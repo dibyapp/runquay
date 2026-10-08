@@ -1,5 +1,7 @@
 # Getting started with Runquay
 
+**New to coding?** Follow the [beginner guide](BEGINNERS.md) for setup explanations, an idea form and opening your result.
+
 Runquay runs your existing AI coding CLI on your computer. You describe a goal, choose the tool, and let a persistent local queue work through bounded milestones. This guide covers installation, all four onboarding steps, and your first task.
 
 **Start here:** [Install](#1-install-the-prerequisites) · [Onboard](#3-complete-the-four-setup-steps) · [Add a task](#5-add-one-small-task) · [Review the result](#6-start-work-and-review-the-result)
@@ -80,7 +82,7 @@ macOS / Linux:
 python3 runquay.py start
 ```
 
-Windows can also use `start.cmd`; macOS/Linux can use `sh start.sh`. The launcher opens [127.0.0.1:8765](http://127.0.0.1:8765/). Keep the terminal running while using a foreground instance. Ctrl+C stops it; closing the browser tab alone does not stop the queue.
+Windows can also open `start.cmd`; macOS can open `start.command`; macOS/Linux can use `sh start.sh`. The launcher opens [127.0.0.1:8765](http://127.0.0.1:8765/). Keep the terminal running while using a foreground instance. Ctrl+C stops it; closing the browser tab alone does not stop the queue.
 
 If Python is called `python` on your machine, substitute it in these commands. Do not expose the dashboard through a public proxy or tunnel. It is a local, single-user application.
 
@@ -126,7 +128,9 @@ Review workspace access and billing, select **I understand the workspace access 
 
 ## 5. Add one small task
 
-Choose **New task** on Home or Tasks. Enter a task name, explain the expected behavior and checks, and select the AI tool. Expand **Limits and model (optional)** only if you need a step cap, priority or model. A step is one bounded work session.
+Choose **Help me build something** on Home or **New task** in Tasks. The two-screen guide asks what you want to make, who it is for and any must-have features. Review the idea before adding it. Starter examples are available on Home. See the [beginner walkthrough](BEGINNERS.md).
+
+For the original form pictured below, choose **I prefer to write my own task**. Enter a name, goal and AI tool. Expand **Limits and model (optional)** only if you need a step cap, priority or model. A step is one bounded work session.
 
 ![Actual text-cleaner goal in the shorter task form](images/simple-new-task.jpg)
 
@@ -142,7 +146,7 @@ Use **Start work** on Home. The next-step card explains whether work is waiting,
 
 Codex needs verified subscription quota and zero paid balance. Other providers ask for approval before each invocation because billing is unverified. Review any request on Home; declining or waiting remains available. Runquay does not purchase credits or resets.
 
-When a task finishes, choose **Review results** on Home or **Finished** in Tasks. Expand **Task details and checks** for its goal, reported tests, folder, tool and step count. **View output** opens the detailed run log, which may contain private project information.
+When a task finishes, choose **Review results** on Home or **Finished** in Tasks. Choose **See what was made** for opening instructions, **Open project folder**, and **Ask for help**. The handoff displays START_HERE.md when present, with README fallback. It does not execute project files. Expand **Task details and checks** for its goal, reported tests, folder, tool and step count. **View output** opens the detailed run log, which may contain private project information.
 
 ![Real text-cleaner completion and checks, cropped before its private path](images/simple-result.jpg)
 

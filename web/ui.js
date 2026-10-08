@@ -31,6 +31,32 @@ const RunquayUI = (() => {
   function visibleIdeas(ideas, filter, target) {
     return ideas.filter(s => s.state === "proposed" && (filter === "all" || s.payload.kind === filter) && (!target || s.payload.catalog_id === target));
   }
-  return {pageFor,nextStep,visibleTasks,visibleIdeas,label:state => labels[state] || state};
+  const starters = [
+    {id:"website",title:"A personal website",kind:"website",purpose:"A personal website where I can introduce myself, show my interests and share a contact section.",features:"Easy to read on a phone. Use sample text that I can replace later."},
+    {id:"checklist",title:"A daily checklist",kind:"tracker",purpose:"A checklist for my daily tasks. I want to add tasks, mark them done and remove them.",features:"Save my list in this browser. Include a clear way to empty it."},
+    {id:"budget",title:"A simple expense tracker",kind:"tracker",purpose:"A simple expense tracker where I can enter a description and amount and see a total.",features:"Save entries in this browser. Use made-up examples, with no bank connection or sign-in."}
+  ];
+  function createBrief(input) {
+    const names={website:"My simple website",tracker:"My useful tracker",tool:"My small tool",other:"My new project"};
+    if(!Object.hasOwn(names,input.kind)) throw new Error("Choose what you would like to make.");
+    const purpose=String(input.purpose || "").trim();
+    if(!purpose) throw new Error("Describe your idea in a sentence or two.");
+    const name=String(input.name || "").trim() || names[input.kind];
+    const audience=String(input.audience || "").trim() || "People who do not know programming";
+    const features=String(input.features || "").trim() || "Keep it simple, readable and easy to use.";
+    const goal=[purpose,"Who it is for: "+audience,"Must include: "+features,
+      "Choose the simplest practical implementation for someone who does not know coding. For a simple website, tracker or browser tool, prefer a self-contained index.html with embedded CSS and JavaScript that opens by double-clicking it. Use no external fonts, scripts, APIs, accounts, packages or build steps unless the stated goal requires them. If that simple approach cannot satisfy the goal, explain the actual requirements rather than claiming it works.",
+      "Use fictional placeholder content. For saved browser data, explain that it stays in this browser and can be cleared; do not claim it is backed up or secure storage.",
+      "Write START_HERE.md with plain, numbered instructions: where to find the entry file, exactly how to open and use it, a small manual check the user can try, known limitations and what to do if it does not open. Explain any unavoidable technical term. Do not invent successful tests or promise deployment.",
+      "Run meaningful checks and report their results. Do not buy, publish, deploy or install software automatically. If human action is needed, stop and ask one clear question."
+    ].join("\n\n");
+    if(name.length>100 || goal.length>30000) throw new Error("Please shorten your project name or description.");
+    return {name,goal,provider:input.provider || "codex",max_steps:3,priority:0};
+  }
+  function plainInstructions(text) {
+    return String(text || "").replace(/^```[^\n]*$/gm, "").replace(/^#{1,6}\s+/gm, "")
+      .replace(/\*\*([^*\n]+)\*\*/g, "$1").replace(/`([^`\n]+)`/g, "$1");
+  }
+  return {pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,label:state => labels[state] || state};
 })();
 if (typeof module !== "undefined") module.exports = RunquayUI;

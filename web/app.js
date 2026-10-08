@@ -56,7 +56,7 @@ function renderTasks() {
   replaceCards("project-list", tasks.length ? tasks.map(p => {
     const run = state.runs.find(r => r.project_id === p.id);
     const explanation = p.state === "queued" ? state.running ? "Waiting for the worker, an available account, or your approval." : "Saved. Start work from Home when you are ready." : p.state === "complete" ? "Review the files and checks before accepting the result." : p.state === "paused" ? "Your files are saved. Continue when you are ready." : "";
-    return `<article class="project"><div class="project-top"><h3>${esc(p.name)}</h3>${badge(p.state)}</div>${p.checkpoint.summary ? `<div class="project-detail">${esc(p.checkpoint.summary)}</div>` : `<p>${esc(p.goal.slice(0,180))}${p.goal.length > 180 ? "…" : ""}</p>`}${explanation ? `<p class="task-explanation">${esc(explanation)}</p>` : ""}${p.note && !/^none\.?$/i.test(p.note.trim()) ? `<p class="project-detail">${esc(p.note)}</p>` : ""}<details data-key="task-${p.id}"><summary>Task details and checks</summary><p class="project-goal">${esc(p.goal)}</p>${p.checkpoint.tests ? `<p>Checks: ${esc(p.checkpoint.tests)}</p>` : ""}<div class="project-meta"><span>${p.steps} / ${p.max_steps} steps</span><span>${esc(state.tools.find(t=>t.id===p.provider)?.name || "Codex")}</span><span>${esc(p.model || "Default model")}</span><span>${esc(p.path)}</span></div></details><div class="project-actions">${["paused","attention","complete","cancelled"].includes(p.state) ? `<button class="secondary" data-action="resume" data-id="${p.id}">${p.state === "complete" ? "Add follow-up" : "Continue"}</button>` : ""}${["running","queued"].includes(p.state) ? `<button class="secondary" data-action="pause-project" data-id="${p.id}">Pause task</button>` : ""}${run ? `<button class="text-button" data-action="log" data-id="${run.id}">View output</button>` : ""}${!["cancelled","complete"].includes(p.state) ? `<button class="text-button" data-action="cancel-project" data-id="${p.id}">Cancel task</button>` : ""}</div></article>`;
+    return `<article class="project"><div class="project-top"><h3>${esc(p.name)}</h3>${badge(p.state)}</div>${p.checkpoint.summary ? `<div class="project-detail">${esc(p.checkpoint.summary)}</div>` : `<p>${esc(p.goal.slice(0,180))}${p.goal.length > 180 ? "…" : ""}</p>`}${explanation ? `<p class="task-explanation">${esc(explanation)}</p>` : ""}${p.note && !/^none\.?$/i.test(p.note.trim()) ? `<p class="project-detail">${esc(p.note)}</p>` : ""}<details data-key="task-${p.id}"><summary>Task details and checks</summary><p class="project-goal">${esc(p.goal)}</p>${p.checkpoint.tests ? `<p>Checks: ${esc(p.checkpoint.tests)}</p>` : ""}<div class="project-meta"><span>${p.steps} / ${p.max_steps} steps</span><span>${esc(state.tools.find(t=>t.id===p.provider)?.name || "Codex")}</span><span>${esc(p.model || "Default model")}</span><span>${esc(p.path)}</span></div></details><div class="project-actions">${p.state === "complete" ? `<button data-action="result" data-id="${p.id}">See what was made</button>` : ""}${["paused","attention","complete","cancelled"].includes(p.state) ? `<button class="secondary" data-action="resume" data-id="${p.id}">${p.state === "complete" ? "Add follow-up" : "Continue"}</button>` : ""}${["running","queued"].includes(p.state) ? `<button class="secondary" data-action="pause-project" data-id="${p.id}">Pause task</button>` : ""}${run ? `<button class="text-button" data-action="log" data-id="${run.id}">View output</button>` : ""}${!["cancelled","complete"].includes(p.state) ? `<button class="text-button" data-action="cancel-project" data-id="${p.id}">Cancel task</button>` : ""}</div></article>`;
   }).join("") : empty(emptyTitle,emptyText) + (taskFilter === "active" && state.projects.some(p=>["complete","cancelled"].includes(p.state)) ? '<div class="controls"><button class="text-button" data-show-finished>View finished tasks</button></div>' : ""));
 }
 function renderNextStep() {
@@ -99,6 +99,7 @@ function render() {
   $("ready").innerHTML = `${state.profiles.filter(p=>p.eligible && p.enabled).length} <em>/ ${state.profiles.length}</em>`;
   $("completed").textContent = state.projects.filter(p=>p.state === "complete").length;
   renderBrain(); renderTasks(); renderNextStep();
+  if(typeof beginnerNote === "function") beginnerNote();
   if (typeof renderSetup === "function") renderSetup();
   $("connection").innerHTML = '<span class="dot"></span> Connected';
   $("binary").textContent = "Codex executable: " + (state.binary || "Not found");
@@ -162,7 +163,7 @@ document.addEventListener("click", async event => {
   if(event.target.closest('#next-step a[href="#projects"]')) setTaskFilter("active");
   if(event.target.closest("[data-show-finished]")) {setTaskFilter("finished"); location.hash="#projects";}
   const next = event.target.closest("[data-next-action]");
-  if(next) {if(next.dataset.nextAction === "new") showProjectForm(); if(next.dataset.nextAction === "account") showAccount(); if(next.dataset.nextAction === "start") await act("/api/control",{action:"start"}); if(next.dataset.nextAction === "finished") {setTaskFilter("finished");location.hash="#projects";}}
+  if(next) {if(next.dataset.nextAction === "new") showBeginner(); if(next.dataset.nextAction === "account") showAccount(); if(next.dataset.nextAction === "start") await act("/api/control",{action:"start"}); if(next.dataset.nextAction === "finished") {setTaskFilter("finished");location.hash="#projects";}}
   const filter = event.target.closest("[data-idea-filter]");
   if(filter) {ideaFilter = filter.dataset.ideaFilter; document.querySelectorAll("[data-idea-filter]").forEach(b => {const active=b.dataset.ideaFilter === ideaFilter; b.classList.toggle("active",active);b.setAttribute("aria-pressed",String(active));}); ideaSignature = ""; renderBrain();}
   const close = event.target.closest("[data-close]"); if(close) $(close.dataset.close).close();
@@ -193,6 +194,7 @@ function updateNavigation() {
   else window.scrollTo({top:0,behavior:"instant"});
 }
 document.addEventListener("invalid",event=>{let details=event.target.closest("details"); while(details) {details.open=true; details=details.parentElement.closest("details");}},true);
+document.querySelector(".skip-link").onclick=event=>{event.preventDefault();$("main-content").focus();$("main-content").scrollIntoView();};
 window.addEventListener("hashchange",updateNavigation); updateNavigation();
 
 refresh(); setInterval(refresh,4000);

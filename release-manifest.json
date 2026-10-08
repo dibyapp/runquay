@@ -25,7 +25,9 @@
     "Uninstall-Autostart.ps1",
     "start.sh",
     "start.cmd",
-    "runquay.py"
+    "runquay.py",
+    "delivery.py",
+    "start.command"
   ],
   "directories": [
     "web",
@@ -76,6 +78,15 @@
     ],
     "docs/images/simple-ideas.jpg": [
       "14ae96b5546b2308893e6d501fe688bbca60b4cd78ec07d40a1ed3193b416303"
+    ],
+    "docs/images/beginner-idea.jpg": [
+      "d3a3f8572b581d5ad621622aa09726a7836382b11922987f5291848d318adb48"
+    ],
+    "docs/images/beginner-review.jpg": [
+      "0015c363492125053f3001366fd7a0ab76dad09a8a7e81324873bcae6196ac12"
+    ],
+    "docs/images/beginner-result.jpg": [
+      "d437ab03bae4af673bf02bb3b68e3a2e5132735b51cc35bb75fe3c90ef086a36"
     ]
   }
 }

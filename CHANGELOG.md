@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 — A guided start for people who do not code
+
+- Two-screen idea guide with everyday questions, editable website/checklist/expense starters, optional name/tool choices, and review before submission.
+- Guided goals request a simple practical implementation, plain opening instructions in START_HERE.md and meaningful checks. Three-session caps bound new guided tasks.
+- Finished tasks offer See what was made, text-only instructions, Open project folder and an editable Ask for help message. Opening the result screen does not execute generated code.
+- Clearer onboarding language, terminal explanation, copyable sign-in instructions and an illustrated beginner guide.
+- Friendly Python/Git prerequisite checks, Windows error visibility and a Mac start.command launcher. Source ZIPs preserve executable permissions for shell launchers.
+- Local-session/CSRF checks protect folder opening. Handoff reads are bounded, skip symlinks and render as text; tests cover these boundaries.
+
 ## 0.3.0 — A simpler workspace
 
 - Five focused pages: Home, Tasks, Ideas, Accounts, and Settings. Home explains the next action for waiting work, active tasks, approvals and completed results.

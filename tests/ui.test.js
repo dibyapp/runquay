@@ -57,3 +57,27 @@ test("selecting a project hides unrelated and dismissed ideas",()=>{
   assert.deepEqual(ui.visibleIdeas(ideas,"new",""),[ideas[2]]);
   assert.equal(ui.visibleIdeas(ideas,"all","").length,3);
 });
+
+test("a beginner brief supplies opening instructions and bounded work",()=>{
+  const brief=ui.createBrief({kind:"tracker",purpose:"A list for my groceries",features:"Large buttons",provider:"claude"});
+  assert.equal(brief.name,"My useful tracker");
+  assert.equal(brief.provider,"claude");
+  assert.equal(brief.max_steps,3);
+  assert.match(brief.goal,/A list for my groceries/);
+  assert.match(brief.goal,/Large buttons/);
+  assert.match(brief.goal,/START_HERE.md/);
+  assert.match(brief.goal,/Do not buy, publish, deploy or install/);
+  assert.match(brief.goal,/do not claim it is backed up/);
+});
+
+test("blank and oversized beginner input is rejected without inventing a goal",()=>{
+  assert.throws(()=>ui.createBrief({kind:"website",purpose:"  "}),/Describe your idea/);
+  assert.throws(()=>ui.createBrief({kind:"unknown",purpose:"Build"}),/Choose what/);
+  assert.throws(()=>ui.createBrief({kind:"website",purpose:"Build",name:"x".repeat(101)}),/shorten/);
+  assert.equal(ui.createBrief({kind:"website",purpose:" Build ",name:" My page "}).name,"My page");
+});
+
+test("opening instructions remove formatting markers while retaining literal HTML",()=>{
+  assert.equal(ui.plainInstructions('# Open it\n1. Open `index.html` and choose **Next**.\n<script>unsafe()</script>'),
+    'Open it\n1. Open index.html and choose Next.\n<script>unsafe()</script>');
+});

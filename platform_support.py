@@ -23,6 +23,19 @@ def default_data(root):
     return legacy if (legacy / "autowork.sqlite3").exists() else data_home()
 
 
+def open_folder(path, system=None):
+    """Ask the desktop to show a known project directory, without a shell."""
+    folder = Path(path).resolve()
+    if not folder.is_dir():
+        raise ValueError("This project's folder is no longer available on this computer.")
+    system = system or sys.platform
+    if system == "win32":
+        os.startfile(str(folder))
+    else:
+        subprocess.Popen(["open" if system == "darwin" else "xdg-open", str(folder)],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+
+
 def child_options():
     return {"creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)} if os.name == "nt" else {"start_new_session": True}
 

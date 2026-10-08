@@ -251,10 +251,30 @@ class HttpTests(unittest.TestCase):
         self.assertEqual(ctx.exception.code, 403)
 
     def test_focused_interface_assets_are_served_without_model_requests(self):
-        for asset, marker in (("ui.js", b"RunquayUI"), ("simple.css", b".next-step")):
+        for asset, marker in (("ui.js", b"RunquayUI"), ("beginner.js", b"showBeginner"), ("simple.css", b".next-step")):
             with self.client.open(self.url + "/" + asset) as response:
                 self.assertEqual(response.status, 200)
                 self.assertIn(marker, response.read())
+
+    def test_delivery_is_local_json_and_folder_open_requires_csrf(self):
+        ident = self.sup.create_project({"name":"Delivery example","goal":"Create an example"})
+        project = self.sup.store.one("SELECT * FROM projects WHERE id=?", (ident,))
+        (Path(project['path'])/'START_HERE.md').write_text('1. Open the result. <script>unsafe()</script>', encoding='utf-8')
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            self.client.open(self.url + '/api/delivery/' + ident)
+        self.assertEqual(ctx.exception.code, 403)
+        self.client.open(self.url + '/').close()
+        with self.client.open(self.url + '/api/delivery/' + ident) as response:
+            self.assertTrue(response.headers['Content-Type'].startswith('application/json'))
+            self.assertIn('<script>', json.load(response)['instructions'])
+        request = urllib.request.Request(self.url+'/api/project/folder', data=json.dumps({'id':ident,'path':'untrusted override'}).encode(), headers={'Content-Type':'application/json'})
+        with patch('supervisor.open_folder') as opener:
+            with self.assertRaises(urllib.error.HTTPError):
+                self.client.open(request)
+            opener.assert_not_called()
+            request.add_header('X-AutoWork-CSRF', 'fixture-secret')
+            self.client.open(request).close()
+            opener.assert_called_once_with(project['path'])
 
     def post(self, path, data, origin=None):
         self.client.open(self.url + "/").close()

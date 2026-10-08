@@ -1,6 +1,6 @@
 # Verification record
 
-Current interface verification: 2026-10-09. The 50-test Python suite completed on Windows (49 passed, one POSIX-only skip) and Ubuntu under WSL (50 passed). Nine JavaScript UI regression tests cover navigation, next-step decisions, task filters and scoped ideas. Test commands and results are recorded separately from CI and account-dependent checks.
+Current interface verification: 2026-10-09, version 0.4.0. The 57-test Python suite completed on Windows (55 passed, two platform/permission skips) and Ubuntu 24.04 under WSL (57 passed). Twelve JavaScript UI regression tests cover navigation, next-step decisions, task filters, scoped ideas, beginner briefs and plain opening instructions. Test commands and results are recorded separately from CI and account-dependent checks.
 
 | Check | Status |
 | --- | --- |
@@ -40,3 +40,12 @@ A temporary external-tool connection and task tested approval acknowledgement an
 The HTTP regression verifies the new UI assets are served without model requests. JavaScript tests also verify a ready account for another provider cannot make waiting work look eligible. Expanded details are retained across background renders. The Windows stop/start smoke check verified an already-exited scheduled worker no longer causes a null-command-line error. Actual public captures and their provenance are in [SCREENSHOTS.md](SCREENSHOTS.md).
 
 The cross-platform CI matrix runs the Python suite, JavaScript syntax checks, UI regression tests, source/history privacy audit and ZIP build on Windows, Ubuntu and macOS with Python 3.11/3.13. CI results are available from the [Verify workflow](https://github.com/dibyapp/runquay/actions/workflows/ci.yml). Desktop browser/model execution was tested on Windows; macOS/Linux vendor sign-in and startup behavior remain separate integration checks.
+
+
+## Beginner workflow verification — 0.4.0
+
+The live Windows app was tested in the Codex in-app browser: required idea validation, editable starter, retained fields after Back, optional name, review, saving while paused, starting work and a real one-step Codex completion. The fictional Sunny Corner cafe produced a self-contained menu, START_HERE.md and a check script. Independent execution of the script passed. A local HTTP preview confirmed Drinks shows two items, Snacks shows one, and All restores three, including keyboard activation. The result dialog showed the actual opening instructions as text; Open project folder returned success. Ask for help opened an editable follow-up and was closed without submitting another model request. Original accounts and settings were retained.
+
+The worker's headless screenshot attempt was denied by Windows. The later interactive browser check used the actual generated page over local HTTP. The in-app browser rejected a direct file:// URL; this restriction was not bypassed, and direct double-click opening remains unverified. Native macOS launcher interaction, sign-in clipboard interaction, other-vendor model requests and paid resets were not exercised. The three new public images are actual reviewed captures, not mockups.
+
+Regression checks cover authenticated delivery access, CSRF protection for folder opening, ignoring caller-supplied paths, bounded text reads, credential-name exclusion, symlink containment, plain-text rendering and OS-specific folder-opening commands. The source ZIP is checked for an exact allowlist and executable Unix launcher permissions. Python/Git and an authenticated AI helper remain prerequisites; Runquay is not a bundled one-click AI installation.

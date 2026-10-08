@@ -1,6 +1,20 @@
 # Actual Runquay screenshots and test record
 
-## Current interface — 0.3.0, 9 October 2026
+## Current beginner flow — 0.4.0, 9 October 2026
+
+Actual captures from the running Windows app in the Codex in-app browser. The fictional cafe idea was submitted to real Codex and completed in one step. These screenshots contain no account email, credential, sign-in command, private home path or unrelated project contents. All three image files were reviewed and hash-pinned before publication.
+
+![Describe an idea in everyday words](images/beginner-idea.jpg)
+
+![Review the idea before adding the task](images/beginner-review.jpg)
+
+![Read actual opening instructions and open the project folder](images/beginner-result.jpg)
+
+The walkthrough tested required fields, an editable starter, Back with retained input, saving while paused, starting work, completion, the result dialog, opening the folder and an editable help message. The help message was closed without submitting it. The generated check script passed independently; the actual menu controls were tested over a local HTTP preview: two drinks, one snack and all three items, including keyboard activation.
+
+The worker's headless screenshot attempt was denied by Windows; the public captures above came from the interactive in-app browser. That browser also rejected direct file:// opening, which remains unverified. No restriction was bypassed. No paid credit/reset or other-vendor model request was used. Original accounts and work settings were restored. See [the beginner guide](BEGINNERS.md) and [verification limits](VERIFICATION.md).
+
+## Earlier focused interface — 0.3.0, 9 October 2026
 
 These are actual captures of the running Windows app in the Codex in-app browser, using the real backend and an authenticated Codex subscription. No API responses, account values or generated results were mocked. Home and Ideas are full-page captures; the result is cropped before the private folder path. The form contains the actual goal submitted for this test.
 

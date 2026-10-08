@@ -15,6 +15,14 @@ Previously the AutoWork prototype. Existing state and the `autowork.py` launcher
 
 Created and maintained by [Dibyaprakash Pradhan](https://github.com/dibyapp). [Download the latest release](https://github.com/dibyapp/runquay/releases/latest) · [Report a bug](https://github.com/dibyapp/runquay/issues/new/choose).
 
+## New to coding?
+
+[Start with the beginner guide](docs/BEGINNERS.md). Describe an idea in everyday words, review it before starting, then use **See what was made** for opening instructions and an **Open project folder** button. Editable starters help with a small website, checklist or expense tracker. Setup still requires Python, Git and a supported AI helper.
+
+Windows: open `start.cmd`. Mac: open `start.command`. Linux: run `sh start.sh` in the extracted folder. If something is missing, the launcher explains the next step.
+
+![Actual beginner task review](docs/images/beginner-review.jpg)
+
 ## See Runquay in use
 
 Five pages keep the daily workflow clear: **Home → Tasks → Ideas → Accounts → Settings**. Home tells you what needs attention. Task forms show the essentials first; limits, models, file paths, usage and logs are available when needed.

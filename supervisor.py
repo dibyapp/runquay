@@ -22,7 +22,8 @@ import time
 import urllib.parse
 import uuid
 from codex_brain import CodexBrain, path_key
-from platform_support import default_data, child_options, kill_group, private_directory, command_display, DataLock
+from platform_support import default_data, child_options, kill_group, private_directory, command_display, DataLock, open_folder
+from delivery import result_details
 import providers
 import sys
 import signal
@@ -911,7 +912,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if self.headers.get("Sec-Fetch-Site") == "cross-site":
             return self.send_data({"error": "Cross-site access denied"}, 403)
         path = urllib.parse.urlparse(self.path).path
-        static = {"/mark.svg": ("mark.svg", "image/svg+xml"), "/": ("index.html", "text/html; charset=utf-8"), "/app.js": ("app.js", "text/javascript; charset=utf-8"), "/setup.js": ("setup.js", "text/javascript; charset=utf-8"), "/ui.js": ("ui.js", "text/javascript; charset=utf-8"), "/simple.css": ("simple.css", "text/css; charset=utf-8"), "/style.css": ("style.css", "text/css; charset=utf-8")}
+        static = {"/beginner.js": ("beginner.js", "text/javascript; charset=utf-8"), "/mark.svg": ("mark.svg", "image/svg+xml"), "/": ("index.html", "text/html; charset=utf-8"), "/app.js": ("app.js", "text/javascript; charset=utf-8"), "/setup.js": ("setup.js", "text/javascript; charset=utf-8"), "/ui.js": ("ui.js", "text/javascript; charset=utf-8"), "/simple.css": ("simple.css", "text/css; charset=utf-8"), "/style.css": ("style.css", "text/css; charset=utf-8")}
         if path in static:
             name, mime = static[path]
             return self.send_data((ROOT / "web" / name).read_bytes(), mime=mime, cookie=path == "/")
@@ -921,6 +922,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
             state = self.server.supervisor.state()
             state["csrf"] = self.server.token
             return self.send_data(sanitize(state))
+        if path.startswith("/api/delivery/"):
+            project = self.server.supervisor.store.one("SELECT * FROM projects WHERE id=? AND kind!='advisor'", (path.split("/")[-1],))
+            if not project:
+                return self.send_data({"error": "Task not found"}, 404)
+            try:
+                return self.send_data(result_details(project))
+            except (OSError, ValueError):
+                return self.send_data({"error": "The result folder is unavailable. Use Ask for help if you need guidance."}, 400)
         if path.startswith("/api/run/"):
             run = self.server.supervisor.store.one("SELECT * FROM runs WHERE id=?", (path.split("/")[-1],))
             if not run:
@@ -961,6 +970,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
             elif path == "/api/projects":
                 ident = sup.create_project(data)
                 return self.send_data({"id": ident}, 201)
+            elif path == "/api/project/folder":
+                project = sup.store.one("SELECT * FROM projects WHERE id=? AND kind!='advisor'", (data.get("id", ""),))
+                if not project:
+                    raise ValueError("Task not found")
+                try:
+                    open_folder(project["path"])
+                except OSError:
+                    raise ValueError("Your computer could not open the folder. Find it under Task details and checks.") from None
             elif path == "/api/catalog/refresh":
                 sup.brain.discover()
             elif path == "/api/catalog/add":

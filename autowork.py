@@ -10,6 +10,15 @@ import sys
 ROOT = Path(__file__).resolve().parent
 
 
+def startup_problems():
+    problems = []
+    if sys.version_info < (3, 11):
+        problems.append("Install Python 3.11 or newer from https://www.python.org/downloads/ and reopen Runquay.")
+    if not shutil.which("git"):
+        problems.append("Install Git from https://git-scm.com/downloads, then reopen Runquay. It keeps each new project's work separate.")
+    return problems
+
+
 def doctor():
     from supervisor import Supervisor
     sup = Supervisor()
@@ -44,6 +53,11 @@ def main():
         from release import build
         build(check_only=args.check)
     else:
+        problems = startup_problems()
+        if problems:
+            print("Runquay needs a little setup before it can open:\n\n" + "\n\n".join(problems))
+            print("\nSee docs/BEGINNERS.md in the downloaded folder for the step-by-step guide.")
+            raise SystemExit(2)
         cmd = [sys.executable, str(ROOT / "supervisor.py")]
         if args.command == "start":
             cmd += ["--port", str(args.port)]

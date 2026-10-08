@@ -128,7 +128,14 @@ def build(check_only=False, root=ROOT):
     target = directory / f"runquay-{version}-source.zip"
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
         for file in files:
-            archive.write(file, Path("runquay") / file.relative_to(root))
+            name = Path("runquay") / file.relative_to(root)
+            if file.name in {"start.command", "start.sh"}:
+                info = zipfile.ZipInfo.from_file(file, name.as_posix())
+                info.create_system = 3
+                info.external_attr = 0o100755 << 16
+                archive.writestr(info, file.read_bytes(), compress_type=zipfile.ZIP_DEFLATED)
+            else:
+                archive.write(file, name)
     digest = hashlib.sha256(target.read_bytes()).hexdigest()
     (directory / (target.name + ".sha256")).write_text(digest + "  " + target.name + "\n", encoding="ascii")
     print("Created " + target.name + " · SHA256 " + digest)
