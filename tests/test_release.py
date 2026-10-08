@@ -20,7 +20,7 @@ class ReleaseTests(unittest.TestCase):
 
     def test_only_reviewed_image_bytes_can_enter_release(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             images = root / "docs/images"
             images.mkdir(parents=True)
             public = images / "reviewed.jpg"
@@ -38,7 +38,7 @@ class ReleaseTests(unittest.TestCase):
 
     def test_even_pinned_images_with_private_metadata_are_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             file = root / "docs/images/photo.jpg"
             file.parent.mkdir(parents=True)
             raw = b"\xff\xd8\xff\xe1Exif\x00\x00private metadata\xff\xd9"
