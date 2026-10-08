@@ -33,5 +33,37 @@
     "docs",
     "examples",
     ".github"
-  ]
+  ],
+  "public_images": {
+    "docs/images/completed-task.jpg": [
+      "f1dd777f8a6f8242ce48c301cce728e310f2fed4fb555a4a03cd462b3d20c404"
+    ],
+    "docs/images/connect-account.jpg": [
+      "c9307fba6bfe605733433f575224644916c86144b1c1bf4ed1d858ddbf491b2e"
+    ],
+    "docs/images/connect-folder.jpg": [
+      "a5f4883274df957343bdfe293ed39a24f6fd923383938a29fc0bcbdc46dcbe22"
+    ],
+    "docs/images/create-project.jpg": [
+      "50a811a1b361d9b63d82af6a6e787381f5e22bcccd44df74eee2a73487033f83"
+    ],
+    "docs/images/overview.jpg": [
+      "c7fcfc7c7b5f5384b62ae7cc9a3300dc3da34f903a371534191cbafdc815eafb"
+    ],
+    "docs/images/run-settings.jpg": [
+      "854b37c0b4a713de002621719d028de6995cd3f25de19ff463684654c0ce3767"
+    ],
+    "docs/images/setup-accounts.jpg": [
+      "b3e49d104d3834007fbc5f57c979fa3d1ac7024255dc9e22b4ba9ae606c408da"
+    ],
+    "docs/images/setup-review.jpg": [
+      "f357aefafcbf1c03ed466f5f02546a7134c1ec31c025e834d1e3323d5deafdd5"
+    ],
+    "docs/images/setup-tools.jpg": [
+      "9070b0513664ee0fa9585e53e87cb1adeebf50d0fe0a1da315d69133bd501d5f"
+    ],
+    "docs/images/setup-workspace.jpg": [
+      "cdabb860121b2fd7319776fba5fce5800d9a882de7f0c6d3eef51b8e45982cf0"
+    ]
+  }
 }

@@ -2,7 +2,7 @@
 
 1. Run tests, JS syntax checks, and the release audit. Review `docs/VERIFICATION.md`; run the OS CI matrix in a private repository if possible.
 2. Complete fresh onboarding on every advertised OS. Validate each vendor CLI/version using your own account; approved model invocations may cost allowance or money.
-3. Run `python runquay.py release`. Extract the ZIP into a new empty directory and inspect every file and checksum. Confirm there are no databases, personal paths, accounts, real screenshots, logs, generated projects, or credentials.
+3. Run `python runquay.py release`. Extract the ZIP into a new empty directory and inspect every file and checksum. Confirm there are no databases, personal paths, accounts, unreviewed or personal screenshots, logs, generated projects, or credentials. Visually inspect every documentation JPEG before adding its hash to `public_images`; preserve reviewed historical hashes if replacing an image. Confirm no private pixels, EXIF/XMP metadata or unrelated project details are included.
 4. Start the extracted source using `python runquay.py start --data <private-test-directory> --port 8766`. Never share a data directory between live instances.
 5. Seed a clean Git repository from inspected source. Do not upload the original working folder or carry private history into the public repository.
 6. Confirm Runquay name/handle/domain availability and perform appropriate trademark checks; the initial web search is not clearance. Confirm license holder, description, topics, and issue templates. Use the repository description and relevant topics below. Enable secret scanning, private vulnerability reporting, and suitable branch protection.

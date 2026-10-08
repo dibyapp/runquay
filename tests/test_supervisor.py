@@ -1,5 +1,6 @@
 import http.cookiejar
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -55,6 +56,42 @@ class GateTests(unittest.TestCase):
         self.assertNotIn("CODEX_API_KEY", env)
         self.assertNotIn("CODEX_ACCESS_TOKEN", env)
         self.assertEqual(env["CODEX_HOME"], "fixture-home")
+
+
+class RelativeDataTests(unittest.TestCase):
+    def test_worker_result_survives_a_different_workspace_cwd(self):
+        original = Path.cwd()
+        with tempfile.TemporaryDirectory() as folder:
+            base = Path(folder).resolve()
+            work = base / "workspace"
+            work.mkdir()
+            sup = None
+            try:
+                os.chdir(base)
+                sup = Supervisor("state", "test-codex")
+                sup.store.set("running", True)
+                sup.store.execute("INSERT INTO projects(id,name,goal,path,created) VALUES('relative','Relative path','Check result',?,'2026-10-08')", (str(work),))
+                profile = {"id": "relative-account", "home": str(base), "name": "Fixture"}
+                sup.store.execute("INSERT INTO profiles(id,name,home) VALUES(?,?,?)", (profile["id"], profile["name"], profile["home"]))
+                real_popen = subprocess.Popen
+                fixture = ROOT / "tests/fake_worker.py"
+                class FakeRpc:
+                    def close(self): pass
+                    def call(self, method, params):
+                        return {"data": [{"isDefault": True, "model": "fixture-model"}]}
+                def popen(command, **kwargs):
+                    if command[0] != "test-codex":
+                        return real_popen(command, **kwargs)
+                    output = command[command.index("--output-last-message") + 1]
+                    self.assertTrue(Path(output).is_absolute())
+                    return real_popen([sys.executable, "-u", str(fixture), "complete", output], **kwargs)
+                with patch("supervisor.subprocess.Popen", side_effect=popen):
+                    sup.run_step(sup.store.one("SELECT * FROM projects"), profile, FakeRpc())
+                self.assertEqual(sup.store.one("SELECT state FROM projects")["state"], "complete")
+            finally:
+                if sup:
+                    sup.children.close()
+                os.chdir(original)
 
 
 class LifecycleTests(unittest.TestCase):

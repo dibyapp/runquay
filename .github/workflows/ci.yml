@@ -28,4 +28,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: source-${{ matrix.os }}-${{ matrix.python }}
-          path: dist/runquay-0.2.0-source.zip*
+          path: dist/runquay-*-source.zip*

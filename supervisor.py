@@ -231,7 +231,7 @@ def next_reset(bucket):
 
 class Store:
     def __init__(self, directory):
-        self.directory = Path(directory)
+        self.directory = Path(directory).expanduser().resolve()
         private_directory(self.directory)
         self.path = self.directory / "autowork.sqlite3"
         with self.connect() as db:

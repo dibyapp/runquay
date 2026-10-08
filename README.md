@@ -13,7 +13,17 @@ Self-hosted on your own computer, Runquay brings AI coding workflow automation a
 
 Previously the AutoWork prototype. Existing state and the `autowork.py` launcher remain compatible. [Brand and research](docs/BRAND_RESEARCH.md).
 
-Created and maintained by [Dibyaprakash Pradhan](https://github.com/dibyapp). [Download v0.2.0](https://github.com/dibyapp/runquay/releases/tag/v0.2.0) · [Report a bug](https://github.com/dibyapp/runquay/issues/new/choose).
+Created and maintained by [Dibyaprakash Pradhan](https://github.com/dibyapp). [Download the latest release](https://github.com/dibyapp/runquay/releases/latest) · [Report a bug](https://github.com/dibyapp/runquay/issues/new/choose).
+
+## See Runquay in use
+
+Actual screenshots from a Windows installation using real Codex execution. The walkthrough built a Markdown word counter, passed seven tests, and verified its CLI output. Views are cropped to exclude unrelated private projects and personal paths; no UI values or execution results were fabricated. [Capture details](docs/SCREENSHOTS.md).
+
+![A real Codex task running in Runquay](docs/images/overview.jpg)
+
+![The actual completed task and its checks](docs/images/completed-task.jpg)
+
+**Detailed guides:** [Getting started](docs/GETTING_STARTED.md) · [Daily workflows](docs/WORKFLOWS.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Screenshot gallery](docs/SCREENSHOTS.md)
 
 ## Start in one command
 
@@ -95,14 +105,14 @@ Startup is opt-in and per user: Task Scheduler on Windows, LaunchAgent on macOS,
 
 The dashboard binds only to `127.0.0.1`, validates Host and Origin, rejects cross-site loads, and uses an HttpOnly SameSite cookie, CSRF checks, and restrictive content policy. Do not expose it through a proxy or tunnel. Processes running as your OS user share the trust boundary. Tool permissions vary; the custom adapter provides no additional sandbox.
 
-**Do not publish this working folder wholesale.** Accounts, databases, logs, real screenshots, generated projects, and personal configuration are private. `.gitignore` excludes them. Release packaging uses an explicit source allowlist and scans for likely credentials, private home paths, personal emails, and sensitive Git history:
+**Do not publish this working folder wholesale.** Accounts, databases, logs, personal screenshots, generated projects, and personal configuration are private. Runtime folders are excluded by `.gitignore`; release packaging includes only allowlisted source and explicitly reviewed documentation images. It scans for likely credentials, private home paths, personal emails, and sensitive Git history:
 
 ```sh
 python runquay.py release --check
 python runquay.py release
 ```
 
-Publish the inspected `dist/runquay-0.2.0-source.zip` and its SHA256 checksum, or seed a clean repository from that archive. A pattern scan cannot prove arbitrary text is non-sensitive; review all included files and history. [Security](SECURITY.md) · [Release checklist](RELEASE_CHECKLIST.md).
+Publish the inspected versioned `dist/runquay-<version>-source.zip` and its SHA256 checksum, or seed a clean repository from that archive. Only explicitly reviewed documentation JPEGs with pinned SHA256 hashes enter the bundle; arbitrary screenshots remain excluded. A pattern scan cannot prove arbitrary text or image content is non-sensitive; review all included files and history. [Security](SECURITY.md) · [Release checklist](RELEASE_CHECKLIST.md).
 
 ## Development and verification
 

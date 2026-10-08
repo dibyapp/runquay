@@ -16,4 +16,6 @@ Contact the repository owner privately; after publication, use private vulnerabi
 
 ## Release safely
 
-Run `python autowork.py release --check`, inspect the allowlisted ZIP, and review history. Seed a public repository only from reviewed source. Pattern scanning cannot detect every confidential value. Enable secret scanning and private vulnerability reporting when publishing. Never publish screenshots of real account/project details.
+Run `python runquay.py release --check`, inspect the allowlisted ZIP, and review history. Seed a public repository only from reviewed source. Pattern scanning cannot detect every confidential value. Enable secret scanning and private vulnerability reporting when publishing. Never publish screenshots exposing private account or project details.
+
+Documentation JPEGs are an explicit exception to raster-image exclusion: `release-manifest.json` pins visually reviewed image hashes under `docs/images`. Arbitrary images, changed image bytes and EXIF/XMP metadata are rejected. Pixel contents need human review; a checksum is not an image privacy detector. The published walkthrough captures the real application and a dedicated non-sensitive project, with private views outside the crop.

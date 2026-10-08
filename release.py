@@ -5,11 +5,33 @@ from pathlib import Path
 import re
 import subprocess
 import zipfile
+import tomllib
 from security import PATTERNS
 
 ROOT = Path(__file__).resolve().parent
 IGNORED = {"__pycache__", "node_modules", ".git", "data", "projects", "accounts", ".venv"}
 EXTENSIONS = {".py", ".md", ".json", ".js", ".css", ".html", ".yml", ".yaml", ".toml", ".sh", ".cmd", ".ps1", ".svg"}
+
+
+def public_images(root=ROOT):
+    manifest_path = Path(root) / "release-manifest.json"
+    images = json.loads(manifest_path.read_text(encoding="utf-8")).get("public_images", {}) if manifest_path.exists() else {}
+    for name, digests in images.items():
+        if not name.startswith("docs/images/") or ".." in Path(name).parts or Path(name).suffix != ".jpg":
+            raise ValueError("Public images must be explicitly reviewed JPEGs under docs/images")
+        if not isinstance(digests, list) or not digests or any(not re.fullmatch(r"[0-9a-f]{64}", digest) for digest in digests):
+            raise ValueError("Every public image needs its reviewed SHA256 digest")
+    return images
+
+
+def image_findings(name, raw, images):
+    if name not in images or hashlib.sha256(raw).hexdigest() not in images[name]:
+        return [name + ": image is not pinned to reviewed public content"]
+    if len(raw) > 5_000_000 or not raw.startswith(b"\xff\xd8\xff") or not raw.endswith(b"\xff\xd9"):
+        return [name + ": unsupported or oversized public image"]
+    if b"Exif\x00\x00" in raw or b"http://ns.adobe.com/xap/" in raw:
+        return [name + ": image contains unreviewed EXIF/XMP metadata"]
+    return []
 
 
 def has_credential(text):
@@ -26,6 +48,7 @@ def source_files(root=ROOT):
     root = Path(root).resolve()
     manifest = json.loads((root / "release-manifest.json").read_text(encoding="utf-8"))
     candidates = [root / name for name in manifest["files"]]
+    candidates += [root / name for name in public_images(root)]
     for directory in manifest["directories"]:
         candidates += [p for p in (root / directory).rglob("*") if p.is_file() and p.suffix in EXTENSIONS and not IGNORED.intersection(p.relative_to(root).parts)]
     files = []
@@ -40,11 +63,15 @@ def source_files(root=ROOT):
 
 def audit(files, root=ROOT):
     findings = []
+    images = public_images(root)
     home = str(Path.home())
     private_paths = {home, home.replace("\\", "/"), home.replace("\\", "\\\\")}
     for file in files:
+        name = file.relative_to(root).as_posix()
+        if file.suffix.lower() in {".jpg", ".jpeg", ".png"}:
+            findings.extend(image_findings(name, file.read_bytes(), images))
+            continue
         text = file.read_text(encoding="utf-8")
-        name = str(file.relative_to(root))
         if has_credential(text):
             findings.append(name + ": credential-like content")
         if any(value in text for value in private_paths if len(value) > 1):
@@ -62,6 +89,7 @@ def history_audit(root=ROOT):
             raise ValueError("Git history could not be audited; inspect the repository before releasing")
         return []  # No repository/history in a source ZIP.
     findings = []
+    images = public_images(root)
     for row in probe.stdout.splitlines():
         oid, _, name = row.partition(" ")
         if not name:
@@ -69,7 +97,11 @@ def history_audit(root=ROOT):
         kind = subprocess.run(["git", "cat-file", "-t", oid], cwd=root, capture_output=True, text=True)
         if kind.stdout.strip() != "blob":
             continue
-        value = subprocess.run(["git", "cat-file", "blob", oid], cwd=root, capture_output=True).stdout.decode("utf-8", errors="replace")
+        raw = subprocess.run(["git", "cat-file", "blob", oid], cwd=root, capture_output=True).stdout
+        if Path(name).suffix.lower() in {".jpg", ".jpeg", ".png"}:
+            findings.extend(image_findings(name, raw, images))
+            continue
+        value = raw.decode("utf-8", errors="replace")
         if has_credential(value) or str(Path.home()) in value or str(Path.home()).replace("\\", "/") in value:
             findings.append("History contains sensitive content in " + name + " (" + oid[:8] + ")")
         if re.search(r"\b[A-Za-z0-9._%+-]+@(?!example\.(?:com|org|net)\b)[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b", value):
@@ -85,12 +117,15 @@ def build(check_only=False, root=ROOT):
     findings = audit(files, root) + history_audit(root)
     if findings:
         raise SystemExit("Release audit failed:\n" + "\n".join(findings))
-    print(f"Release audit passed: {len(files)} source files; no detected credential patterns, private home paths, or personal emails. Runtime data is excluded by allowlist.")
+    print(f"Release audit passed: {len(files)} files; text scanned for credentials, private home paths and personal emails. Public images are pinned to reviewed hashes; runtime data is excluded by allowlist.")
     if check_only:
         return
     directory = root / "dist"
     directory.mkdir(exist_ok=True)
-    target = directory / "runquay-0.2.0-source.zip"
+    version = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
+        raise ValueError("Release version must be numeric major.minor.patch")
+    target = directory / f"runquay-{version}-source.zip"
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
         for file in files:
             archive.write(file, Path("runquay") / file.relative_to(root))
