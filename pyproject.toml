@@ -1,0 +1,22 @@
+[project]
+name = "runquay"
+version = "0.2.0"
+description = "Open-source AI coding agent orchestrator for Codex, Claude Code, Gemini CLI, and Antigravity, with local task queues and approvals"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+readme = "README.md"
+authors = [{name = "Dibyaprakash Pradhan"}]
+dependencies = []
+keywords = [
+  "ai-coding-agent", "agent-orchestration", "workflow-automation", "task-scheduler",
+  "codex", "claude-code", "gemini-cli", "antigravity", "self-hosted", "developer-tools"
+]
+
+[project.urls]
+Repository = "https://github.com/dibyapp/runquay"
+Issues = "https://github.com/dibyapp/runquay/issues"
+Releases = "https://github.com/dibyapp/runquay/releases"
+
+[tool.autowork]
+launcher = "python runquay.py start"
+runtime-dependencies = "Python standard library and Git"

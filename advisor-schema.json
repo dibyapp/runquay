@@ -1,0 +1,23 @@
+{
+  "type": "object", "additionalProperties": false,
+  "properties": {
+    "status": {"type": "string", "enum": ["complete", "blocked"]},
+    "summary": {"type": "string"},
+    "tests": {"type": "string"},
+    "next_step": {"type": "string"},
+    "question": {"type": "string"},
+    "suggestions": {"type": "array", "items": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "title": {"type": "string"},
+        "kind": {"type": "string", "enum": ["existing", "new"]},
+        "catalog_id": {"type": "string"},
+        "why": {"type": "string"},
+        "evidence": {"type": "string"},
+        "goal": {"type": "string"},
+        "first_milestone": {"type": "string"},
+        "effort": {"type": "string"}
+      }, "required": ["title", "kind", "catalog_id", "why", "evidence", "goal", "first_milestone", "effort"]
+    }}
+  }, "required": ["status", "summary", "tests", "next_step", "question", "suggestions"]
+}

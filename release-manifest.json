@@ -1,0 +1,37 @@
+{
+  "files": [
+    ".gitignore",
+    "LICENSE",
+    "README.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md",
+    "RELEASE_CHECKLIST.md",
+    "pyproject.toml",
+    "autowork.py",
+    "supervisor.py",
+    "providers.py",
+    "platform_support.py",
+    "service_setup.py",
+    "codex_brain.py",
+    "security.py",
+    "release.py",
+    "release-manifest.json",
+    "advisor-schema.json",
+    "result-schema.json",
+    "Start-AutoWork.ps1",
+    "Stop-AutoWork.ps1",
+    "Install-Autostart.ps1",
+    "Uninstall-Autostart.ps1",
+    "start.sh",
+    "start.cmd",
+    "runquay.py"
+  ],
+  "directories": [
+    "web",
+    "tests",
+    "docs",
+    "examples",
+    ".github"
+  ]
+}
