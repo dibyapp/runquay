@@ -1,6 +1,6 @@
 # Verification record
 
-Release preparation: 2026-10-08. The current 49-test suite completed on Windows (48 passed, one POSIX-only skip) and Ubuntu (49 passed). Test commands and results are recorded separately from CI and account-dependent checks.
+Current interface verification: 2026-10-09. The 50-test Python suite completed on Windows (49 passed, one POSIX-only skip) and Ubuntu under WSL (50 passed). Nine JavaScript UI regression tests cover navigation, next-step decisions, task filters and scoped ideas. Test commands and results are recorded separately from CI and account-dependent checks.
 
 | Check | Status |
 | --- | --- |
@@ -30,3 +30,13 @@ The live local service was restarted after confirming no active build or advisor
 Actual Windows onboarding, current Codex subscription verification, a real word-counter build, resumed completion and import of its generated folder were exercised. Seven generated-project tests passed independently and the CLI printed the expected count of 7. The run exposed a relative-data-path defect; `Store` now resolves the data directory before constructing worker result paths. A regression check launches a worker in a different directory and verifies completion. The [screenshot record](SCREENSHOTS.md) documents the initial failure and recovery. Reviewed public captures are explicitly hash-pinned; unrelated private screenshots remain excluded.
 
 After these changes, `python -m unittest discover -s tests -q` completed with 49 tests on Windows (one POSIX-only skip) and Ubuntu 24.04 under WSL (no skips). The release audit passed for 61 allowlisted files, including ten reviewed screenshots.
+
+## Simpler interface verification — 0.3.0
+
+The revised app was tested through the Codex in-app browser against the live local Windows supervisor. The check covered all five pages, setup acknowledgement and retained workspace, task-form advanced validation, waiting/start/progress/results, finished filtering, logs, folder import, scoped read-only suggestions and editable idea review. A real Codex task built a UTF-8 text-cleaner CLI; seven generated tests passed independently. A reviewed suggestion added a README clarification and reran the checks.
+
+A temporary external-tool connection and task tested approval acknowledgement and decline without executing that vendor. The account was unlinked and the original work settings restored. Existing private projects were not used for model execution in this check. Real limit exhaustion and reset redemption were not exercised.
+
+The HTTP regression verifies the new UI assets are served without model requests. JavaScript tests also verify a ready account for another provider cannot make waiting work look eligible. Expanded details are retained across background renders. The Windows stop/start smoke check verified an already-exited scheduled worker no longer causes a null-command-line error. Actual public captures and their provenance are in [SCREENSHOTS.md](SCREENSHOTS.md).
+
+The cross-platform CI matrix runs the Python suite, JavaScript syntax checks, UI regression tests, source/history privacy audit and ZIP build on Windows, Ubuntu and macOS with Python 3.11/3.13. CI results are available from the [Verify workflow](https://github.com/dibyapp/runquay/actions/workflows/ci.yml). Desktop browser/model execution was tested on Windows; macOS/Linux vendor sign-in and startup behavior remain separate integration checks.

@@ -1,5 +1,27 @@
 # Actual Runquay screenshots and test record
 
+## Current interface — 0.3.0, 9 October 2026
+
+These are actual captures of the running Windows app in the Codex in-app browser, using the real backend and an authenticated Codex subscription. No API responses, account values or generated results were mocked. Home and Ideas are full-page captures; the result is cropped before the private folder path. The form contains the actual goal submitted for this test.
+
+![The focused Home page](images/simple-home.jpg)
+
+![The actual task form](images/simple-new-task.jpg)
+
+![A real completed task with seven tests](images/simple-result.jpg)
+
+![An actual scoped project suggestion](images/simple-ideas.jpg)
+
+The browser test completed onboarding with its acknowledgement, retained existing connections and workspace, created a one-step text-cleaner task while paused, started real Codex work, inspected output and finished-task checks, imported the resulting folder, and requested a read-only advisor analysis scoped to that project. The proposed README clarification was reviewed and submitted as a follow-up. Independent execution of the generated suite passed seven tests.
+
+The external-provider path was checked without authorizing an invocation: a temporary Claude connection and disposable task exercised the billing acknowledgement, decline and cancellation flow. The temporary connection was unlinked, retaining vendor credentials. No Claude model request, paid reset or purchase was made. Existing user settings were restored after testing.
+
+Screenshots contain no account email, credentials, sign-in command, private home path or unrelated project contents. Profile/task counts are actual counts. All public image bytes are explicitly reviewed and hash-pinned. See [verification](VERIFICATION.md) for limits.
+
+## Historical interface — 0.2.1
+
+The following ten images document the earlier layout. Their button labels and navigation differ from 0.3.0; use the [current setup guide](GETTING_STARTED.md) for present instructions.
+
 These images were captured from the running application on **8 October 2026, Windows**, using the real backend, current vendor tool detection and an authenticated Codex subscription. The documentation session used a separate data directory and a real project at `C:\RunquayGuide\projects`. No mock API responses, invented accounts, simulated quota values or fabricated completion results were used for these screenshots.
 
 Images are cropped browser captures of the relevant panel or dialog. Unrelated private projects, personal home paths, sign-in commands, identifiers and account quota details are outside the published views. The generic path shown is the actual path used for this test. Setup counts reflect the actual discovered library; the library itself is not pictured.

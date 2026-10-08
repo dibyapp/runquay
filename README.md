@@ -17,11 +17,13 @@ Created and maintained by [Dibyaprakash Pradhan](https://github.com/dibyapp). [D
 
 ## See Runquay in use
 
-Actual screenshots from a Windows installation using real Codex execution. The walkthrough built a Markdown word counter, passed seven tests, and verified its CLI output. Views are cropped to exclude unrelated private projects and personal paths; no UI values or execution results were fabricated. [Capture details](docs/SCREENSHOTS.md).
+Five pages keep the daily workflow clear: **Home → Tasks → Ideas → Accounts → Settings**. Home tells you what needs attention. Task forms show the essentials first; limits, models, file paths, usage and logs are available when needed.
 
-![A real Codex task running in Runquay](docs/images/overview.jpg)
+These are actual screenshots of the running 0.3.0 app tested in the Codex in-app browser on Windows. A real Codex task built a text cleaner and passed seven tests, independently rerun. The advisor inspected that project and proposed a README improvement. Screenshots exclude personal paths, account emails and unrelated project details. [Capture details](docs/SCREENSHOTS.md).
 
-![The actual completed task and its checks](docs/images/completed-task.jpg)
+![The simpler Runquay Home page](docs/images/simple-home.jpg)
+
+![A real completed Codex task with seven passing tests](docs/images/simple-result.jpg)
 
 **Detailed guides:** [Getting started](docs/GETTING_STARTED.md) · [Daily workflows](docs/WORKFLOWS.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Screenshot gallery](docs/SCREENSHOTS.md)
 
@@ -37,12 +39,12 @@ Use `python3` on macOS/Linux if needed. Windows users can double-click `start.cm
 
 The guided onboarding walks through four steps:
 
-1. **Tools** — detect CLIs and open official installation documentation.
-2. **Accounts** — reuse a current login or create an isolated profile; authenticate through the vendor.
-3. **Workspace** — choose where new projects live and connect existing project folders.
-4. **Review** — understand workspace access, tool permissions, and billing before finishing.
+1. **Tool** — detect CLIs and open official installation documentation.
+2. **Account** — reuse a current login or create an isolated profile; authenticate through the vendor.
+3. **Folder** — choose where new projects live and connect existing project folders.
+4. **Ready** — understand workspace access, tool permissions, and billing before finishing.
 
-Describe a goal and its acceptance criteria, choose its AI tool, then **Start queue**. First installations start paused. Finishing setup does not start work. Revisit the setup guide from Settings anytime.
+Describe a goal and its acceptance criteria, choose its AI tool, then choose **Start work** on Home. First installations start paused. Finishing setup does not start work. Revisit the setup guide from Settings anytime.
 
 ## AI coding workflow automation
 
@@ -83,7 +85,7 @@ Saved Codex desktop roots are discovered without modifying Codex state. Use **Co
 
 Existing workspaces retain files, instructions, and Git history. New projects get separate Git workspaces in your chosen root. One active task per workspace prevents conflicting edits. The running Runquay installation cannot edit itself through its queue; develop in a separate checkout.
 
-Select a planning tool and **Ask AI**. Supported advisors use native read-only modes. **Review & queue** lets you edit the proposal and choose the execution tool. Proposed builds never start automatically. Automatic planning defaults to six-hour intervals while enabled, behind build tasks; non-Codex planning still requires invocation approval.
+Open **Ideas**, choose a project, and select **Get ideas**. The project selection also filters saved proposals; choose **All my projects** to see new-project ideas. Expand **Choose the planning tool** to change providers. Supported advisors use native read-only modes. **Review idea** lets you edit the proposal and choose the execution tool. Proposed builds never start automatically. Automatic planning defaults to six-hour intervals while enabled, behind build tasks; non-Codex planning still requires invocation approval.
 
 ## Task scheduling and long-running coding workflows
 
@@ -120,10 +122,12 @@ Publish the inspected versioned `dist/runquay-<version>-source.zip` and its SHA2
 python -m unittest discover -s tests -v
 node --check web/app.js
 node --check web/setup.js
+node --check web/ui.js
+node --test tests/ui.test.js
 python runquay.py doctor
 ```
 
-Deterministic tests use temporary folders and synthetic CLIs, with no model requests. Node is needed only for JS syntax checks. The optional `python tests/live_check.py` consumes Codex subscription allowance.
+Deterministic tests use temporary folders and synthetic CLIs, with no model requests. Node is needed only for JavaScript development checks and UI regression tests. The optional `python tests/live_check.py` consumes Codex subscription allowance.
 
 GitHub Actions is configured for Windows, Ubuntu, and macOS on Python 3.11 and 3.13. **Configured CI is not a completed CI run.** Local verification covers Windows and Ubuntu 24.04 under WSL. macOS startup is definition-tested and needs a real macOS run. [Verification details](docs/VERIFICATION.md).
 

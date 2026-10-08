@@ -2,7 +2,7 @@
 
 Runquay runs your existing AI coding CLI on your computer. You describe a goal, choose the tool, and let a persistent local queue work through bounded milestones. This guide covers installation, all four onboarding steps, and your first task.
 
-**Start here:** [Install](#1-install-the-prerequisites) · [Onboard](#3-complete-the-four-setup-steps) · [Build a project](#4-create-your-first-project) · [Review the result](#6-review-the-output)
+**Start here:** [Install](#1-install-the-prerequisites) · [Onboard](#3-complete-the-four-setup-steps) · [Add a task](#5-add-one-small-task) · [Review the result](#6-start-work-and-review-the-result)
 
 For day-to-day use, read the [workflow guide](WORKFLOWS.md). For problems, use [troubleshooting](TROUBLESHOOTING.md). Check the [verification record](VERIFICATION.md) before assuming an OS or provider has been live-tested.
 
@@ -86,77 +86,77 @@ If Python is called `python` on your machine, substitute it in these commands. D
 
 ## 3. Complete the four setup steps
 
-The screenshots below are actual captures of Runquay running on Windows. Tool detection, account verification and project execution used the real backend. Views are cropped to keep unrelated private projects and personal paths out of the images. The workspace path shown is the actual dedicated folder used for the walkthrough. See [screenshot provenance](SCREENSHOTS.md).
+The guide opens on a new installation. You can reopen it at **Settings → Open setup guide**. Setup retains existing accounts, projects and the current work start/pause state.
 
-### Step 1 — Tools
+### Step 1 — Tool
 
-![Actual tool detection in Runquay onboarding](images/setup-tools.jpg)
+Installed tools appear first; expand **Other supported tools** for more adapters. **Installed** confirms executable detection, not account authentication. Use **Installation guide** to find vendor setup instructions. Runquay makes no model request during detection.
 
-Runquay lists supported CLIs and whether their executable is found. **Found** means detection succeeded; it is not proof of authentication, entitlement or live integration compatibility. Follow **Official setup documentation** if a tool is missing. Install the tool separately, then refresh or reopen the guide.
+Choose the **Tool for project ideas**. Only advisors with an enforced read-only mode are offered. Antigravity and custom tools currently support execution adapters but have no verified read-only advisor.
 
-Choose a planning tool that supports a read-only advisor. Antigravity and custom tools currently have no verified read-only advisor, even though they can be execution adapters.
+### Step 2 — Account
 
-### Step 2 — Accounts
+Reuse a current vendor login or choose **Connect another account**. In the account form, select the AI tool and give the connection a recognizable name. **Use the login already on this computer** is selected initially; uncheck it for a separate supported login profile. Runquay prevents duplicate login homes.
 
-![An actual Codex login verified by Runquay](images/setup-accounts.jpg)
+A verified Codex subscription displays **Subscription verified**. **Sign-in guide** shows the exact profile command to run in your terminal. Complete the official vendor flow, then choose **Check connection**. Other tools' authentication is established by a separately approved invocation, not detection alone.
 
-The first installation offers the current Codex login. A successful Codex check displays **Subscription verified**. Use **Sign-in guide** if authentication is required; run the displayed command in your terminal and finish the vendor flow there.
+There is no application account-count cap. Additional profiles do not increase provider allowances. Never paste passwords, API keys or auth files into Runquay.
 
-To connect another profile, choose **Connect another account**, select the tool and enter a local profile name. Check **Use this tool's current login** to reuse its existing login. Leave it unchecked for an isolated profile where supported. Then follow that profile's generated sign-in instructions and verify the connection.
+### Step 3 — Folder
 
-![The actual account connection form before entering credentials](images/connect-account.jpg)
+Choose an absolute writable **New-project folder** on this computer. Each new task creates a separate Git workspace inside it. Existing tasks keep their paths when you change this root.
 
-Do not paste passwords, API keys or auth files into profile names or command arguments. Adding profiles has no application count cap, but it does not increase a provider's allowance. Antigravity needs its current login or a custom wrapper with a verified isolation mechanism.
+**Connect a project folder** adds an existing directory without moving or editing its files. Import reads filenames and a bounded README preview. Saved Codex desktop roots are discovered automatically; projects from other tools can be connected by folder.
 
-### Step 3 — Workspace
+### Step 4 — Ready
 
-![Actual workspace selection](images/setup-workspace.jpg)
+Review workspace access and billing, select **I understand the workspace access and billing rules**, then **Finish setup**. First installations stay paused. This acknowledgement does not authorize a reset, a paid tool run or a purchase.
 
-Choose an absolute folder path for **new** project workspaces. The walkthrough uses `C:\RunquayGuide\projects`; choose a suitable writable folder on your device. macOS/Linux examples could use a folder under your home directory. Each new task gets its own Git workspace inside the selected root.
+## 4. Learn the five pages
 
-**Connect a project folder** imports an existing directory into the library. The import reads filenames and a bounded README preview without editing project files. Saved Codex desktop roots are discovered automatically; other tools' projects can be connected manually. Existing tasks keep their original paths if you later change the new-project root.
+![Actual Home page after a real task completed](images/simple-home.jpg)
 
-### Step 4 — Review
+| Page | Use it for |
+| --- | --- |
+| **Home** | See the next step, start/pause work, and review approval requests. |
+| **Tasks** | Create work, view in-progress/finished tasks, and use existing folders. |
+| **Ideas** | Ask AI for project suggestions, then review a proposal before adding it. |
+| **Accounts** | Connect tools, check sign-in and expand usage/account options. |
+| **Settings** | Configure automatic ideas, work limits, setup and troubleshooting output. |
 
-![Actual setup review and billing acknowledgement](images/setup-review.jpg)
+## 5. Add one small task
 
-Read the workspace, provider and billing details, check the acknowledgement and choose **Finish setup**. On a new installation, the queue stays paused. Finishing setup does not authorize a paid reset or start a project. Reopening setup on an existing installation preserves the current start/pause state.
+Choose **New task** on Home or Tasks. Enter a task name, explain the expected behavior and checks, and select the AI tool. Expand **Limits and model (optional)** only if you need a step cap, priority or model. A step is one bounded work session.
 
-Open **Settings → Open setup guide** to revisit these steps.
+![Actual text-cleaner goal in the shorter task form](images/simple-new-task.jpg)
 
-## 4. Create your first project
+The browser test used a Python CLI that reads a UTF-8 file, trims lines, skips blanks, and includes tests for empty input, whitespace, Unicode and multiple lines. It required no dependencies, network access or publication.
 
-Choose **Projects → New project**. Give the task a name, a concrete goal, an AI tool and a milestone cap. A smaller first task makes the initial integration easier to assess.
+Choose **Add task**. If work is paused, the task shows **Waiting**, and Home offers **Start work**. When work is already enabled, adding a task can start it as soon as an eligible account is available. Read the form's note before submitting.
 
-![Real project goal entered in the Runquay form](images/create-project.jpg)
+For an existing repository, choose **Tasks → Use an existing project**, find the folder and choose **Add task**. Use **Connect folder** if it is missing. Review or back up current changes before an agent edits that repository.
 
-The walkthrough used this goal:
+## 6. Start work and review the result
 
-> Build a small Python standard-library CLI in wordcount.py that reads a UTF-8 Markdown file and prints its word count. Add unittest tests for empty input, punctuation and Unicode. Include a short README with a runnable example. Run the tests and the CLI example; report the commands and results. No dependency installs, network calls, git commits or publishing. Complete within one milestone.
+Use **Start work** on Home. The next-step card explains whether work is waiting, active or needs your approval. **View task** opens the in-progress task. **Pause work** stops scheduling and active child work; written files remain.
 
-Choose **Codex**, set the milestone cap to **1**, and leave the model blank to use the account's available default. Choose **Add to queue**. This saves the task; it does not start a paused queue.
+Codex needs verified subscription quota and zero paid balance. Other providers ask for approval before each invocation because billing is unverified. Review any request on Home; declining or waiting remains available. Runquay does not purchase credits or resets.
 
-The priority field controls ordering: higher-priority work is selected ahead of lower-priority work. A milestone cap limits the number of turns, while **Minutes per milestone** limits a single turn. Neither is a guarantee that a goal can be completed within that budget.
+When a task finishes, choose **Review results** on Home or **Finished** in Tasks. Expand **Task details and checks** for its goal, reported tests, folder, tool and step count. **View output** opens the detailed run log, which may contain private project information.
 
-## 5. Start and monitor
+![Real text-cleaner completion and checks, cropped before its private path](images/simple-result.jpg)
 
-Choose **Start queue**. Runquay checks eligibility, selects an account for the task's chosen provider, and starts one milestone. Only one worker runs at a time. Other providers are not silently substituted.
+Inspect the files and `AUTOWORK_CHECKPOINT.md`, and independently run relevant checks. **Done** means the agent reported completion; it does not certify the code. The illustrated text cleaner passed all seven tests independently. Choose **Add follow-up** for further work; inspect existing edits before continuing an interrupted task.
 
-![Actual Codex task running in the local dashboard](images/overview.jpg)
+Launch completed apps separately: worker-launched development servers stop with the step. Publishing, deployments and purchases require separate action.
 
-The overview shows supervisor status, waiting tasks, eligible accounts and completed projects. **Recent activity** provides run history and output. **Pause all** stops the queue and active child work. Use **Pause project** to stop only that task; review changed files before resuming an interrupted milestone.
+## 7. Find your next task
 
-If a task uses a tool with unverified billing, the approval inbox requests one invocation. Check the vendor account before approving. Every subsequent milestone or retry needs another approval. Codex earned resets are a separate explicit decision; waiting for natural refresh remains an option.
+Open **Ideas**, choose a project and optionally enter a focus. Select **Get ideas**. If work is paused, choose **Start work to get ideas**. The selected project also filters saved proposals; **All my projects** includes new-project ideas.
 
-## 6. Review the output
+![Actual scoped AI suggestion after inspecting the text-cleaner project](images/simple-ideas.jpg)
 
-![The actual completed word-counter task and its reported checks](images/completed-task.jpg)
-
-Open the project's folder. Inspect the changed files, README, tests and `AUTOWORK_CHECKPOINT.md`. Read the reported commands and run relevant checks yourself. **Complete** means the agent reported completion; it is not an independent quality or security certification.
-
-For this walkthrough, Codex wrote a real word-counter project and executed its checks. The documentation session also reran its tests independently. Exact observed results and screenshot context are recorded in [SCREENSHOTS.md](SCREENSHOTS.md).
-
-For an existing repository, inspect `git diff` before committing. Launch completed applications separately: dev servers started by a worker stop with the milestone. Publishing, deployments and purchases remain separate actions.
+Open **Why this idea?** to inspect evidence, then **Review idea** to edit the goal and choose the execution tool. A suggestion alone never starts a build. Requested planning sends relevant context to the selected provider. Change providers under **Choose the planning tool**.
 
 ## Next steps
 

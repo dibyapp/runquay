@@ -250,6 +250,12 @@ class HttpTests(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as ctx: self.client.open(request)
         self.assertEqual(ctx.exception.code, 403)
 
+    def test_focused_interface_assets_are_served_without_model_requests(self):
+        for asset, marker in (("ui.js", b"RunquayUI"), ("simple.css", b".next-step")):
+            with self.client.open(self.url + "/" + asset) as response:
+                self.assertEqual(response.status, 200)
+                self.assertIn(marker, response.read())
+
     def post(self, path, data, origin=None):
         self.client.open(self.url + "/").close()
         headers = {"Content-Type":"application/json", "X-AutoWork-CSRF":self.server.token}

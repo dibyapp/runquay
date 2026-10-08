@@ -41,7 +41,7 @@ These are example private data locations, not a storage-name migration. Never po
 | Symptom | Check and action |
 | --- | --- |
 | Codex says sign-in required | Open that profile's sign-in guide and run the generated command in your terminal. Finish official vendor authentication, then verify. Runquay requires subscription auth, not API-key auth. |
-| Additional account appears to use the same login | Check whether **Use current login** was selected. Isolated profiles have their own vendor home where supported; use the generated command for that exact profile. Do not copy auth files. |
+| Additional account appears to use the same login | Check whether **Use the login already on this computer** was selected. Isolated profiles have their own vendor home where supported; use the generated command for that exact profile. Do not copy auth files. |
 | Current login is already connected | Runquay prevents duplicate login homes. Create an isolated supported profile for another account instead. |
 | Paid balance is positive or unknown | The Codex guard blocks work. Review vendor account/billing state. Waiting or resolving the account state is safer than repeatedly retrying an unknown balance. |
 | Codex waits below the vendor's hard limit | The configured reserve intentionally stops earlier, up to 90% used. Check both quota windows and the account reason. |
@@ -55,18 +55,19 @@ No provider account was live-tested merely because its name appears in the UI. S
 
 | Symptom | Check and action |
 | --- | --- |
-| Existing project is missing | Use **Sync projects** for saved Codex roots, or **Connect folder** with an existing absolute directory. Discovery does not search the entire disk. |
-| Queue has tasks but nothing runs | Check **Start queue**, task provider, eligible matching profiles, approvals, task note and whether another milestone is active. |
-| Ask AI stays queued | Planning is a queued task. Start the supervisor, ensure a supported planning profile is available and review any required invocation approval. |
+| Existing project is missing | Use **Tasks → Use an existing project → Refresh saved projects** for saved Codex roots, or **Connect folder** with an existing absolute directory. Discovery does not search the entire disk. |
+| Queue has tasks but nothing runs | Check **Start work** on Home, task provider, eligible matching profiles, approvals, task note and whether another milestone is active. |
+| Get ideas stays waiting | Planning is a queued task. Start the supervisor, ensure a supported planning profile is available and review any required invocation approval. |
+| Completed task seems missing | Choose **Finished** in Tasks or **Review results** on Home. In-progress and finished work have separate filters. |
 | Suggestions are empty | Run the advisor first, check its status/error and remove restrictive suggestion filters. Suggestions are not generated merely by opening the page. |
 | Antigravity/custom is absent from planning | Their read-only advisor policy is unverified, so those advisors are disabled. Choose a supported planning tool. |
 | AI tool requests trust or tool permission | Review the vendor's project trust/sandbox configuration and grant only permissions you intend. Runquay does not turn on permission bypass to fix this. |
 | Gemini sandbox fails | Check the sandbox runtime required by the vendor on your OS. Contract tests do not prove a particular sandbox installation works. |
-| Task reaches Attention | Read the note and inspect files. Resolve the blocker, answer with **Resume / add guidance**, and raise the cap above completed milestones when appropriate. |
+| Task shows Needs you | Read the note and inspect files. Resolve the blocker, answer with **Continue**, and raise the cap above completed milestones when appropriate. |
 | Timeout or restart interrupted a task | Files may already have changed. Check the checkpoint and diff before resuming; interruption is not an automatic rollback. |
 | Custom wrapper produces invalid output | Emit exactly one checkpoint JSON object on stdout, with diagnostic output on stderr. Test against the documented schema. |
 | Finished app stops responding | Worker-launched dev servers stop with the milestone. Launch the finished app separately using its own instructions. |
-| Generated result fails your checks | Preserve the evidence, describe the failed command and required behavior, then resume with guidance. An agent's Complete status is not a substitute for review. |
+| Generated result fails your checks | Preserve the evidence, describe the failed command and required behavior, then resume with guidance. An agent's Done status is not a substitute for review. |
 
 ## Startup and shutdown
 

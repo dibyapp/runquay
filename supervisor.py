@@ -911,7 +911,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if self.headers.get("Sec-Fetch-Site") == "cross-site":
             return self.send_data({"error": "Cross-site access denied"}, 403)
         path = urllib.parse.urlparse(self.path).path
-        static = {"/mark.svg": ("mark.svg", "image/svg+xml"), "/": ("index.html", "text/html; charset=utf-8"), "/app.js": ("app.js", "text/javascript; charset=utf-8"), "/setup.js": ("setup.js", "text/javascript; charset=utf-8"), "/style.css": ("style.css", "text/css; charset=utf-8")}
+        static = {"/mark.svg": ("mark.svg", "image/svg+xml"), "/": ("index.html", "text/html; charset=utf-8"), "/app.js": ("app.js", "text/javascript; charset=utf-8"), "/setup.js": ("setup.js", "text/javascript; charset=utf-8"), "/ui.js": ("ui.js", "text/javascript; charset=utf-8"), "/simple.css": ("simple.css", "text/css; charset=utf-8"), "/style.css": ("style.css", "text/css; charset=utf-8")}
         if path in static:
             name, mime = static[path]
             return self.send_data((ROOT / "web" / name).read_bytes(), mime=mime, cookie=path == "/")

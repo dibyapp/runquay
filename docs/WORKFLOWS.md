@@ -5,14 +5,14 @@ Use this guide after [initial setup](GETTING_STARTED.md). Runquay is a local tas
 ## Improve an existing repository
 
 1. Commit or back up your current work before handing a repository to an agent. Runquay preserves existing files and instructions, but a build is authorized to change project files.
-2. Choose **Projects → Connect folder**. Enter an existing absolute directory path and an optional display name. This registers the folder without moving or editing its files.
-3. Find the connected card and choose **Start work**. This opens a goal for that repository, rather than creating a separate new project directory.
+2. Choose **Tasks → Use an existing project → Connect folder**. Enter an existing absolute directory path and an optional display name. This registers the folder without moving or editing its files.
+3. Find the connected card and choose **Add task**. This opens a goal for that repository, rather than creating a separate new project directory.
 4. Describe the concrete change and acceptance checks. Include files or interfaces that must remain compatible. Choose the tool explicitly.
 5. Add the goal, start the queue when ready, and inspect the results before committing or publishing.
 
 Runquay avoids overlapping active tasks for the same workspace within its own supervisor. It cannot coordinate unrelated terminals, editors or other agent processes. Avoid making competing changes to the same files elsewhere while a milestone runs.
 
-![Importing the actual word-counter project folder](images/connect-folder.jpg)
+Expand **Use an existing project** in Tasks to see your saved folders. Folder paths and filenames are available under **Folder details**.
 
 The running supervisor checkout cannot queue edits to itself. Use a separate development checkout when improving Runquay.
 
@@ -32,16 +32,16 @@ Avoid a vague goal such as "finish everything" for the first run. Break large pr
 
 ## Ask the advisor for useful next work
 
-1. Open **AI advisor**.
-2. Under **Look across**, choose one repository or all connected projects. Choosing one keeps the analysis focused.
-3. Select a supported planning tool. Only advisors with an enforced read-only mode are offered.
+1. Open **Ideas**.
+2. Under **Project**, choose one repository or all connected projects. Choosing one keeps the analysis focused and filters saved suggestions to that project. Choose **All my projects** to see new-project ideas.
+3. Expand **Choose the planning tool** to change providers. Only advisors with an enforced read-only mode are offered.
 4. Enter a focus such as "find a small, testable improvement in the CSV importer".
-5. Choose **Ask AI**. If the queue is paused, the advisor waits until it is started. Non-Codex planning needs one-invocation approval.
-6. Read each suggestion's evidence, proposed goal, first milestone and effort. Choose **Review & queue** to edit the goal and select the execution tool. A suggestion does not automatically become a build.
+5. Choose **Get ideas**. If the queue is paused, the advisor waits until it is started. Non-Codex planning needs one-invocation approval.
+6. Read each suggestion's evidence, proposed goal, first milestone and effort. Choose **Review idea** to edit the goal and select the execution tool. A suggestion does not automatically become a build.
 
 The advisor reads bounded project evidence and may use recent matching Codex chat previews. Relevant context is sent to the selected provider. Imported README files and chat previews can contain confidential information; choose repositories accordingly. Antigravity and custom tools currently have no verified read-only advisor.
 
-Automatic suggestions run at the configured interval while the queue is enabled, behind higher-priority builds. Disable **Let the selected advisor suggest next steps automatically** if you want planning only on demand.
+Automatic suggestions run at the configured interval while the queue is enabled, behind higher-priority builds. Disable **Suggest new ideas automatically** if you want planning only on demand.
 
 ## Understand accounts, quotas and approvals
 
@@ -62,9 +62,9 @@ Unlinking a profile removes the Runquay connection and retains vendor credential
 
 ## Pause, resume and recover
 
-**Pause all** stops scheduling and the active child work. Files already written remain on disk. **Pause project** affects that task; **Cancel** removes it from active scheduling without rolling back its edits.
+**Pause work** on Home stops scheduling and the active child work. Files already written remain on disk. **Pause task** affects that task; **Cancel task** removes it from active scheduling without rolling back its edits.
 
-After a timeout, restart or interruption, inspect the repository and checkpoint first. The worker may have changed files before it stopped. Choose **Resume / add guidance**, explain what to do next, and set the milestone cap above the number already completed. Do not blindly repeat an operation that could have had external effects.
+After a timeout, restart or interruption, inspect the repository and checkpoint first. The worker may have changed files before it stopped. Choose **Continue** (or **Add follow-up** for a finished task), explain what to do next, and set the milestone cap above the number already completed. Do not blindly repeat an operation that could have had external effects.
 
 For a blocker, answer the actual question in the resume guidance. For a failed check, include the command, relevant sanitized error and intended behavior. Repeated failures are bounded; fix the cause instead of continually increasing limits. External-provider retries require new approvals.
 
@@ -74,16 +74,16 @@ The checkpoint file uses the legacy name `AUTOWORK_CHECKPOINT.md`. Later eligibl
 
 | State | Meaning |
 | --- | --- |
-| Queued | Saved and waiting for a worker, eligible account or approval. A paused supervisor does not dispatch it. |
-| Running | A milestone is active. Use activity output and inspect the actual files when appropriate. |
+| Waiting | Saved and waiting for a worker, eligible account or approval. A paused supervisor does not dispatch it. |
+| Working | A milestone is active. Use activity output and inspect the actual files when appropriate. |
 | Paused | Deliberately stopped. Review edits before resuming. |
-| Attention | A blocker, exhausted cap, restart or bounded failure needs review and guidance. Read the task's note. |
-| Complete | The agent reported the goal finished. Review code and rerun checks before accepting it. |
+| Needs you | A blocker, exhausted cap, restart or bounded failure needs review and guidance. Read the task's note. |
+| Done | The agent reported the goal finished. Review code and rerun checks before accepting it. |
 | Cancelled | No further milestones will be scheduled unless you explicitly resume it. Existing files remain. |
 
 ## Choose reasonable run settings
 
-![Actual Runquay settings used for the walkthrough](images/run-settings.jpg)
+Work limits are collapsed initially so everyday settings are easier to scan.
 
 - **Pause account at usage (%):** 50–90%. The reserve leaves room for in-flight work and other activity on the account.
 - **Minutes per milestone:** 2–120. Use short milestones for initial integration checks and bounded changes; split large goals when useful.

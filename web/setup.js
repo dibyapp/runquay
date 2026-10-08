@@ -1,7 +1,7 @@
 "use strict";
 let setupStep = 0, setupDismissed = false, setupSignature = "", loginProfile = "", externalDecision = "";
 function toolOptions(advisorOnly = false) {
-  return state.tools.filter(t => !advisorOnly || t.advisor).map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
+  return state.tools.filter(t => !advisorOnly || t.advisor).map(t => `<option value="${t.id}">${esc(t.name)}${!t.installed && t.id !== "custom" ? " (not installed)" : ""}</option>`).join("");
 }
 function renderSetup() {
   const signature = JSON.stringify(state.tools);
@@ -12,10 +12,13 @@ function renderSetup() {
       $(id).innerHTML = toolOptions(["advisor-provider","setup-provider"].includes(id));
       $(id).value = selected || state.advisor_provider || "codex";
     }
-    $("setup-tools").innerHTML = state.tools.map(t => `<article class="tool-card"><h3>${esc(t.name)} ${badge(t.installed ? "found" : t.id === "custom" ? "extensible" : "not installed")}</h3><p>${esc(t.billing)}</p><small>${esc(t.verification)}</small>${t.docs ? `<a target="_blank" rel="noopener noreferrer" href="${esc(t.docs)}">Official setup documentation ↗</a>` : ""}</article>`).join("");
+    const toolCard = t => `<article class="tool-card"><h3>${esc(t.name)} ${badge(t.installed ? "Installed" : t.id === "custom" ? "Custom" : "Not installed")}</h3><p>${t.id === "codex" ? "Subscription usage is checked before work." : "Asks for approval before each run. Billing is unverified."}</p>${t.docs ? `<a target="_blank" rel="noopener noreferrer" href="${esc(t.docs)}">Installation guide ↗</a>` : ""}<details><summary>Support details</summary><p>${esc(t.verification)}</p></details></article>`;
+    const installed = state.tools.filter(t => t.installed);
+    const others = state.tools.filter(t => !t.installed);
+    $("setup-tools").innerHTML = installed.map(toolCard).join("") + `<details class="other-tools"><summary>${installed.length ? "Other supported tools" : "Install a supported tool"}</summary>${others.map(toolCard).join("")}</details>`;
   }
   $("setup-accounts").innerHTML = state.profiles.length ? state.profiles.map(p => `<div class="setup-account"><div><b>${esc(p.name)}</b><small>${esc(state.tools.find(t => t.id === p.provider)?.name)} · ${p.eligible ? "Subscription verified" : esc(p.error || (p.provider === "codex" ? "Check sign-in and quota" : "Quota/auth unverified"))}</small></div><button type="button" class="secondary" data-action="login-guide" data-id="${p.id}">Sign-in guide</button></div>`).join("") : empty("No profiles connected", "Connect a tool account to begin.");
-  $("setup-project-count").textContent = `${state.catalog.length} project folders connected. You can add more now or later.`;
+  $("setup-project-count").textContent = `${state.catalog.length} existing project folders found. You can use them from Tasks.`;
   if(!$("setup-workspace").value) $("setup-workspace").value = state.workspace_root;
   if(!state.onboarded && !setupDismissed && !$("setup-dialog").open) openSetup();
 }
@@ -24,11 +27,11 @@ function drawSetup() {
   document.querySelectorAll(".setup-progress li").forEach((p,i) => p.classList.toggle("active", i === setupStep));
   $("setup-back").disabled = setupStep === 0;
   $("setup-step-text").textContent = `Step ${setupStep + 1} of 4`;
-  $("setup-next").textContent = setupStep === 3 ? "Finish setup →" : "Continue →";
-  $("setup-review").textContent = `${state.tools.find(t => t.id === $("setup-provider").value)?.name || "Codex"} advisor · ${state.profiles.length} profiles · ${state.catalog.length} existing projects. New work: ${$("setup-workspace").value}. Finishing setup keeps the current queue start/pause state; use Start queue when ready.`;
+  $("setup-next").textContent = setupStep === 3 ? "Finish setup" : "Next";
+  $("setup-review").textContent = `${state.tools.find(t => t.id === $("setup-provider").value)?.name || "Codex"} for project ideas · ${state.profiles.length} accounts · ${state.catalog.length} existing folders. New projects go in ${$("setup-workspace").value}. Setup keeps your current work start/pause state.`;
 }
-function openSetup() {setupStep = 0; drawSetup(); if(!$("setup-dialog").open) $("setup-dialog").showModal();}
-function showAccount() {$("account-form").reset(); $("custom-command-label").hidden = true; $("account-dialog").showModal();}
+function openSetup() {if(!state) return toast("Wait for the local app to connect."); setupStep = 0; $("setup-ack").checked = false; drawSetup(); if(!$("setup-dialog").open) $("setup-dialog").showModal();}
+function showAccount() {if(!state) return toast("Wait for the local app to connect."); $("account-form").reset(); $("account-form").querySelectorAll("details").forEach(d=>d.open=false); $("custom-command-label").hidden = true; $("account-dialog").showModal();}
 $("setup-close").onclick = () => {setupDismissed = true; $("setup-dialog").close();};
 $("setup-dialog").addEventListener("cancel", () => {setupDismissed = true;});
 $("reopen-setup").onclick = openSetup;
@@ -37,7 +40,7 @@ $("setup-next").onclick = async () => {
   if(setupStep < 3) {setupStep++; drawSetup(); return;}
   try {
     await api("/api/onboarding", {acknowledged:$("setup-ack").checked,provider:$("setup-provider").value,workspace_root:$("setup-workspace").value});
-    $("setup-dialog").close(); setupDismissed = true; toast("Setup saved. Add a goal and start the queue when ready."); await refresh();
+    $("setup-dialog").close(); setupDismissed = true; toast("Setup saved. Create a task to begin."); location.hash="#overview"; await refresh();
   } catch(error) {toast(error.message);}
 };
 $("add-account").onclick = showAccount;
@@ -48,7 +51,7 @@ $("account-form").onsubmit = async event => {
   const data = Object.fromEntries(new FormData(form)); data.existing = form.elements.existing.checked; data.action = "add";
   try {
     if(data.provider === "custom") data.command = JSON.parse(data.command);
-    await api("/api/account",data); $("account-dialog").close(); await refresh(); toast("Profile connected. Use its sign-in guide to authenticate.");
+    await api("/api/account",data); $("account-dialog").close(); await refresh(); toast("Account connected. Open its sign-in guide if needed.");
   } catch(error) {toast(error.message);}
 };
 $("import-project").onclick = () => $("import-dialog").showModal();
@@ -66,7 +69,7 @@ document.addEventListener("click", async event => {
     $("login-guide").showModal();
   }
   if(action === "remove-profile") {
-    await act("/api/account",{action:"remove",id}); toast("Profile unlinked. Vendor credentials and history were retained.");
+    if(await act("/api/account",{action:"remove",id})) toast("Connection removed. Vendor credentials and history are kept.");
   }
   if(action === "review-external") {
     externalDecision = id; const d = state.decisions.find(d => d.id === id); const payload = JSON.parse(d.payload);
@@ -74,7 +77,7 @@ document.addEventListener("click", async event => {
     $("external-ack").checked = false; $("external-dialog").showModal();
   }
 });
-$("verify-profile").onclick = async () => {await act("/api/account",{action:"verify",id:loginProfile}); $("login-guide").close(); toast("Connection check started. Non-Codex authentication is verified by the first approved run.");};
+$("verify-profile").onclick = async () => {if(await act("/api/account",{action:"verify",id:loginProfile})) {$("login-guide").close(); toast("Checking the connection. Other tools verify authentication on the first approved run.");}};
 $("approve-external").onclick = async () => {
   if(!$("external-ack").checked) return toast("Review the billing acknowledgement first");
   try {await api("/api/decision",{id:externalDecision,approve:true}); $("external-dialog").close(); await refresh(); toast("One invocation authorized");} catch(error) {toast(error.message);}

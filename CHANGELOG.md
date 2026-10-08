@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 — A simpler workspace
+
+- Five focused pages: Home, Tasks, Ideas, Accounts, and Settings. Home explains the next action for waiting work, active tasks, approvals and completed results.
+- Shorter task and account forms, plain task states, separate in-progress/finished filters, and advanced controls under details.
+- Existing folders remain available from Tasks. Selecting a project in Ideas filters saved proposals to that project; each idea stays editable before work starts.
+- Expanded task, folder, account and idea details survive background refreshes. Errors no longer produce misleading success messages in the updated settings and connection actions.
+- Accessible dialog labels, focus indicators, a skip link, and navigation that remains available on small screens. Legacy bookmarks still resolve.
+- Fix Windows stop helper when its scheduled worker has already exited and its command line is unavailable.
+- Updated guides, actual browser screenshots, UI decision regression tests, and static-asset HTTP checks. Real Codex build and read-only planning were exercised; other vendors were not invoked.
+
 ## 0.2.1 — Illustrated guides and relative data-path fix
 
 - Detailed setup, workflow and troubleshooting guides, with actual application screenshots and a real Codex execution record.
