@@ -38,13 +38,19 @@ def main():
     start.add_argument("--data", type=Path)
     start.add_argument("--no-browser", action="store_true")
     sub.add_parser("doctor", help="Check tool availability without sending model requests")
+    setup = sub.add_parser('setup', help='Detect this OS and install missing tools for the chosen AI')
+    setup.add_argument('--provider', choices=['codex','claude','gemini','antigravity'], default='codex')
+    setup.add_argument('--install', action='store_true', help='Install the displayed missing tools; OS permission prompts appear here')
     service = sub.add_parser("service", help="Install or remove per-user startup")
     service.add_argument("action", choices=["install", "uninstall", "preview"])
     service.add_argument("--system", choices=["linux", "darwin", "win32"])
     release = sub.add_parser("release", help="Audit and create a source-only ZIP")
     release.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    if args.command == "doctor":
+    if args.command == 'setup':
+        from install_setup import cli
+        cli(args.provider, args.install)
+    elif args.command == "doctor":
         doctor()
     elif args.command == "service":
         from service_setup import manage

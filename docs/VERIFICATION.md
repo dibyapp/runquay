@@ -1,6 +1,6 @@
 # Verification record
 
-Current interface verification: 2026-10-09, version 0.4.2. The 62-test Python suite completed on Windows (60 passed, two platform/permission skips) and Ubuntu 24.04 under WSL (62 passed). Sixteen JavaScript UI tests cover navigation, next steps, task filters, ideas, beginner briefs, account selection and account-scoped browser sign-in progress. Test commands and results are recorded separately from CI and account-dependent checks.
+Current interface verification: 2026-10-09, version 0.5.0. The 70-test Python suite completed on Windows (68 passed, two platform/permission skips) and Ubuntu 24.04 under WSL (70 passed). Eighteen JavaScript UI tests cover the prior workflow and recommendations for verified accounts, installed tools and a fresh computer. Test commands and results are recorded separately from CI and account-dependent checks.
 
 | Check | Status |
 | --- | --- |
@@ -62,3 +62,14 @@ The actual Windows dashboard was tested in the Codex in-app browser. A temporary
 Lifecycle tests simulate successful login and automatic refresh, cancellation, executable failure, rejection of concurrent logins, rejection of unlink during login, and protection of the shared app login. HTTP tests require the local cookie and CSRF token before login/cancel callbacks can run. The UI test scopes status to its own profile. JavaScript syntax, both local Python suites and the 16 UI checks passed.
 
 No live OAuth consent or successful sign-in completion was performed by the agent. macOS/Linux browser sign-in and keyring behavior need their own desktop integration checks; the cross-platform deterministic CI matrix does not establish those. No model requests, paid credit purchases or reset actions were made in this check. See the [actual capture](SCREENSHOTS.md).
+
+
+## Automatic setup verification — 0.5.0
+
+The real Windows walkthrough in the Codex in-app browser detected Windows/Python/Git, recommended the verified Codex account, and displayed Node.js and Gemini CLI as the missing software after selecting Gemini. Install missing tools downloaded the official Node.js 22 archive and verified its checksum, installed the fixed official Gemini package in the private user prefix, and checked its version. An independent version-only invocation returned 0 and Gemini CLI 0.63.0. The UI reported Tools are ready and enabled Next.
+
+Next created a connection without a name or path; the wizard progressed to the suggested project-folder step. The temporary Gemini profile was unlinked. Both user Codex profiles, paused work, zero model runs and unfinished onboarding were preserved. The installed Node/Gemini software remains available. No sign-in, model execution, paid credit purchase or reset occurred.
+
+Deterministic setup tests cover Windows/macOS/Linux fixed Git package recipes, OS permission boundaries, unsupported CPU/platform handling, checksum failure, archive traversal and special-file rejection, fixed npm package/registry/user prefix, setup concurrency, error recovery, native Codex reuse without Node, and local-session/CSRF protection. Work and login are blocked during setup. First-launch detection ran on Windows and Ubuntu without installation; CI repeats the detection check on all three OS families.
+
+Live Windows Python/Git installation was not executed because those were already present. Native macOS/Homebrew installation, Linux privileged package installation, provider sign-in and other vendor installation remain separate desktop integration checks. The setup guide describes restricted systems, older Python distributions and unsupported package managers honestly.

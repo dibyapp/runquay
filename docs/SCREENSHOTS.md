@@ -1,5 +1,13 @@
 # Actual Runquay screenshots and test record
 
+## Automatic setup — 0.5.0, 9 October 2026
+
+Actual Windows dashboard capture after Install missing tools downloaded and verified a private Node.js runtime, installed Gemini CLI from its official npm package, and checked that the executable starts. The screen shows Windows detected and Tools are ready. No email, credential, private path or sign-in URL is visible; the image was reviewed and hash-pinned.
+
+![Actual automatic installation completed in the dashboard](images/automatic-setup.jpg)
+
+Next created the Gemini connection without asking for a name or path. That temporary connection was unlinked after testing; installed software remains available. The two user Codex profiles, paused queue and unfinished onboarding were retained. No vendor sign-in, AI model request, credit purchase or reset occurred.
+
 ## Codex browser sign-in — 0.4.2, 9 October 2026
 
 Actual capture from the running Windows walkthrough in the Codex in-app browser. The separate account now offers one browser sign-in action, with terminal instructions collapsed. The screenshot contains no account email, sign-in URL, credentials or private home path. It was reviewed and hash-pinned before publication.

@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+from install_setup import search_path, node_binary
 
 TOOLS = {
     "codex": {"name": "Codex", "executable": "codex", "home_var": "CODEX_HOME", "home": ".codex", "advisor": True,
@@ -27,6 +28,7 @@ SECRET_ENV = {"OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN", "OPENAI_B
 
 def environment(provider, home):
     env = {k: v for k, v in os.environ.items() if k.upper() not in SECRET_ENV}
+    env['PATH'] = search_path()
     # Avoid cross-tool account aliases inherited from the launching process.
     for key in ("CODEX_HOME", "CLAUDE_CONFIG_DIR", "GEMINI_CLI_HOME"):
         env.pop(key, None)
@@ -39,7 +41,7 @@ def environment(provider, home):
 
 
 def resolve_executable(executable):
-    found = shutil.which(executable)
+    found = shutil.which(executable, path=search_path())
     if found:
         return found
     path = Path(executable).expanduser()
@@ -54,7 +56,7 @@ def native_command(args):
     shim = Path(args[0])
     text = shim.read_text(encoding="utf-8", errors="replace")
     match = re.search(r'"%dp0%\\([^"\r\n]+\.(?:js|cjs|mjs))"', text, re.I)
-    node = shutil.which("node")
+    node = node_binary()
     if not match or not node:
         raise ValueError("This Windows CLI wrapper cannot be safely launched. Select the vendor's native executable.")
     script = shim.parent / match.group(1)

@@ -1,6 +1,10 @@
 "use strict";
 // Pure display decisions shared by the browser and navigation regression tests.
 const RunquayUI = (() => {
+  function recommendedTool(state) {
+    const ready=(state.profiles||[]).find(p=>p.enabled && p.eligible && (state.tools||[]).some(t=>t.id===p.provider && t.advisor));
+    return ready?.provider || (state.tools||[]).find(t=>t.installed && t.advisor)?.id || "codex";
+  }
   const routes = {overview:"overview",projects:"projects",advisor:"advisor",accounts:"accounts",settings:"settings",approvals:"overview",activity:"settings"};
   const labels = {queued:"Waiting",running:"Working",paused:"Paused",attention:"Needs you",complete:"Done",cancelled:"Cancelled"};
   function pageFor(hash) { return routes[String(hash || "").replace(/^#/, "")] || "overview"; }
@@ -67,7 +71,12 @@ const RunquayUI = (() => {
   }
   function setupAccount(state, provider) {
     const profiles=(state.profiles || []).filter(p=>p.provider===provider);
-    return profiles.find(p=>p.enabled && p.eligible) || profiles.find(p=>p.enabled && p.current_login) || profiles.find(p=>p.enabled) || null;
+    const current=profiles.find(p=>p.enabled && p.current_login);
+    return profiles.find(p=>p.enabled && p.eligible) || (current?.snapshot?.account?.type==="chatgpt" ? current : null) || profiles.find(p=>p.enabled && !p.current_login) || current || null;
+  }
+  function needsSetupAccount(state, provider) {
+    const profile=setupAccount(state,provider);
+    return !profile || (provider==="codex" && profile.current_login && !profile.eligible && profile.snapshot?.account?.type!=="chatgpt");
   }
   function loginView(state, profile) {
     const own=state.login_status?.profile_id===profile?.id ? state.login_status : null;
@@ -76,6 +85,6 @@ const RunquayUI = (() => {
     return {browser:Boolean(profile?.instructions?.browser_login),waiting,complete,
       blocked:Boolean(state.login_in_progress),message:own?.message || ""};
   }
-  return {pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,loginView,label:state => labels[state] || state};
+  return {pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
 })();
 if (typeof module !== "undefined") module.exports = RunquayUI;

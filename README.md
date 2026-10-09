@@ -17,7 +17,7 @@ Created and maintained by [Dibyaprakash Pradhan](https://github.com/dibyapp). [D
 
 ## New to coding?
 
-[Start with the beginner guide](docs/BEGINNERS.md). Describe an idea in everyday words, review it before starting, then use **See what was made** for opening instructions and an **Open project folder** button. Installed AI tools are detected automatically; verified Codex accounts need only Next during setup. Optional account settings stay under More options. Installed AI tools are detected automatically; verified Codex accounts need only Next during setup. Optional account settings stay under More options. Editable starters help with a small website, checklist or expense tracker. Setup still requires Python, Git and a supported AI helper.
+[Start with the beginner guide](docs/BEGINNERS.md). Describe an idea in everyday words, review it before starting, then use **See what was made** for opening instructions and an **Open project folder** button. The setup assistant detects your OS, recommends an installed tool, and offers to install missing dependencies. Verified Codex accounts need only Next. Optional account settings stay under More options. Editable starters help with a small website, checklist or expense tracker. Setup still requires Python, Git and a supported AI helper.
 
 Windows: open `start.cmd`. Mac: open `start.command`. Linux: run `sh start.sh` in the extracted folder. If something is missing, the launcher explains the next step.
 
@@ -37,7 +37,9 @@ These are actual screenshots of the running 0.3.0 app tested in the Codex in-app
 
 ## Start in one command
 
-Install **Python 3.11+**, **Git**, and at least one vendor CLI. Download the source ZIP, extract it, and open a terminal in the extracted `runquay` folder:
+For a fresh computer, extract the source ZIP and open **setup.cmd** (Windows), **setup.command** (Mac), or **sh setup.sh** (Linux). It detects your OS, prepares missing Python/Git using the matching package manager, and opens the dashboard. Choose **Install missing tools** there to prepare Codex, Claude Code or Gemini CLI. OS permissions and vendor sign-in remain interactive. [Automatic setup guide](docs/SETUP.md).
+
+If Python 3.11+ and Git are already installed, open a terminal in the extracted `runquay` folder:
 
 ```sh
 python runquay.py start
@@ -47,7 +49,7 @@ Use `python3` on macOS/Linux if needed. Windows users can double-click `start.cm
 
 The guided onboarding walks through four steps:
 
-1. **Tool** — detect CLIs and open official installation documentation.
+1. **Tool** — detect your OS and installed tools; install missing dependencies for your selected AI with one action.
 2. **Account** — reuse a current login or create an isolated profile; authenticate through the vendor.
 3. **Folder** — choose where new projects live and connect existing project folders.
 4. **Ready** — understand workspace access, tool permissions, and billing before finishing.
@@ -79,7 +81,7 @@ Runquay is extensible to other tools; **not every AI product provides a compatib
 
 ## Accounts and billing
 
-Use **Accounts → Add account** and give each profile a recognizable local name. The sign-in guide shows the correct profile environment and official CLI command. Runquay never requests passwords, copies auth files, or exports vendor sessions. Non-Codex detection confirms the executable; the first approved invocation verifies authentication.
+Setup creates the chosen connection automatically when needed. Later, use **Accounts → Add account**; names are filled for you. Separate Codex profiles offer browser sign-in, with the correct profile command under the terminal fallback. Runquay never requests passwords, copies auth files, or exports vendor sessions. Non-Codex detection confirms the executable; the first approved invocation verifies authentication.
 
 **Codex:** requires ChatGPT subscription auth and verified zero paid credits with no unlimited credit entitlement. Official quota checks run before each milestone and every 15 seconds. Positive or unknown paid balances fail closed. At the reserve (90% used by default), Runquay stops and selects another eligible Codex profile; otherwise it waits for natural refresh. Existing earned resets require approval. Durable idempotency IDs protect reset retries. No purchase or paid-continuation feature is implemented.
 

@@ -1,6 +1,6 @@
 # AI coding CLI setup: Codex, Claude Code, Gemini, and Antigravity
 
-Install vendor tools from their official sources, authenticate there, then connect profiles in Runquay. Installing Runquay does not install or sign you into an AI service. It makes no guarantees about vendor account entitlement or plan availability.
+Install vendor tools from their official sources, authenticate there, then connect profiles in Runquay. The [automatic setup assistant](SETUP.md) can install missing Codex, Claude Code and Gemini CLI helpers from fixed official packages. Installation does not sign you into an AI service. It makes no guarantees about vendor account entitlement or plan availability.
 
 | Tool | Official documentation | Expected CLI |
 | --- | --- | --- |

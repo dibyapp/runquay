@@ -1,5 +1,5 @@
 "use strict";
-let state, token, resetDecision, activeLog, pollBusy = false, previousPending = new Set();
+let state, token, resetDecision, activeLog, pollPromise = null, previousPending = new Set();
 let taskFilter = "active";
 let ideaFilter = "all", catalogSignature = "", ideaSignature = "";
 const $ = id => document.getElementById(id);
@@ -124,12 +124,13 @@ function render() {
   replaceCards("event-list",state.events.map(e=>`<div class="activity-row"><div class="row-content">${esc(e.message)}<small>${esc(when(e.at))}</small></div></div>`).join(""));
   if(!$("settings-form").contains(document.activeElement)) for(const key of ["quota_ceiling","turn_minutes","keep_awake","advisor_auto","advisor_hours"]) {const input=$("settings-form").elements[key]; input[input.type === "checkbox" ? "checked" : "value"]=state[key];}
 }
-async function refresh() {
-  if (pollBusy) return;
-  pollBusy = true;
-  try { state = await api("/api/state"); token = state.csrf; render(); if(activeLog && $("log-dialog").open) await loadLog(activeLog); }
-  catch(error) { $("connection").textContent = "Disconnected · refresh to reconnect"; }
-  finally { pollBusy = false; }
+function refresh(force=false) {
+  if(pollPromise) return force ? pollPromise.then(()=>refresh(true)) : pollPromise;
+  pollPromise=(async()=>{
+    try { state = await api("/api/state"); token = state.csrf; render(); if(activeLog && $("log-dialog").open) await loadLog(activeLog); }
+    catch(error) { $("connection").textContent = "Disconnected · refresh to reconnect"; }
+  })().finally(()=>{pollPromise=null;});
+  return pollPromise;
 }
 async function loadLog(id) {
   const data = await api("/api/run/" + id);

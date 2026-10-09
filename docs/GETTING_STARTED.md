@@ -171,3 +171,8 @@ Open **Why this idea?** to inspect evidence, then **Review idea** to edit the go
 - [Tool setup](TOOLS.md): adapter authentication, output contracts and verification boundaries.
 - [Operations](OPERATIONS.md): data locations, backups, per-user startup and shutdown.
 - [Security](../SECURITY.md): the local trust boundary and safe reporting.
+
+
+## Automatic setup
+
+For a fresh computer, use **setup.cmd**, **setup.command** or **sh setup.sh** instead of manually preparing every dependency. The dashboard detects the OS, recommends an installed tool, lists missing software and offers **Install missing tools**. A new connection is created automatically on Next; sign-in remains with the vendor. [Full setup and permission guide](SETUP.md).

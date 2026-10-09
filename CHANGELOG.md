@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0 — OS-aware automatic setup
+
+- First-launch setup files detect Windows, macOS or Linux and prepare missing Python/Git with the matching package manager.
+- The dashboard recommends an installed tool, lists missing dependencies and offers Install missing tools for Codex, Claude Code and Gemini CLI.
+- Missing Node.js uses an official checksum-verified private runtime; vendor packages use a separate user tools prefix. Existing tools are reused.
+- Connection names/settings are filled automatically. Next creates a needed connection and waits for fresh state before showing the account step.
+- OS passwords and agreement prompts remain in the terminal; unsupported installers get official/manual guidance. Work and sign-in cannot start during setup.
+- Actual Windows Node/Gemini installation, launcher detection checks, security regression tests, platform CI and updated illustrated setup guides.
+
 ## 0.4.2 — Browser sign-in for Codex
 
 - Separate Codex accounts offer Sign in with Codex, launching the official ChatGPT browser OAuth flow without a copied terminal command.

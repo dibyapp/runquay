@@ -321,6 +321,21 @@ class HttpTests(unittest.TestCase):
                 self.client.open(request).close()
                 callback.assert_called_once_with('fixture-account')
 
+    def test_setup_install_is_csrf_protected_and_cannot_supply_a_command(self):
+        self.client.open(self.url + '/').close()
+        request=urllib.request.Request(self.url+'/api/setup',data=b'{"action":"install","provider":"codex","command":"untrusted"}',headers={'Content-Type':'application/json'})
+        with patch.object(self.sup.setup,'start') as installer:
+            with self.assertRaises(urllib.error.HTTPError) as ctx:self.client.open(request)
+            self.assertEqual(ctx.exception.code,403);installer.assert_not_called()
+            request.add_header('X-AutoWork-CSRF',self.server.token)
+            self.client.open(request).close();installer.assert_called_once_with('codex')
+        self.sup.setup.lock.acquire()
+        try:
+            with self.assertRaises(urllib.error.HTTPError) as ctx:self.post('/api/control',{'action':'start'})
+            self.assertEqual(ctx.exception.code,400)
+            self.assertFalse(self.sup.store.setting('running'))
+        finally:self.sup.setup.lock.release()
+
     def test_rebinding_host_rejected(self):
         request = urllib.request.Request(self.url + "/", headers={"Host":"attacker.example"})
         with self.assertRaises(urllib.error.HTTPError) as ctx: self.client.open(request)

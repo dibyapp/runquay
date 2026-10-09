@@ -1,5 +1,5 @@
 "use strict";
-let setupStep = 0, setupDismissed = false, setupSignature = "", loginProfile = "", externalDecision = "", accountSignature = "", accountSaving = false;
+let setupStep = 0, setupDismissed = false, setupSignature = "", loginProfile = "", externalDecision = "", accountSignature = "", accountSaving = false, setupInstallStarting=false, setupSaving=false;
 function toolOptions(advisorOnly = false) {
   return state.tools.filter(t => !advisorOnly || t.advisor).map(t => `<option value="${t.id}">${esc(t.name)}${!t.installed && t.id !== "custom" ? " (not installed)" : ""}</option>`).join("");
 }
@@ -10,14 +10,11 @@ function renderSetup() {
     for(const id of ["account-provider","project-provider","advisor-provider","setup-provider"]) {
       const selected = $(id).value;
       $(id).innerHTML = toolOptions(["advisor-provider","setup-provider"].includes(id));
-      $(id).value = selected || state.advisor_provider || "codex";
+      $(id).value = selected || RunquayUI.recommendedTool(state);
     }
-    const toolCard = t => `<article class="tool-card"><h3>${esc(t.name)} ${badge(t.installed ? "Installed" : t.id === "custom" ? "Custom" : "Not installed")}</h3><p>${t.id === "codex" ? "Subscription usage is checked before work." : "Asks for approval before each run. Billing is unverified."}</p>${t.docs ? `<a target="_blank" rel="noopener noreferrer" href="${esc(t.docs)}">Installation guide ↗</a>` : ""}<details><summary>Support details</summary><p>${esc(t.verification)}</p></details></article>`;
-    const installed = state.tools.filter(t => t.installed);
-    const others = state.tools.filter(t => !t.installed);
-    $("setup-tools").innerHTML = installed.map(toolCard).join("") + `<details class="other-tools"><summary>${installed.length ? "Other supported tools" : "Install a supported tool"}</summary>${others.map(toolCard).join("")}</details>`;
   }
   const provider=$("setup-provider").value, tool=state.tools.find(t=>t.id===provider), profile=RunquayUI.setupAccount(state,provider);
+  drawMachineSetup();
   $("setup-account-title").textContent=profile?.eligible ? `${tool.name} is ready` : profile ? `Check your ${tool.name} connection` : `Connect ${tool?.name || "your AI"}`;
   $("setup-account-note").textContent=profile?.eligible ? "Your account is verified. Choose Next to continue." : profile ? provider==="codex" ? "Your login was found. Check the connection before starting work." : "Use your existing login. Each run will ask for your approval." : "Use the login already on this computer. No account name or settings needed.";
   $("setup-accounts").innerHTML=profile && !profile.eligible ? `<div class="controls"><button type="button" class="secondary" data-action="login-guide" data-id="${esc(profile.id)}">Sign-in guide</button><button type="button" class="secondary" data-action="verify" data-id="${esc(profile.id)}">Check connection</button></div><details class="advanced"><summary>Connection details</summary><p>${esc(profile.reason || profile.error || "Checking sign-in and allowance…")}</p></details>` : "";
@@ -35,6 +32,21 @@ function drawSetup() {
   $("setup-step-text").textContent = `Step ${setupStep + 1} of 4`;
   $("setup-next").textContent = setupStep === 3 ? "Finish setup" : "Next";
   $("setup-review").textContent = `${state.tools.find(t => t.id === $("setup-provider").value)?.name || "Codex"} for project ideas · ${state.profiles.length} accounts · ${state.catalog.length} existing folders. New projects go in ${$("setup-workspace").value}. Setup keeps your current work start/pause state.`;
+}
+function drawMachineSetup() {
+  const provider=$("setup-provider").value, plan=state.setup?.plans[provider], tool=state.tools.find(t=>t.id===provider);
+  if(!plan) return;
+  const busy=state.setup.status.state==="working" || setupInstallStarting;
+  $("setup-machine").textContent=`${plan.os} detected · ${state.setup.detected.git ? "Git ready" : "Git needed"} · Python ready`;
+  $("setup-tools").innerHTML=`<p>${plan.ready ? `${esc(tool.name)} is installed. Continue to connect your account.` : plan.automatic ? `We can install ${plan.names.map(esc).join(" and ")} for you.` : `Follow the official installation guide for ${esc(tool.name)} on this computer.`}</p>`;
+  $("setup-install").hidden=!plan.automatic;
+  $("setup-install").disabled=busy || state.running;
+  $("setup-install").textContent=busy ? "Setting up…" : "Install missing tools";
+  $("setup-install-status").textContent=state.setup.status.message || (state.running && !plan.ready ? "Pause work on Home before installing tools." : "");
+  $("setup-terminal").textContent=plan.terminal;
+  $("setup-official-guide").href=plan.docs;
+  $("setup-install-note").hidden=plan.ready;
+  $("setup-next").disabled=busy || setupSaving;
 }
 function openSetup() {if(!state) return toast("Wait for the local app to connect."); setupStep = 0; $("setup-ack").checked = false; drawSetup(); if(!$("setup-dialog").open) $("setup-dialog").showModal();}
 function showAccount(provider="", separate=false) {
@@ -70,6 +82,22 @@ $("setup-dialog").addEventListener("cancel", () => {setupDismissed = true;});
 $("reopen-setup").onclick = openSetup;
 $("setup-back").onclick = () => {setupStep = Math.max(0,setupStep-1); drawSetup();};
 $("setup-next").onclick = async () => {
+  if(setupSaving) return;
+  if(setupStep===0) {
+    const provider=$("setup-provider").value, plan=state.setup?.plans[provider];
+    if(!plan?.ready) return toast("Install the selected tool first, then Check again.");
+    setupSaving=true; drawMachineSetup();
+    try {
+      if(RunquayUI.needsSetupAccount(state,provider)) {
+        const tool=state.tools.find(t=>t.id===provider);
+        const result=await api("/api/account",{action:"add",provider,name:`${tool.name} account`,existing:provider!=="codex"});
+        await refresh(true); setupStep=1; drawSetup();
+        if(provider==="codex") openLoginGuide(result.id);
+      } else {setupStep=1;drawSetup();}
+    } catch(error){toast(error.message);}
+    finally {setupSaving=false;drawMachineSetup();}
+    return;
+  }
   if(setupStep < 3) {setupStep++; drawSetup(); return;}
   try {
     await api("/api/onboarding", {acknowledged:$("setup-ack").checked,provider:$("setup-provider").value,workspace_root:$("setup-workspace").value});
@@ -134,6 +162,15 @@ $("browser-login").onclick=async()=>{
   catch(error) {$("login-status").textContent=error.message;toast(error.message);}
   finally {loginStarting=false;drawLoginGuide();}
 };
+$("setup-install").onclick=async()=>{
+  if(setupInstallStarting) return;
+  setupInstallStarting=true;drawMachineSetup();
+  try{await api("/api/setup",{action:"install",provider:$("setup-provider").value});await refresh();}
+  catch(error){toast(error.message);}
+  finally{setupInstallStarting=false;drawMachineSetup();}
+};
+$("setup-check").onclick=async()=>{await act("/api/setup",{action:"check"});};
+$("copy-setup").onclick=async()=>{try{await navigator.clipboard.writeText($("setup-terminal").textContent);toast("Setup instruction copied");}catch(error){toast("Select and copy the setup instruction below.");}};
 $("cancel-browser-login").onclick=async()=>{await act("/api/account",{action:"cancel_login",id:loginProfile});};
 document.addEventListener("click", async event => {
   const tool=event.target.closest("[data-account-tool]");

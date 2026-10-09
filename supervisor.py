@@ -28,6 +28,7 @@ import providers
 import sys
 import signal
 from security import redact, sanitize
+from install_setup import SetupManager, search_path
 
 ROOT = Path(__file__).resolve().parent
 SCHEMA = json.loads((ROOT / "result-schema.json").read_text(encoding="utf-8"))
@@ -47,7 +48,7 @@ def utcnow():
 def find_codex():
     candidates = list((Path(os.environ.get("LOCALAPPDATA", "")) / "OpenAI/Codex/bin").glob("*/codex.exe"))
     candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-    found = shutil.which("codex")
+    found = shutil.which("codex", path=search_path())
     if found and not candidates:
         candidates.append(Path(found))
     return str(candidates[0]) if candidates else ""
@@ -330,6 +331,7 @@ class Supervisor:
         self.awake_proc = None
         self.profile_lock = threading.Lock()
         self.brain = CodexBrain(self)
+        self.setup = SetupManager(self)
 
     def profile_binary(self, profile):
         options = json.loads(profile.get("options", "{}"))
@@ -590,6 +592,8 @@ class Supervisor:
         self.wake.set()
 
     def login(self, ident):
+        if self.setup.lock.locked():
+            raise ValueError('Finish tool setup before signing in')
         profile = self.store.one("SELECT * FROM profiles WHERE id=?", (ident,))
         if not profile:
             raise ValueError("Account not found")
@@ -906,6 +910,7 @@ class Supervisor:
                 "profiles": profiles, "projects": projects, "binary": self.binary,
                 "tools": self.tool_status(), "onboarded": self.store.setting("onboarded"),
                 "workspace_root": self.store.setting("workspace_root"), "platform": sys.platform,
+                "setup": self.setup.snapshot(),
                 "advisor_provider": self.store.setting("advisor_provider"),
                 "runs": self.store.rows("SELECT * FROM runs ORDER BY started DESC LIMIT 40"),
                 "decisions": self.store.rows("SELECT * FROM decisions ORDER BY created DESC LIMIT 40"),
@@ -999,6 +1004,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 if action not in ("start", "pause"):
                     raise ValueError("Unknown action")
                 with sup.active_lock:
+                    if action == 'start' and sup.setup.lock.locked():
+                        raise ValueError('Finish tool setup before starting work')
                     sup.store.set("running", action == "start")
                     if action == "pause":
                         stop_tree(sup.active_proc)
@@ -1065,6 +1072,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         raise ValueError("Unknown project action or project is already running")
             elif path == "/api/accounts/refresh":
                 threading.Thread(target=sup.refresh_all, daemon=True).start()
+            elif path == "/api/setup":
+                if data.get('action') == 'install':
+                    sup.setup.start(data['provider'])
+                elif data.get('action') == 'check':
+                    sup.setup.cached = None
+                    sup.setup.checked = 0
+                    sup.binary = find_codex()
+                else:
+                    raise ValueError('Unknown setup action')
             elif path == "/api/account":
                 if data["action"] == "add":
                     ident = sup.add_profile(data)

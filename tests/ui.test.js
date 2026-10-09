@@ -2,6 +2,13 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const ui = require("../web/ui.js");
+
+test("setup recommends a verified account, then an installed tool, then Codex",()=>{
+  const tools=[{id:"codex",advisor:true,installed:false},{id:"claude",advisor:true,installed:true},{id:"antigravity",advisor:false,installed:true}];
+  assert.equal(ui.recommendedTool({tools,profiles:[]}),"claude");
+  assert.equal(ui.recommendedTool({tools,profiles:[{provider:"codex",enabled:true,eligible:true}]}),"codex");
+  assert.equal(ui.recommendedTool({tools:[],profiles:[]}),"codex");
+});
 const base = {running:true, projects:[], decisions:[], profiles:[{provider:"codex",enabled:true,eligible:true}]};
 
 test("legacy bookmarks and unknown routes always resolve to an accessible page",()=>{
@@ -118,4 +125,17 @@ test("browser sign-in progress is scoped to the selected account",()=>{
   state.login_in_progress=false;state.login_status.state="complete";
   assert.equal(ui.loginView(state,profile).complete,true);
   assert.equal(ui.loginView({},{}).browser,false);
+});
+
+test("fresh Codex setup preserves shared credentials and reuses a separate login profile",()=>{
+  const current={provider:"codex",enabled:true,current_login:true,snapshot:{}};
+  const state={profiles:[current]};
+  assert.equal(ui.needsSetupAccount(state,"codex"),true);
+  const separate={provider:"codex",enabled:true,current_login:false};
+  state.profiles.push(separate);
+  assert.equal(ui.setupAccount(state,"codex"),separate);
+  assert.equal(ui.needsSetupAccount(state,"codex"),false);
+  current.snapshot.account={type:"chatgpt"};
+  assert.equal(ui.setupAccount(state,"codex"),current);
+  assert.equal(ui.needsSetupAccount(state,"codex"),false);
 });

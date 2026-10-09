@@ -4,7 +4,7 @@ Runquay lets you describe something you want in everyday words, ask an AI coding
 
 **Good first projects:** a personal webpage, a daily checklist, or a simple expense tracker using made-up examples. Start small so you can tell whether the result does what you asked.
 
-Runquay needs a one-time setup. It is not yet a standalone installer: Python, Git and a supported AI helper must be installed separately. Your AI provider may require a subscription or apply charges. Runquay itself is free and open source.
+Runquay needs a one-time setup. The first-launch setup file can install missing Python/Git using your OS package manager. The dashboard can prepare Codex, Claude Code or Gemini CLI. OS permission prompts and provider sign-in still need you. [Automatic setup details](SETUP.md). Your AI provider may require a subscription or apply charges. Runquay itself is free and open source.
 
 ## 1. Prepare your computer
 
@@ -20,19 +20,19 @@ Download the source ZIP from [the latest release](https://github.com/dibyapp/run
 
 | Computer | What to open |
 | --- | --- |
-| Windows | Double-click **start.cmd** in the extracted folder. Windows may display it simply as **start** if filename extensions are hidden. |
-| Mac | Open **start.command** in the extracted folder. Its terminal window starts the local dashboard. |
-| Linux / Ubuntu | Open Terminal in the extracted folder and enter **sh start.sh**, then press Enter. File managers vary, so double-click behavior is not assumed. |
+| Windows | Double-click **setup.cmd** in the extracted folder. Windows may display it simply as **start** if filename extensions are hidden. |
+| Mac | Open **setup.command** in the extracted folder. Its terminal window starts the local dashboard. |
+| Linux / Ubuntu | Open Terminal in the extracted folder and enter **sh setup.sh**, then press Enter. File managers vary, so double-click behavior is not assumed. |
 
 If you prefer a terminal, enter `python runquay.py start` in the extracted folder. Mac/Linux may call Python `python3`. If you need to navigate to the folder, type `cd `, drag the extracted folder into the terminal, then press Enter. `cd` means change folder.
 
 Runquay opens [its dashboard](http://127.0.0.1:8765/) in your browser. This address belongs to your own computer. Keep the launcher window running while the AI works. Closing the browser tab alone does not stop work.
 
-If a prerequisite is missing, the launcher explains what to install. The Windows and Mac launchers keep the error visible. More startup help is in [troubleshooting](TROUBLESHOOTING.md).
+The setup file installs missing essentials for supported package managers; unsupported or restricted systems get an explanation and official installation links. The Windows and Mac launchers keep the error visible. More startup help is in [troubleshooting](TROUBLESHOOTING.md).
 
 ## 3. Follow the setup guide
 
-1. **Tool:** find the AI helper you installed. **Installed** means the program was found; it does not prove you are signed in. Follow **Installation guide** if it is missing.
+1. **Tool:** Runquay identifies your OS and suggests a tool. Keep that choice or choose another. If software is missing, choose **Install missing tools**, wait for **Tools are ready**, then choose **Next**. The app fills in the connection settings. Installation does not prove sign-in or billing. **Manual setup or troubleshooting** handles OS permission prompts.
 2. **Account:** when you see **Codex is ready**, choose **Next**. Runquay has already found and checked your login. If it asks you to connect, choose the detected tool and its **Connect** button; the app chooses an account name. For a separate Codex account, choose **How to sign in → Sign in with Codex** and finish on OpenAI's website in the browser that opens. Runquay checks the connection afterward. **Use terminal instead** is a fallback. Current Codex app logins are reused; sign in through Codex if that login needs refreshing. For other tools, expand **Sign-in instructions**, complete the vendor steps in your terminal, then choose **Check connection**. Other tools verify authentication through a separately approved run. **Use another account** is optional.
 3. **Folder:** keep the suggested folder unless you want to change it. A project folder is simply where the files made for one task are stored.
 4. **Ready:** read the workspace and billing rules, tick the acknowledgement, and choose **Finish setup**. New installations start paused.

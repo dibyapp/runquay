@@ -27,7 +27,12 @@
     "start.cmd",
     "runquay.py",
     "delivery.py",
-    "start.command"
+    "start.command",
+    "install_setup.py",
+    "setup.cmd",
+    "Setup-Runquay.ps1",
+    "setup.sh",
+    "setup.command"
   ],
   "directories": [
     "web",
@@ -96,6 +101,9 @@
     ],
     "docs/images/codex-browser-sign-in.jpg": [
       "d1b01f57c4532d51cebca920be034a8f91924d8f7b2bdac1469ef9894713421d"
+    ],
+    "docs/images/automatic-setup.jpg": [
+      "f3e0cb0d592ff598b849e54a676b933bb163f0e6ee97b9f5509ab016fc3be443"
     ]
   }
 }

@@ -26,6 +26,12 @@ jobs:
       - run: node --check web/beginner.js
       - run: node --check web/ui.js
       - run: node --test tests/ui.test.js
+      - name: Check Windows first-launch setup without installing
+        if: runner.os == 'Windows'
+        run: powershell.exe -NoProfile -File Setup-Runquay.ps1 -CheckOnly
+      - name: Check Unix first-launch setup without installing
+        if: runner.os != 'Windows'
+        run: sh setup.sh --check
       - run: python runquay.py release --check
       - run: python runquay.py release
       - uses: actions/upload-artifact@v4

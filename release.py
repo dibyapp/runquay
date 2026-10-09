@@ -129,7 +129,7 @@ def build(check_only=False, root=ROOT):
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
         for file in files:
             name = Path("runquay") / file.relative_to(root)
-            if file.name in {"start.command", "start.sh"}:
+            if file.name in {"start.command", "start.sh", "setup.command", "setup.sh"}:
                 info = zipfile.ZipInfo.from_file(file, name.as_posix())
                 info.create_system = 3
                 info.external_attr = 0o100755 << 16
