@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1 — Fewer account choices
+
+- Detected AI tools appear as simple buttons. Account names are chosen automatically; existing connections are recognized without submitting duplicates.
+- Verified onboarding accounts show one ready message and Next. Extra accounts and connection details stay collapsed.
+- Account names, separate logins, uninstalled tools and custom commands move under More options. Separate accounts open their sign-in guide immediately.
+- Installed tools are distinguished from verified authentication. Other tools still need approval for every run; billing and reset safeguards are retained.
+- Actual browser checks and reviewed screenshots document the simpler flow; temporary test connections were removed without touching vendor credentials.
+
 ## 0.4.0 — A guided start for people who do not code
 
 - Two-screen idea guide with everyday questions, editable website/checklist/expense starters, optional name/tool choices, and review before submission.

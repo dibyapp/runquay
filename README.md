@@ -17,7 +17,7 @@ Created and maintained by [Dibyaprakash Pradhan](https://github.com/dibyapp). [D
 
 ## New to coding?
 
-[Start with the beginner guide](docs/BEGINNERS.md). Describe an idea in everyday words, review it before starting, then use **See what was made** for opening instructions and an **Open project folder** button. Editable starters help with a small website, checklist or expense tracker. Setup still requires Python, Git and a supported AI helper.
+[Start with the beginner guide](docs/BEGINNERS.md). Describe an idea in everyday words, review it before starting, then use **See what was made** for opening instructions and an **Open project folder** button. Installed AI tools are detected automatically; verified Codex accounts need only Next during setup. Optional account settings stay under More options. Installed AI tools are detected automatically; verified Codex accounts need only Next during setup. Optional account settings stay under More options. Editable starters help with a small website, checklist or expense tracker. Setup still requires Python, Git and a supported AI helper.
 
 Windows: open `start.cmd`. Mac: open `start.command`. Linux: run `sh start.sh` in the extracted folder. If something is missing, the launcher explains the next step.
 

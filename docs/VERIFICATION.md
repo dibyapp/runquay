@@ -1,6 +1,6 @@
 # Verification record
 
-Current interface verification: 2026-10-09, version 0.4.0. The 57-test Python suite completed on Windows (55 passed, two platform/permission skips) and Ubuntu 24.04 under WSL (57 passed). Twelve JavaScript UI regression tests cover navigation, next-step decisions, task filters, scoped ideas, beginner briefs and plain opening instructions. Test commands and results are recorded separately from CI and account-dependent checks.
+Current interface verification: 2026-10-09, version 0.4.1. The 58-test Python suite completed on Windows (56 passed, two platform/permission skips) and Ubuntu 24.04 under WSL (58 passed). Fifteen JavaScript UI regression tests cover navigation, next-step decisions, task filters, scoped ideas, beginner briefs, plain opening instructions and choosing current/separate accounts. Test commands and results are recorded separately from CI and account-dependent checks.
 
 | Check | Status |
 | --- | --- |
@@ -49,3 +49,7 @@ The live Windows app was tested in the Codex in-app browser: required idea valid
 The worker's headless screenshot attempt was denied by Windows. The later interactive browser check used the actual generated page over local HTTP. The in-app browser rejected a direct file:// URL; this restriction was not bypassed, and direct double-click opening remains unverified. Native macOS launcher interaction, sign-in clipboard interaction, other-vendor model requests and paid resets were not exercised. The three new public images are actual reviewed captures, not mockups.
 
 Regression checks cover authenticated delivery access, CSRF protection for folder opening, ignoring caller-supplied paths, bounded text reads, credential-name exclusion, symlink containment, plain-text rendering and OS-specific folder-opening commands. The source ZIP is checked for an exact allowlist and executable Unix launcher permissions. Python/Git and an authenticated AI helper remain prerequisites; Runquay is not a bundled one-click AI installation.
+
+## Simpler account setup verification — 0.4.1
+
+In the separate paused Windows walkthrough, the real Codex account was detected and verified. Its setup step showed Codex is ready and Next without an account form. The account dialog displayed only installed-tool buttons, the connection message, the main action and collapsed More options. Names and the full provider selector were confirmed hidden until requested. Done closed an existing connection without adding a duplicate. Selecting the installed Claude tool and Connect created a named connection without typed fields; approval remained required and no vendor run was authorized. Sign in to another account created an isolated Codex profile and opened its sign-in guide without starting authentication. Both temporary connections were removed, retaining vendor credentials. Antigravity was disabled when absent, with separate login unavailable; custom setup remained accessible. There were no browser console errors, model requests, purchases or resets. The walkthrough remained paused and not onboarded, ready for the user's next step.

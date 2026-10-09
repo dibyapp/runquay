@@ -81,3 +81,28 @@ test("opening instructions remove formatting markers while retaining literal HTM
   assert.equal(ui.plainInstructions('# Open it\n1. Open `index.html` and choose **Next**.\n<script>unsafe()</script>'),
     'Open it\n1. Open index.html and choose Next.\n<script>unsafe()</script>');
 });
+
+test("detected current logins are reused without creating duplicate accounts",()=>{
+  const state={tools:[{id:"codex",name:"Codex",installed:true}],profiles:[{id:"one",provider:"codex",current_login:true}]};
+  assert.equal(ui.accountChoice(state,"codex").connected,true);
+  assert.equal(ui.accountChoice(state,"codex").existing,true);
+  assert.equal(ui.accountChoice(state,"codex",true).connected,false);
+  assert.equal(ui.accountChoice(state,"codex",true).existing,false);
+  assert.equal(ui.accountChoice(state,"codex",true).name,"Codex account 2");
+});
+
+test("a separate profile does not pretend to be the current login",()=>{
+  const state={tools:[{id:"claude",name:"Claude Code",installed:true}],profiles:[{provider:"claude",current_login:false}]};
+  assert.equal(ui.accountChoice(state,"claude").connected,false);
+  assert.equal(ui.accountChoice(state,"claude").existing,true);
+  assert.equal(ui.accountChoice(state,"antigravity",true).existing,true);
+});
+
+test("onboarding selects a verified enabled account for the chosen tool",()=>{
+  const ready={id:"ready",provider:"codex",eligible:true,enabled:true};
+  const state={profiles:[{provider:"codex",enabled:true,current_login:true},ready,{provider:"claude",eligible:true,enabled:true}]};
+  assert.equal(ui.setupAccount(state,"codex"),ready);
+  ready.enabled=false;
+  assert.equal(ui.setupAccount(state,"codex"),state.profiles[0]);
+  assert.equal(ui.setupAccount(state,"gemini"),null);
+});

@@ -1,6 +1,16 @@
 # Actual Runquay screenshots and test record
 
-## Current beginner flow — 0.4.0, 9 October 2026
+## Current account setup — 0.4.1, 9 October 2026
+
+These are actual captures of the separate Windows walkthrough in the Codex in-app browser. The current Codex account was found and its subscription checked by the real backend. The account dialog shows the actual installed tools, with optional fields collapsed. No account email, credentials, private paths or unrelated project details are visible. Both images were reviewed and hash-pinned.
+
+![A verified account needs only Next](images/simple-account-setup.jpg)
+
+![Detected tools and one main action](images/simple-connect-account.jpg)
+
+The browser check covered duplicate-free Done, selecting and connecting a detected Claude tool without typing a name, opening separate Codex sign-in instructions, hidden optional fields, absent Antigravity and accessible custom setup. Temporary connections were removed; no vendor model invocation or sign-in was executed. See [verification details](VERIFICATION.md).
+
+## Beginner task flow — 0.4.0, 9 October 2026
 
 Actual captures from the running Windows app in the Codex in-app browser. The fictional cafe idea was submitted to real Codex and completed in one step. These screenshots contain no account email, credential, sign-in command, private home path or unrelated project contents. All three image files were reviewed and hash-pinned before publication.
 

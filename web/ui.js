@@ -57,6 +57,18 @@ const RunquayUI = (() => {
     return String(text || "").replace(/^```[^\n]*$/gm, "").replace(/^#{1,6}\s+/gm, "")
       .replace(/\*\*([^*\n]+)\*\*/g, "$1").replace(/`([^`\n]+)`/g, "$1");
   }
-  return {pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,label:state => labels[state] || state};
+  function accountChoice(state, provider, separate=false) {
+    const tool=(state.tools || []).find(t=>t.id===provider);
+    const profiles=(state.profiles || []).filter(p=>p.provider===provider);
+    const current=profiles.find(p=>p.current_login);
+    return {tool,current,existing:provider==="antigravity" || !separate,
+      name:(tool?.name || "AI")+" account "+(profiles.length+1),
+      connected:Boolean(current && (provider==="antigravity" || !separate))};
+  }
+  function setupAccount(state, provider) {
+    const profiles=(state.profiles || []).filter(p=>p.provider===provider);
+    return profiles.find(p=>p.enabled && p.eligible) || profiles.find(p=>p.enabled && p.current_login) || profiles.find(p=>p.enabled) || null;
+  }
+  return {pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,label:state => labels[state] || state};
 })();
 if (typeof module !== "undefined") module.exports = RunquayUI;

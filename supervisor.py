@@ -838,6 +838,11 @@ class Supervisor:
     def state(self):
         profiles = self.store.rows("SELECT * FROM profiles ORDER BY id")
         for profile in profiles:
+            provider = profile.get("provider", "codex")
+            default_home = Path.home() / providers.TOOLS[provider]["home"]
+            if provider == "antigravity":
+                default_home = Path.home() / ".gemini/antigravity-cli"
+            profile["current_login"] = Path(profile["home"]).resolve() == default_home.resolve()
             profile["snapshot"] = json.loads(profile["snapshot"])
             profile["snapshot"].get("account", {}).pop("email", None)
             if profile.get("provider", "codex") != "codex":

@@ -1,6 +1,6 @@
 [project]
 name = "runquay"
-version = "0.4.0"
+version = "0.4.1"
 description = "Open-source AI coding agent orchestrator for Codex, Claude Code, Gemini CLI, and Antigravity, with local task queues and approvals"
 requires-python = ">=3.11"
 license = {text = "MIT"}

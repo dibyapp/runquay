@@ -33,11 +33,15 @@ If a prerequisite is missing, the launcher explains what to install. The Windows
 ## 3. Follow the setup guide
 
 1. **Tool:** find the AI helper you installed. **Installed** means the program was found; it does not prove you are signed in. Follow **Installation guide** if it is missing.
-2. **Account:** if a Codex account says **Subscription verified**, continue. Otherwise choose **Sign-in guide**. Use **Copy sign-in instruction**, paste it into your terminal, press Enter and complete the provider's sign-in. Return and choose **Check connection**. Other tools verify authentication through a separately approved run.
+2. **Account:** when you see **Codex is ready**, choose **Next**. Runquay has already found and checked your login. If it asks you to connect, choose the detected tool and its **Connect** button; the app chooses an account name. If sign-in is needed, choose **Sign-in guide**, copy the instruction into your terminal and complete provider sign-in, then **Check connection**. Other tools verify authentication through a separately approved run. **Use another account** is optional.
 3. **Folder:** keep the suggested folder unless you want to change it. A project folder is simply where the files made for one task are stored.
 4. **Ready:** read the workspace and billing rules, tick the acknowledgement, and choose **Finish setup**. New installations start paused.
 
 Setup does not purchase a plan or authorize a reset. If a sign-in command reports an error, keep the error text and follow the provider's official instructions rather than pasting passwords into Runquay.
+
+![Actual account step after automatic Codex verification](images/simple-account-setup.jpg)
+
+To connect another tool later, open **Accounts → Add account**. Choose an installed tool; an existing connection says **Done**, otherwise choose **Connect**. No name or path is required. **Sign in to another account** creates a separate login and opens its instructions. **More options** contains optional names, uninstalled tools and custom setup. Connecting a detected program does not prove its authentication or billing.
 
 ## 4. Describe one idea
 

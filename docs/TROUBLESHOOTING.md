@@ -41,7 +41,7 @@ These are example private data locations, not a storage-name migration. Never po
 | Symptom | Check and action |
 | --- | --- |
 | Codex says sign-in required | Open that profile's sign-in guide and run the generated command in your terminal. Finish official vendor authentication, then verify. Runquay requires subscription auth, not API-key auth. |
-| Additional account appears to use the same login | Check whether **Use the login already on this computer** was selected. Isolated profiles have their own vendor home where supported; use the generated command for that exact profile. Do not copy auth files. |
+| Additional account appears to use the same login | Choose **Sign in to another account** to create a separate login, or select **Sign in to a different account** under **More options**. Isolated profiles have their own vendor home where supported; use the generated command for that exact profile. Do not copy auth files. |
 | Current login is already connected | Runquay prevents duplicate login homes. Create an isolated supported profile for another account instead. |
 | Paid balance is positive or unknown | The Codex guard blocks work. Review vendor account/billing state. Waiting or resolving the account state is safer than repeatedly retrying an unknown balance. |
 | Codex waits below the vendor's hard limit | The configured reserve intentionally stops earlier, up to 90% used. Check both quota windows and the account reason. |

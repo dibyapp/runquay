@@ -98,9 +98,11 @@ Choose the **Tool for project ideas**. Only advisors with an enforced read-only 
 
 ### Step 2 — Account
 
-Reuse a current vendor login or choose **Connect another account**. In the account form, select the AI tool and give the connection a recognizable name. **Use the login already on this computer** is selected initially; uncheck it for a separate supported login profile. Runquay prevents duplicate login homes.
+When the chosen tool shows **Codex is ready**, choose **Next**: its login is already verified. Otherwise use **Connect account** or its sign-in/check controls. **Use another account** is optional.
 
-A verified Codex subscription displays **Subscription verified**. **Sign-in guide** shows the exact profile command to run in your terminal. Complete the official vendor flow, then choose **Check connection**. Other tools' authentication is established by a separately approved invocation, not detection alone.
+The account dialog shows installed tools as buttons. Choose a tool, then **Connect**; names and paths are filled automatically. A current login already connected says **Done**, without creating a duplicate. **Sign in to another account** creates a separate profile and opens its sign-in instructions. Optional names, other tools and custom commands are under **More options**. Detection confirms installation; it does not prove authentication or billing.
+
+A verified Codex subscription displays **Codex is ready**. **Sign-in guide** shows the exact profile command to run in your terminal. Complete the official vendor flow, then choose **Check connection**. Other tools' authentication is established by a separately approved invocation, not detection alone.
 
 There is no application account-count cap. Additional profiles do not increase provider allowances. Never paste passwords, API keys or auth files into Runquay.
 

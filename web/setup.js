@@ -1,5 +1,5 @@
 "use strict";
-let setupStep = 0, setupDismissed = false, setupSignature = "", loginProfile = "", externalDecision = "";
+let setupStep = 0, setupDismissed = false, setupSignature = "", loginProfile = "", externalDecision = "", accountSignature = "", accountSaving = false;
 function toolOptions(advisorOnly = false) {
   return state.tools.filter(t => !advisorOnly || t.advisor).map(t => `<option value="${t.id}">${esc(t.name)}${!t.installed && t.id !== "custom" ? " (not installed)" : ""}</option>`).join("");
 }
@@ -17,7 +17,12 @@ function renderSetup() {
     const others = state.tools.filter(t => !t.installed);
     $("setup-tools").innerHTML = installed.map(toolCard).join("") + `<details class="other-tools"><summary>${installed.length ? "Other supported tools" : "Install a supported tool"}</summary>${others.map(toolCard).join("")}</details>`;
   }
-  $("setup-accounts").innerHTML = state.profiles.length ? state.profiles.map(p => `<div class="setup-account"><div><b>${esc(p.name)}</b><small>${esc(state.tools.find(t => t.id === p.provider)?.name)} · ${p.eligible ? "Subscription verified" : esc(p.error || (p.provider === "codex" ? "Check sign-in and quota" : "Quota/auth unverified"))}</small></div><button type="button" class="secondary" data-action="login-guide" data-id="${p.id}">Sign-in guide</button></div>`).join("") : empty("No profiles connected", "Connect a tool account to begin.");
+  const provider=$("setup-provider").value, tool=state.tools.find(t=>t.id===provider), profile=RunquayUI.setupAccount(state,provider);
+  $("setup-account-title").textContent=profile?.eligible ? `${tool.name} is ready` : profile ? `Check your ${tool.name} connection` : `Connect ${tool?.name || "your AI"}`;
+  $("setup-account-note").textContent=profile?.eligible ? "Your account is verified. Choose Next to continue." : profile ? provider==="codex" ? "Your login was found. Check the connection before starting work." : "Use your existing login. Each run will ask for your approval." : "Use the login already on this computer. No account name or settings needed.";
+  $("setup-accounts").innerHTML=profile && !profile.eligible ? `<div class="controls"><button type="button" class="secondary" data-action="login-guide" data-id="${esc(profile.id)}">Sign-in guide</button><button type="button" class="secondary" data-action="verify" data-id="${esc(profile.id)}">Check connection</button></div><details class="advanced"><summary>Connection details</summary><p>${esc(profile.reason || profile.error || "Checking sign-in and allowance…")}</p></details>` : "";
+  $("setup-connect-account").hidden=Boolean(profile);
+  if($("account-dialog").open) drawAccount();
   $("setup-project-count").textContent = `${state.catalog.length} existing project folders found. You can use them from Tasks.`;
   if(!$("setup-workspace").value) $("setup-workspace").value = state.workspace_root;
   if(!state.onboarded && !setupDismissed && !$("setup-dialog").open) openSetup();
@@ -31,7 +36,34 @@ function drawSetup() {
   $("setup-review").textContent = `${state.tools.find(t => t.id === $("setup-provider").value)?.name || "Codex"} for project ideas · ${state.profiles.length} accounts · ${state.catalog.length} existing folders. New projects go in ${$("setup-workspace").value}. Setup keeps your current work start/pause state.`;
 }
 function openSetup() {if(!state) return toast("Wait for the local app to connect."); setupStep = 0; $("setup-ack").checked = false; drawSetup(); if(!$("setup-dialog").open) $("setup-dialog").showModal();}
-function showAccount() {if(!state) return toast("Wait for the local app to connect."); $("account-form").reset(); $("account-form").querySelectorAll("details").forEach(d=>d.open=false); $("custom-command-label").hidden = true; $("account-dialog").showModal();}
+function showAccount(provider="", separate=false) {
+  if(!state) return toast("Wait for the local app to connect.");
+  const form=$("account-form"); form.reset(); form.querySelectorAll("details").forEach(d=>d.open=false);
+  const installed=state.tools.filter(t=>t.installed), preferred=provider || $("setup-provider").value;
+  form.elements.provider.value=installed.some(t=>t.id===preferred) ? preferred : installed[0]?.id || preferred || "codex";
+  form.elements.separate.checked=separate; accountSignature=""; drawAccount(); $("account-dialog").showModal();
+}
+function drawAccount() {
+  const form=$("account-form"), provider=form.elements.provider.value;
+  if(provider==="antigravity") form.elements.separate.checked=false;
+  const choice=RunquayUI.accountChoice(state,provider,form.elements.separate.checked), tool=choice.tool;
+  const installed=state.tools.filter(t=>t.installed);
+  const signature=JSON.stringify([installed.map(t=>[t.id,t.name]),provider]);
+  if(signature!==accountSignature) {
+    accountSignature=signature;
+    $("account-detected").innerHTML=installed.map(t=>`<button type="button" class="secondary ${t.id===provider ? "selected" : ""}" data-account-tool="${esc(t.id)}" aria-pressed="${t.id===provider}">${esc(t.name)}</button>`).join("");
+  }
+  $("account-detected-note").textContent=installed.length ? "We found these tools on your computer." : "No AI tools found. Install a tool, or use More options.";
+  $("account-connect-note").textContent=choice.connected ? `${tool.name}'s current login is already connected.` : !choice.existing ? `We'll guide you through signing in to another ${tool.name} account.` : `Use the ${tool?.name || "AI"} login already on this computer. Sign in afterward if needed.`;
+  if(provider!=="codex" && !choice.connected) $("account-connect-note").textContent+=" Each run needs your approval because billing is unverified.";
+  $("account-connect").textContent=choice.connected ? "Done" : !choice.existing ? "Continue to sign in" : `Connect ${tool?.name || "AI"}`;
+  $("account-connect").disabled=accountSaving || Boolean(!choice.connected && provider!=="custom" && !tool?.installed && !form.elements.executable.value.trim());
+  $("account-another").hidden=!choice.connected || provider==="antigravity";
+  form.elements.separate.disabled=provider==="antigravity";
+  $("account-separate-note").hidden=provider!=="antigravity";
+  $("custom-command-label").hidden=provider!=="custom"; form.elements.command.required=provider==="custom";
+  $("account-install-note").innerHTML=!tool?.installed && tool?.docs ? `<a href="${esc(tool.docs)}" target="_blank" rel="noopener noreferrer">Install ${esc(tool.name)} ↗</a>, then reopen this screen.` : "";
+}
 $("setup-close").onclick = () => {setupDismissed = true; $("setup-dialog").close();};
 $("setup-dialog").addEventListener("cancel", () => {setupDismissed = true;});
 $("reopen-setup").onclick = openSetup;
@@ -43,16 +75,29 @@ $("setup-next").onclick = async () => {
     $("setup-dialog").close(); setupDismissed = true; toast("Setup saved. Create a task to begin."); location.hash="#overview"; await refresh();
   } catch(error) {toast(error.message);}
 };
-$("add-account").onclick = showAccount;
-$("setup-add-account").onclick = showAccount;
-$("account-provider").onchange = () => {$("custom-command-label").hidden = $("account-provider").value !== "custom";};
+$("add-account").onclick = () => showAccount();
+$("setup-add-account").onclick = () => showAccount($("setup-provider").value,true);
+$("setup-connect-account").onclick = () => showAccount($("setup-provider").value);
+$("setup-provider").onchange=()=>{renderSetup();drawSetup();};
+$("account-provider").onchange = () => {$("account-form").elements.separate.checked=false;drawAccount();};
+$("account-separate").onchange=drawAccount;
+$("account-form").elements.executable.oninput=drawAccount;
+$("account-another").onclick=()=>{$("account-form").elements.separate.checked=true;drawAccount();};
 $("account-form").onsubmit = async event => {
   event.preventDefault(); const form = event.target;
-  const data = Object.fromEntries(new FormData(form)); data.existing = form.elements.existing.checked; data.action = "add";
+  if(accountSaving) return;
+  const data = Object.fromEntries(new FormData(form));
+  const choice=RunquayUI.accountChoice(state,data.provider,form.elements.separate.checked);
+  if(choice.connected) {$("account-dialog").close(); return;}
+  data.name=data.name.trim() || choice.name; data.existing=choice.existing; data.action = "add";
   try {
+    accountSaving=true; drawAccount();
     if(data.provider === "custom") data.command = JSON.parse(data.command);
-    await api("/api/account",data); $("account-dialog").close(); await refresh(); toast("Account connected. Open its sign-in guide if needed.");
+    const result=await api("/api/account",data); $("account-dialog").close(); await refresh();
+    if(!data.existing && result.id) openLoginGuide(result.id);
+    else toast("Account connected. Sign in if needed.");
   } catch(error) {toast(error.message);}
+  finally {accountSaving=false; drawAccount();}
 };
 $("import-project").onclick = () => $("import-dialog").showModal();
 $("setup-import").onclick = () => $("import-dialog").showModal();
@@ -60,13 +105,19 @@ $("import-form").onsubmit = async event => {
   event.preventDefault();
   try {await api("/api/catalog/add",Object.fromEntries(new FormData(event.target))); $("import-dialog").close(); event.target.reset(); await refresh(); toast("Project folder connected");} catch(error) {toast(error.message);}
 };
+function openLoginGuide(id) {
+  const profile=state.profiles.find(p=>p.id===id); if(!profile) return;
+  loginProfile=id; $("login-command").textContent=profile.instructions.login;
+  $("login-note").textContent=profile.instructions.note; $("login-guide").showModal();
+}
 document.addEventListener("click", async event => {
+  const tool=event.target.closest("[data-account-tool]");
+  if(tool) {$("account-provider").value=tool.dataset.accountTool; $("account-form").elements.separate.checked=false;drawAccount();return;}
   const e = event.target.closest("[data-action]"); if(!e) return;
   const {action,id} = e.dataset;
+  if(action === "verify") {if(await act("/api/account",{action:"verify",id})) toast("Checking your connection…");}
   if(action === "login-guide") {
-    const profile = state.profiles.find(p => p.id === id); loginProfile = id;
-    $("login-command").textContent = profile.instructions.login; $("login-note").textContent = profile.instructions.note;
-    $("login-guide").showModal();
+    openLoginGuide(id);
   }
   if(action === "remove-profile") {
     if(await act("/api/account",{action:"remove",id})) toast("Connection removed. Vendor credentials and history are kept.");

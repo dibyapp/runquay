@@ -215,6 +215,16 @@ class LifecycleTests(unittest.TestCase):
 
 
 class HttpTests(unittest.TestCase):
+    def test_state_identifies_current_login_without_exposing_email(self):
+        current = self.sup.add_profile({"provider":"codex", "name":"Current", "existing":True})
+        separate = self.sup.add_profile({"provider":"codex", "name":"Separate", "existing":False})
+        snapshot = {"account":{"email":"private@example.com"}, "limits":allowance()}
+        self.sup.store.execute("UPDATE profiles SET snapshot=? WHERE id=?", (json.dumps(snapshot), current))
+        profiles = {p['id']:p for p in self.sup.state()['profiles']}
+        self.assertTrue(profiles[current]['current_login'])
+        self.assertFalse(profiles[separate]['current_login'])
+        self.assertNotIn('email', profiles[current]['snapshot']['account'])
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="autowork-http-")
         self.sup = Supervisor(Path(self.temp.name), "test-codex")
