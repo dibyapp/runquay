@@ -1,5 +1,13 @@
 # Actual Runquay screenshots and test record
 
+## Existing Codex tasks - 0.5.2, 9 October 2026
+
+Actual capture of the running Windows app in the Codex in-app browser after read-only discovery found 42 saved tasks. The header shows search, project filtering and refresh. The capture covers the header only so private task titles, previews, folder names and paths stay outside the image. It contains no account email or credentials and was reviewed and hash-pinned.
+
+![Actual local Codex task discovery and search controls](images/codex-task-history.jpg)
+
+Browser testing found eight tasks in one project, searched for a specific title, opened its summary, opened and closed the new-task review form without saving, showed 24 results, refreshed, and used the saved-folder shortcut. The local queue remained empty and paused, two account connections remained intact, and no model runs were started. See the [task history guide](GETTING_STARTED.md#find-tasks-you-already-have-in-codex).
+
 ## Automatic setup — 0.5.0, 9 October 2026
 
 Actual Windows dashboard capture after Install missing tools downloaded and verified a private Node.js runtime, installed Gemini CLI from its official npm package, and checked that the executable starts. The screen shows Windows detected and Tools are ready. No email, credential, private path or sign-in URL is visible; the image was reviewed and hash-pinned.

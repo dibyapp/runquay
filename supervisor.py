@@ -904,6 +904,10 @@ class Supervisor:
         advisor = self.store.one("SELECT id,state,note,checkpoint FROM projects WHERE kind='advisor' ORDER BY created DESC LIMIT 1")
         return {"running": self.store.setting("running"), "quota_ceiling": self.store.setting("quota_ceiling"),
                 "catalog": catalog, "catalog_error": self.store.setting("catalog_error"), "suggestions": suggestions,
+                "codex_tasks": self.store.setting("codex_tasks") or [],
+                "codex_tasks_error": self.store.setting("codex_tasks_error") or "",
+                "codex_tasks_checked": self.store.setting("codex_tasks_checked"),
+                "codex_tasks_limited": bool(self.store.setting("codex_tasks_limited")),
                 "advisor": advisor, "advisor_auto": self.store.setting("advisor_auto"), "advisor_hours": self.store.setting("advisor_hours"),
                 "advisor_summary": self.store.setting("advisor_summary"), "advisor_completed": self.store.setting("advisor_completed"),
                 "turn_minutes": self.store.setting("turn_minutes"), "keep_awake": self.store.setting("keep_awake"),

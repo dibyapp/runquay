@@ -139,3 +139,15 @@ test("fresh Codex setup preserves shared credentials and reuses a separate login
   assert.equal(ui.setupAccount(state,"codex"),current);
   assert.equal(ui.needsSetupAccount(state,"codex"),false);
 });
+
+test("existing Codex tasks search and project filters stay separate from queue status",()=>{
+  const tasks=[{id:"one",title:"Fix checkout",project_name:"Shop",catalog_id:"shop"},
+    {id:"two",title:"Build menu",project_name:"Cafe",catalog_id:"cafe"},
+    {id:"three",title:"Notes",project_name:"No saved folder",catalog_id:""}];
+  assert.deepEqual(ui.codexTasks(tasks," CHECKOUT ").map(t=>t.id),["one"]);
+  assert.deepEqual(ui.codexTasks(tasks,"cafe").map(t=>t.id),["two"]);
+  assert.deepEqual(ui.codexTasks(tasks,"","shop").map(t=>t.id),["one"]);
+  assert.deepEqual(ui.codexTasks(tasks,"menu","shop"),[]);
+  assert.equal(ui.codexTasks(tasks).length,3);
+  assert.equal(tasks.length,3);
+});

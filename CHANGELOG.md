@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.2 - Existing Codex tasks
+
+- Show existing local Codex tasks without running the advisor: search, project filters, bounded summaries, refresh and folder shortcuts.
+- Read non-archived top-level task metadata with pagination, retain previous results on failure, and keep saved history separate from the Runquay queue.
+- Browsing does not resume chats, request model turns or create tasks. Discovery/filtering regression checks cover these boundaries.
+
+
 ## 0.5.1 - Windows first-launch compatibility
 
 - setup.cmd prepares missing Python/Git directly through fixed WinGet commands, without executing a PowerShell script file or changing execution policy.

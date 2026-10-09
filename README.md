@@ -144,3 +144,5 @@ GitHub Actions is configured for Windows, Ubuntu, and macOS on Python 3.11 and 3
 If Runquay helps your workflow, star the repository to follow its progress. Reproducible bug reports are welcome.
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) to add adapters or platform support. Runquay is independent of OpenAI, Anthropic, and Google.
+
+Saved Codex tasks appear in **Tasks → Existing Codex tasks** with search, project filters and short summaries. Browsing is read-only and does not start AI work. [Task history guide](docs/GETTING_STARTED.md#find-tasks-you-already-have-in-codex).

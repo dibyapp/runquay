@@ -13,6 +13,50 @@ def path_key(path):
     return os.path.normcase(os.path.abspath(str(path))).rstrip("\\/")
 
 
+def read_codex_tasks(rpc, library, max_pages=10):
+    """Read bounded metadata only. Never resume a thread or request a model turn."""
+    tasks, seen, cursors = [], set(), set()
+    cursor = None
+    deadline = time.monotonic() + 20
+    roots = sorted(library, key=lambda p: len(path_key(p["path"])), reverse=True)
+    for _ in range(max_pages):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("Codex task discovery timed out")
+        params = {"limit": 100, "sortKey": "updated_at", "useStateDbOnly": True,
+                  "sourceKinds": ["cli", "vscode", "appServer", "exec", "unknown"], "archived": False}
+        if cursor:
+            params["cursor"] = cursor
+        result = rpc.call("thread/list", params, timeout=min(8, remaining))
+        if not isinstance(result.get("data"), list):
+            raise ValueError("Invalid Codex task list")
+        for thread in result["data"]:
+            if not isinstance(thread, dict) or thread.get("ephemeral") or thread.get("parentThreadId"):
+                continue
+            ident = thread.get("id")
+            if not isinstance(ident, str) or not ident or ident in seen:
+                continue
+            seen.add(ident)
+            cwd = thread.get("cwd")
+            cwd = cwd if isinstance(cwd, str) and Path(cwd).is_absolute() else ""
+            key = path_key(cwd) if cwd else ""
+            project = next((p for p in roots if key and
+                            (key == path_key(p["path"]) or key.startswith(path_key(p["path"]) + os.sep))), None)
+            updated = thread.get("updatedAt")
+            tasks.append({"id": ident, "title": str(thread.get("name") or "Untitled Codex task")[:240],
+                          "preview": str(thread.get("preview") or "")[:700],
+                          "updated_at": updated if isinstance(updated, (int, float)) else None,
+                          "catalog_id": project["id"] if project else "", "path": cwd,
+                          "project_name": project["name"] if project else Path(cwd).name if cwd else "No saved folder"})
+        cursor = result.get("nextCursor")
+        if not cursor:
+            return tasks, False
+        if not isinstance(cursor, str) or cursor in cursors:
+            raise ValueError("Invalid Codex task cursor")
+        cursors.add(cursor)
+    return tasks, True
+
+
 def saved_projects(state_file):
     """Read the app's saved local roots without editing any Codex state."""
     state = json.loads(Path(state_file).read_text(encoding="utf-8"))
@@ -60,6 +104,7 @@ class CodexBrain:
         self.sup = supervisor
         self.store = supervisor.store
         self.plan_lock = threading.Lock()
+        self.discovery_lock = threading.Lock()
 
     def discover(self, state_file=None):
         file = state_file or Path.home() / ".codex/.codex-global-state.json"
@@ -76,7 +121,38 @@ class CodexBrain:
                                (item["id"], item["name"], item["path"], item["source"], json.dumps(details), time.time()))
         self.store.set("catalog_checked", time.time())
         self.store.set("catalog_error", "")
+        if state_file is None:
+            self.discover_tasks()
         return len(entries)
+
+    def discover_tasks(self):
+        if not self.discovery_lock.acquire(blocking=False):
+            return
+        rpc = None
+        try:
+            if not self.sup.binary:
+                raise RuntimeError("Codex is not installed")
+            # Use the desktop's current local history, not isolated sign-in profiles.
+            from supervisor import Rpc
+            rpc = Rpc(self.sup.binary, Path.home() / ".codex", self.sup.children)
+            library = self.store.rows("SELECT * FROM catalog ORDER BY name")
+            tasks, limited = read_codex_tasks(rpc, library)
+            self.store.set("codex_tasks", tasks)
+            self.store.set("codex_tasks_limited", limited)
+            self.store.set("codex_tasks_checked", time.time())
+            self.store.set("codex_tasks_error", "")
+            for item in library:
+                recent = [t for t in tasks if t["catalog_id"] == item["id"]][:4]
+                self.store.execute("UPDATE catalog SET recent=? WHERE id=?", (json.dumps(recent), item["id"]))
+        except Exception:
+            # Never expose vendor stderr, credentials, or private filesystem errors.
+            self.store.set("codex_tasks_error", "Could not refresh Codex tasks. Check that Codex is installed, then try Refresh tasks. Previously found tasks remain visible.")
+        finally:
+            try:
+                if rpc:
+                    rpc.close()
+            finally:
+                self.discovery_lock.release()
 
     def add_folder(self, path, name=""):
         root = Path(str(path)).expanduser()
@@ -128,25 +204,9 @@ class CodexBrain:
         library = self.store.rows("SELECT * FROM catalog ORDER BY name")
         if request.get("catalog_id"):
             library = [p for p in library if p["id"] == request["catalog_id"]]
-        threads = []
-        try:
-            result = rpc.call("thread/list", {"limit": 100, "sortKey": "updated_at", "useStateDbOnly": True,
-                                              "sourceKinds": ["cli", "vscode", "appServer"]})
-            threads = result.get("data", [])
-        except Exception:
-            pass  # Saved roots and local files still provide real evidence.
         inventory = []
         for item in library:
-            recent = []
-            key = path_key(item["path"])
-            for thread in threads:
-                cwd = thread.get("cwd")
-                if cwd and (path_key(cwd) == key or path_key(cwd).startswith(key + os.sep)):
-                    recent.append({"id": thread.get("id"), "title": thread.get("name") or "Untitled Codex chat",
-                                   "preview": str(thread.get("preview", ""))[:700], "updated_at": thread.get("updatedAt")})
-                if len(recent) == 4:
-                    break
-            self.store.execute("UPDATE catalog SET recent=? WHERE id=?", (json.dumps(recent), item["id"]))
+            recent = json.loads(item["recent"])
             inventory.append({"catalog_id": item["id"], "name": item["name"], "path": item["path"],
                               "workspace": json.loads(item["details"]), "recent_chats": recent})
         previous = [json.loads(p["payload"])["title"] for p in self.store.rows("SELECT payload FROM suggestions ORDER BY created DESC LIMIT 30")]

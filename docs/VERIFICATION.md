@@ -78,3 +78,12 @@ Live Windows Python/Git installation was not executed because those were already
 ## Windows bootstrap verification - 0.5.1
 
 The native setup.cmd --check entry point detected existing compatible Python and Git without installing software, launching a model, running a .ps1 file or changing execution policy. Windows CI checks this entry point and the optional PowerShell helper. The default batch launcher installs only missing fixed WinGet packages and uses known vendor locations within its own environment after installation; OS agreement and permission prompts remain interactive. The dashboard and Node/Gemini installation checks from 0.5.0 still apply.
+
+
+## Existing Codex task discovery - 0.5.2
+
+Windows passed 74 Python tests (72 passed, two POSIX skips); Ubuntu 24.04 under WSL passed all 74. The 19 UI tests and JavaScript syntax check passed. Tests cover read-only API calls, cursor pagination, duplicate/child/ephemeral exclusion, longest-folder matching, bounded preview retention, metadata-field allowlisting, failure preservation, private error suppression and search/filter combinations.
+
+Actual in-app browser testing on the fresh Windows walkthrough found 42 saved Codex tasks. Project filtering returned eight tasks, an exact-title search returned one, and its read-only summary opened correctly. A new-task form opened without queuing work. Show more increased visible results from twelve to 24; refresh retained them; a saved-folder shortcut selected the correct project. The private walkthrough retained both account connections, unfinished onboarding, paused work, zero queued tasks and zero model runs. Original finished task history was preserved in its separate installation.
+
+The reviewed screenshot contains only the task-history header. Private titles, previews, project names and paths are outside its capture. Source/runtime separation and release image hashes are audited before publication. Native live history discovery was tested on Windows; macOS and Linux rely on deterministic/API-contract checks in CI until separate desktop integration runs occur. Other tool histories and isolated login-profile histories are not imported.

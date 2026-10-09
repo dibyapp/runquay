@@ -176,3 +176,19 @@ Open **Why this idea?** to inspect evidence, then **Review idea** to edit the go
 ## Automatic setup
 
 For a fresh computer, use **setup.cmd**, **setup.command** or **sh setup.sh** instead of manually preparing every dependency. The dashboard detects the OS, recommends an installed tool, lists missing software and offers **Install missing tools**. A new connection is created automatically on Next; sign-in remains with the vendor. [Full setup and permission guide](SETUP.md).
+
+## Find tasks you already have in Codex
+
+Open **Tasks** and look for **Existing Codex tasks**. Runquay reads saved conversation titles and short summaries from the current Codex history on this computer. You do not need to run **Find ideas** or start work first.
+
+1. Use **Search tasks** to find a task or project by name.
+2. Select a **Project** to narrow the list. **Show more** reveals the next twelve results.
+3. Expand **Task summary** to see the saved preview and folder. Open Codex to continue the original conversation.
+4. **Refresh tasks** checks local history again. Saved folders also have shortcuts to their existing Codex tasks.
+5. To create separate work in a connected project, use **Add a new task in this project**, write the new goal, and review it before saving. This creates a new Runquay task; it does not carry over the original conversation.
+
+The queue at the top contains tasks added in **this Runquay installation**. A fresh walkthrough or different data directory has a separate queue. Tasks in your earlier installation remain there; they are not copied or restarted automatically. Use **Finished** or **All tasks** in that installation to see completed/cancelled work.
+
+Discovery uses Codex's official read-only [`thread/list` API](https://learn.chatgpt.com/docs/app-server). It reads database metadata, excludes archived, ephemeral and child-agent tasks, and shows up to 1,000 recent tasks. This list includes saved tasks without a connected folder. It does not infer completion from a preview or report the live status of another Codex process. Other AI tools, other computers and isolated sign-in profiles keep their own history. If Codex is missing or a refresh fails, the app explains the failure and retains the previous list.
+
+Browsing history does not request an AI model turn or purchase a reset/credits. Titles, bounded previews and folder associations are cached in Runquay's private local data directory. They are not included in source releases. If you later request **Find ideas**, recent previews in the selected project scope can be included in that AI request.
