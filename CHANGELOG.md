@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0 - Saved tasks across AI tools
+
+- Combine Codex, Claude Code, Gemini CLI and readable Antigravity histories in Existing AI tasks, with project/tool filters, bounded summaries, folder shortcuts and per-source status.
+- Detect configured Claude/Gemini homes and registered profiles without reading authentication files or starting vendor processes. Preserve provider namespaces and use explicit working directories for folder matching.
+- Accept compatible metadata JSON imports for other tools, with size/schema validation, deduplication, field allowlisting and plain-text display.
+- Explain unknown folders, stale cached references, older encrypted formats and cloud-history limitations. New native/imported previews are not automatically sent to the advisor.
+- Add a detailed guide, an actual privacy-reviewed browser capture, native-format/security regressions and end-to-end browser checks.
+
+
 ## 0.5.2 - Existing Codex tasks
 
 - Show existing local Codex tasks without running the advisor: search, project filters, bounded summaries, refresh and folder shortcuts.

@@ -19,6 +19,9 @@ class BrainTests(unittest.TestCase):
         (self.workspace/'README.md').write_text('Existing project instructions',encoding='utf-8')
         (self.workspace/'AGENTS.md').write_text('Preserve these rules',encoding='utf-8')
         self.sup = Supervisor(self.base/'state','fixture-codex')
+        self.history_patch = patch('codex_brain.read_local_tasks', side_effect=lambda provider, profiles: ([], {'provider':provider,'state':'empty','tool':provider}))
+        self.history_patch.start()
+        self.addCleanup(self.history_patch.stop)
         self.state_file = self.base/'global.json'
         self.state_file.write_text(json.dumps({'local-projects':{'p1':{'id':'p1','name':'Existing project','rootPaths':[str(self.workspace)]}},'project-order':['p1']}),encoding='utf-8')
         self.sup.brain.discover(self.state_file)

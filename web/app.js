@@ -1,7 +1,7 @@
 "use strict";
 let state, token, resetDecision, activeLog, pollPromise = null, previousPending = new Set();
 let taskFilter = "active";
-let codexTaskLimit = 12;
+let historyTaskLimit = 12;
 let ideaFilter = "all", catalogSignature = "", ideaSignature = "";
 const $ = id => document.getElementById(id);
 const esc = text => String(text ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -65,16 +65,20 @@ function renderNextStep() {
   replaceCards("next-step", `<h2>${esc(next.title)}</h2><p>${esc(next.text)}</p>${next.href ? `<a class="button" href="${next.href}">${esc(next.label)}</a>` : `<button data-next-action="${next.action}">${esc(next.label)}</button>`}`);
 }
 
-function renderCodexTasks() {
-  const tasks = RunquayUI.codexTasks(state.codex_tasks || [], $("codex-task-search").value, $("codex-task-folder").value);
-  $("codex-task-count").textContent = (state.codex_tasks || []).length;
-  $("codex-task-status").textContent = state.codex_tasks_error || (state.codex_tasks_checked ? `Updated ${when(state.codex_tasks_checked)}.${state.codex_tasks_limited ? " Showing up to 1,000 recent tasks." : ""}` : "Checking local Codex history…");
-  replaceCards("codex-task-list", tasks.length ? tasks.slice(0,codexTaskLimit).map(t => {
+function renderSavedTasks() {
+  const all = state.history_tasks || [];
+  const tasks = RunquayUI.savedTasks(all, $("saved-task-search").value, $("saved-task-folder").value, $("saved-task-tool").value);
+  $("saved-task-count").textContent = all.length;
+  const sources=state.history_sources || [], checked=Math.max(0,...sources.map(s=>s.checked || 0));
+  const attention=sources.filter(s=>["partial","unavailable"].includes(s.state));
+  $("saved-task-status").textContent = checked ? `Updated ${when(checked)}.${attention.length ? " Some histories are incomplete; see History sources below." : ""}` : "Checking local task histories…";
+  replaceCards("history-sources",sources.map(s=>`<div class="history-source"><b>${esc(s.tool)} · ${s.count || 0} tasks</b><p>${esc(s.note)}</p></div>`).join(""));
+  replaceCards("saved-task-list", tasks.length ? tasks.slice(0,historyTaskLimit).map(t => {
     const folder = state.catalog.find(p=>p.id===t.catalog_id);
-    return `<article class="project codex-task"><div class="project-top"><h3>${esc(t.title)}</h3><span class="badge">Codex</span></div><p class="hint">${esc(t.project_name)} · ${esc(when(t.updated_at))}</p><details data-key="codex-${esc(t.id)}"><summary>Task summary</summary><p class="project-goal">${esc(t.preview || "No summary saved by Codex.")}</p>${t.path ? `<p class="catalog-path">${esc(t.path)}</p>` : ""}<p class="hint">This is saved chat history. Open Codex to continue the original conversation. Runquay does not infer whether its work is finished.</p>${folder && folder.details.exists && !folder.is_supervisor ? `<button class="secondary" data-action="work-existing" data-id="${esc(folder.id)}">Add a new task in this project</button>` : ""}</details></article>`;
-  }).join("") : empty(tasks.length === 0 && (state.codex_tasks || []).length ? "No matching Codex tasks" : "No saved Codex tasks found", "Shows non-archived tasks from the current Codex history on this computer. Separate login profiles and other AI tools have their own history."));
-  $("codex-tasks-more").hidden = tasks.length <= codexTaskLimit;
-  $("codex-tasks-more").textContent = `Show more (${Math.max(0,tasks.length-codexTaskLimit)} remaining)`;
+    return `<article class="project saved-task"><div class="project-top"><h3>${esc(t.title)}</h3><span class="badge">${esc(t.tool)}</span></div><p class="hint">${esc(t.project_name)} · ${esc(when(t.updated_at))}</p><details data-key="history-${esc(t.key)}"><summary>Task summary</summary><p class="project-goal">${esc(t.preview || "No summary available.")}</p>${t.path ? `<p class="catalog-path">${esc(t.path)}</p>` : ""}<p class="hint">${esc(t.source)}. Open ${esc(t.tool)} to continue the original conversation. Saved history does not tell Runquay whether its work is finished.</p>${folder && folder.details.exists && !folder.is_supervisor ? `<button class="secondary" data-action="work-history" data-id="${esc(t.key)}">Add a new task in this project</button>` : !folder && t.path ? `<button class="secondary" data-action="connect-history-folder" data-id="${esc(t.key)}">Connect this folder</button>` : ""}</details></article>`;
+  }).join("") : empty(all.length ? "No matching saved tasks" : "No saved tasks found", "Shows available local history from your AI tools. Cloud-only conversations and unsupported formats need a compatible metadata export."));
+  $("saved-tasks-more").hidden = tasks.length <= historyTaskLimit;
+  $("saved-tasks-more").textContent = `Show more (${Math.max(0,tasks.length-historyTaskLimit)} remaining)`;
 }
 
 function renderBrain() {
@@ -82,16 +86,16 @@ function renderBrain() {
   $("project-count").textContent = library.length;
   $("queue-count").textContent = state.projects.length;
   $("catalog-error").textContent = state.catalog_error || "Saved Codex folders refresh automatically. You can connect folders from any tool.";
-  const signature = JSON.stringify([library,(state.codex_tasks || []).map(t=>[t.id,t.catalog_id])]);
+  const signature = JSON.stringify([library,(state.history_tasks || []).map(t=>[t.id,t.catalog_id])]);
   if (catalogSignature !== signature) {
     catalogSignature = signature;
-    replaceCards("catalog-list",library.length ? library.map(p=>{const count=(state.codex_tasks || []).filter(t=>t.catalog_id===p.id).length;return `<article class="catalog-card"><div class="project-top"><h3>${esc(p.name)}</h3>${p.is_supervisor ? badge("app") : !p.details.exists ? badge("missing") : ""}</div>${count ? `<button class="text-button" data-action="view-codex-tasks" data-id="${esc(p.id)}">View ${count} existing Codex ${count===1 ? "task" : "tasks"}</button>` : '<p class="hint">No saved Codex tasks found in this folder.</p>'}<details data-key="folder-${p.id}"><summary>Folder details</summary><div class="catalog-path">${esc(p.path)}</div><div class="catalog-files">${esc(p.details.files.slice(0,7).join(" · ") || "No files found")}</div></details><div class="controls"><button class="secondary" data-action="work-existing" data-id="${esc(p.id)}" ${p.is_supervisor || !p.details.exists ? "disabled" : ""}>${p.is_supervisor ? "This app" : "Add task"}</button><button class="text-button" data-action="advise-project" data-id="${esc(p.id)}">Find ideas</button></div></article>`;}).join("") : empty("Connect an existing project","Choose Connect folder above to add a project you already have."));
+    replaceCards("catalog-list",library.length ? library.map(p=>{const count=(state.history_tasks || []).filter(t=>t.catalog_id===p.id).length;return `<article class="catalog-card"><div class="project-top"><h3>${esc(p.name)}</h3>${p.is_supervisor ? badge("app") : !p.details.exists ? badge("missing") : ""}</div>${count ? `<button class="text-button" data-action="view-saved-tasks" data-id="${esc(p.id)}">View ${count} existing ${count===1 ? "task" : "tasks"}</button>` : '<p class="hint">No saved tasks linked to this folder.</p>'}<details data-key="folder-${p.id}"><summary>Folder details</summary><div class="catalog-path">${esc(p.path)}</div><div class="catalog-files">${esc(p.details.files.slice(0,7).join(" · ") || "No files found")}</div></details><div class="controls"><button class="secondary" data-action="work-existing" data-id="${esc(p.id)}" ${p.is_supervisor || !p.details.exists ? "disabled" : ""}>${p.is_supervisor ? "This app" : "Add task"}</button><button class="text-button" data-action="advise-project" data-id="${esc(p.id)}">Find ideas</button></div></article>`;}).join("") : empty("Connect an existing project","Choose Connect folder above to add a project you already have."));
     const selected = $("advisor-target").value;
     $("advisor-target").innerHTML = '<option value="">All my projects</option>' + library.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
     if(library.some(p=>p.id===selected)) $("advisor-target").value = selected;
-    const taskFolder = $("codex-task-folder").value;
-    $("codex-task-folder").innerHTML = '<option value="">All projects</option>' + library.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
-    if(library.some(p=>p.id===taskFolder)) $("codex-task-folder").value = taskFolder;
+    const taskFolder = $("saved-task-folder").value;
+    $("saved-task-folder").innerHTML = '<option value="">All projects</option>' + library.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
+    if(library.some(p=>p.id===taskFolder)) $("saved-task-folder").value = taskFolder;
   }
   const advisor = state.advisor;
   const busy = advisor && ["queued","running"].includes(advisor.state);
@@ -114,7 +118,11 @@ function render() {
   $("queued").textContent = state.projects.filter(p=>p.state === "queued").length;
   $("ready").innerHTML = `${state.profiles.filter(p=>p.eligible && p.enabled).length} <em>/ ${state.profiles.length}</em>`;
   $("completed").textContent = state.projects.filter(p=>p.state === "complete").length;
-  renderBrain(); renderTasks(); renderCodexTasks(); renderNextStep();
+  const historyTool=$("saved-task-tool").value;
+  const historyTools=["Codex","Claude Code","Gemini CLI","Antigravity",...new Set((state.history_tasks || []).map(t=>t.tool))];
+  const toolOptions='<option value="">All tools</option>' + [...new Set(historyTools)].map(name=>`<option value="${esc(name)}">${esc(name)} (${(state.history_tasks || []).filter(t=>t.tool===name).length})</option>`).join("");
+  if($("saved-task-tool")._options !== toolOptions) {$("saved-task-tool").innerHTML=toolOptions;$("saved-task-tool")._options=toolOptions;$("saved-task-tool").value=historyTools.includes(historyTool) ? historyTool : "";}
+  renderBrain(); renderTasks(); renderSavedTasks(); renderNextStep();
   if(typeof beginnerNote === "function") beginnerNote();
   if (typeof renderSetup === "function") renderSetup();
   $("connection").innerHTML = '<span class="dot"></span> Connected';
@@ -164,9 +172,20 @@ $("home-new").onclick = () => showProjectForm();
 $("home-existing").onclick = () => {$("project-library").open = true; location.hash = "#projects";};
 $("advisor-start").onclick = () => act("/api/control",{action:"start"});
 $("sync-projects").onclick = async () => { if(await act("/api/catalog/refresh", {})) toast("Saved projects refreshed"); };
-$("refresh-codex-tasks").onclick = async () => { const button=$("refresh-codex-tasks"); button.disabled=true; button.textContent="Refreshing…"; try {await api("/api/catalog/refresh",{}); catalogSignature=""; await refresh(true);} catch(error) {toast(error.message);} finally {button.disabled=false;button.textContent="Refresh tasks";} };
-$("codex-task-search").oninput = $("codex-task-folder").onchange = () => {codexTaskLimit=12;renderCodexTasks();};
-$("codex-tasks-more").onclick = () => {codexTaskLimit+=12;renderCodexTasks();};
+$("refresh-saved-tasks").onclick = async () => { const button=$("refresh-saved-tasks"); button.disabled=true; button.textContent="Refreshing…"; try {await api("/api/catalog/refresh",{}); catalogSignature=""; await refresh(true);} catch(error) {toast(error.message);} finally {button.disabled=false;button.textContent="Refresh tasks";} };
+$("saved-task-search").oninput = $("saved-task-folder").onchange = $("saved-task-tool").onchange = () => {historyTaskLimit=12;renderSavedTasks();};
+$("import-history").onclick = () => $("history-import-dialog").showModal();
+$("choose-history-file").onclick = () => $("history-file").click();
+$("history-file").onchange = async event => {
+  const file=event.target.files[0]; if(!file) return;
+  const button=$("choose-history-file");button.disabled=true;
+  try {
+    if(file.size>60000) throw new Error("Choose a metadata export smaller than 60 KB (up to 100 tasks).");
+    let payload;try {payload=JSON.parse(await file.text());} catch(error) {throw new Error("Choose a valid Runquay history JSON export.");}
+    const result=await api("/api/history/import",payload);$("history-import-dialog").close();catalogSignature="";await refresh(true);toast(`${result.imported} task records imported. No AI work started.`);
+  } catch(error) {toast(error.message);} finally {button.disabled=false;event.target.value="";}
+};
+$("saved-tasks-more").onclick = () => {historyTaskLimit+=12;renderSavedTasks();};
 $("advisor-target").onchange = () => { if(state) renderBrain(); };
 $("advisor-form").onsubmit = async event => { event.preventDefault(); const data = Object.fromEntries(new FormData(event.target)); await act("/api/advisor", data); };
 $("project-form").onsubmit = async event => {
@@ -190,7 +209,9 @@ document.addEventListener("click", async event => {
   const element = event.target.closest("[data-action]"); if(!element) return;
   const {action,id} = element.dataset;
   if(action === "work-existing") showProjectForm(id);
-  if(action === "view-codex-tasks") {$("codex-task-search").value="";$("codex-task-folder").value=id;codexTaskLimit=12;renderCodexTasks();$("codex-history").scrollIntoView({block:"start"});}
+  if(action === "work-history") {const task=state.history_tasks.find(t=>t.key===id);if(task) {showProjectForm(task.catalog_id);if(task.provider!=="custom") $("project-form").elements.provider.value=task.provider;}}
+  if(action === "connect-history-folder") {const task=state.history_tasks.find(t=>t.key===id);if(task) {$("import-form").reset();$("import-form").elements.path.value=task.path;$("import-dialog").showModal();}}
+  if(action === "view-saved-tasks") {$("saved-task-search").value="";$("saved-task-tool").value="";$("saved-task-folder").value=id;historyTaskLimit=12;renderSavedTasks();$("saved-history").scrollIntoView({block:"start"});}
   if(action === "review-suggestion") showProjectForm("",id);
   if(action === "dismiss-suggestion") await act("/api/suggestion", {action:"dismiss",id});
   if(action === "advise-project") { $("advisor-target").value = id; await act("/api/advisor",{catalog_id:id,focus:$("advisor-form").elements.focus.value,provider:$("advisor-provider").value}); location.hash="#advisor"; }

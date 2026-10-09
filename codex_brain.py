@@ -7,6 +7,7 @@ import time
 import threading
 import uuid
 import providers
+from task_history import read_local_tasks, task, bind_tasks, import_tasks, NAMES
 
 
 def path_key(path):
@@ -152,7 +153,53 @@ class CodexBrain:
                 if rpc:
                     rpc.close()
             finally:
-                self.discovery_lock.release()
+                try:
+                    self.discover_other_tasks()
+                finally:
+                    self.discovery_lock.release()
+
+    def discover_other_tasks(self):
+        profiles = self.store.rows("SELECT provider,home FROM profiles")
+        previous = self.store.setting("other_tasks") or []
+        results, statuses = [], []
+        for provider in ("claude", "gemini", "antigravity"):
+            try:
+                items, status = read_local_tasks(provider, profiles)
+            except Exception:
+                items = []
+                status = {"provider": provider, "tool": NAMES[provider], "state": "unavailable", "checked": time.time(),
+                          "note": "Could not refresh local history. Previously found tasks remain visible."}
+            if status["state"] == "unavailable":
+                items = [t for t in previous if t["provider"] == provider]
+            status["count"] = len(items)
+            results.extend(items)
+            statuses.append(status)
+        self.store.set("other_tasks", results)
+        self.store.set("history_sources", statuses)
+
+    def history_state(self, library):
+        codex = [task("codex", t.get("id"), t.get("title"), t.get("preview"), t.get("path"), t.get("updated_at"))
+                 for t in self.store.setting("codex_tasks") or []]
+        imported = self.store.setting("imported_tasks") or []
+        tasks = bind_tasks([*codex, *(self.store.setting("other_tasks") or []), *imported], library)
+        error = self.store.setting("codex_tasks_error")
+        checked = self.store.setting("codex_tasks_checked")
+        codex_status = {"provider": "codex", "tool": "Codex", "count": len([t for t in tasks if t["provider"] == "codex"]),
+                        "state": "unavailable" if error else "ready" if checked else "checking", "checked": checked,
+                        "note": error or "Current Codex local history; up to 1,000 recent tasks.",
+                        "limited": bool(self.store.setting("codex_tasks_limited"))}
+        sources = [codex_status, *(self.store.setting("history_sources") or []),
+                   {"provider": "custom", "tool": "Other tools", "count": len(imported), "state": "imported" if imported else "empty",
+                    "note": "Import a Runquay history JSON export from another tool. Imported metadata stays local."}]
+        return {"history_tasks": tasks, "history_sources": sources}
+
+    def import_history(self, payload):
+        items = import_tasks(payload)
+        with self.discovery_lock:
+            previous = self.store.setting("imported_tasks") or []
+            merged = bind_tasks([*items, *previous], [])[:1000]
+            self.store.set("imported_tasks", merged)
+        return len(items)
 
     def add_folder(self, path, name=""):
         root = Path(str(path)).expanduser()

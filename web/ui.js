@@ -1,9 +1,9 @@
 "use strict";
 // Pure display decisions shared by the browser and navigation regression tests.
 const RunquayUI = (() => {
-  function codexTasks(tasks, search="", folder="") {
+  function savedTasks(tasks, search="", folder="", tool="") {
     const query=search.trim().toLocaleLowerCase();
-    return tasks.filter(t=>(!folder || t.catalog_id===folder) && (!query || `${t.title} ${t.project_name}`.toLocaleLowerCase().includes(query)));
+    return tasks.filter(t=>(!folder || t.catalog_id===folder) && (!tool || t.tool===tool) && (!query || `${t.title} ${t.project_name} ${t.tool || ""}`.toLocaleLowerCase().includes(query)));
   }
   function recommendedTool(state) {
     const ready=(state.profiles||[]).find(p=>p.enabled && p.eligible && (state.tools||[]).some(t=>t.id===p.provider && t.advisor));
@@ -89,6 +89,6 @@ const RunquayUI = (() => {
     return {browser:Boolean(profile?.instructions?.browser_login),waiting,complete,
       blocked:Boolean(state.login_in_progress),message:own?.message || ""};
   }
-  return {codexTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
+  return {savedTasks,codexTasks:savedTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
 })();
 if (typeof module !== "undefined") module.exports = RunquayUI;

@@ -1,5 +1,14 @@
 # Actual Runquay screenshots and test record
 
+## Existing AI tasks - 0.6.0, 9 October 2026
+
+This is an actual JPEG captured from the running Windows walkthrough in the Codex in-app browser after native history detection and end-to-end filter/import checks. It shows 107 saved local tasks and the new AI tool filter. The local queue remains empty and paused.
+
+![Actual combined AI task history controls](images/ai-task-history.jpg)
+
+The capture ends before task rows, excluding personal titles, previews, project names, folders and account information. It is not generated or reconstructed. Browser checks covered Claude, Gemini and Antigravity filters, summaries, Claude task review, refresh retention, saved-folder shortcuts, invalid import rejection and plain-text rendering of a test-only imported title. The temporary import was removed before capture. [Detailed guide](TASK_HISTORY.md) Â· [Verification](VERIFICATION.md).
+
+
 ## Existing Codex tasks - 0.5.2, 9 October 2026
 
 Actual capture of the running Windows app in the Codex in-app browser after read-only discovery found 42 saved tasks. The header shows search, project filtering and refresh. The capture covers the header only so private task titles, previews, folder names and paths stay outside the image. It contains no account email or credentials and was reviewed and hash-pinned.

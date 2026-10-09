@@ -14,6 +14,7 @@
     "platform_support.py",
     "service_setup.py",
     "codex_brain.py",
+    "task_history.py",
     "security.py",
     "release.py",
     "release-manifest.json",
@@ -107,6 +108,9 @@
     ],
     "docs/images/codex-task-history.jpg": [
       "46da68209030de3587b726cbdeb0513bfcce00f22effcca4932b0a06550f6353"
+    ],
+    "docs/images/ai-task-history.jpg": [
+      "1575089e87873aa33f3241700ebff07031bd367f7f0f5862bc42415ca37a54bd"
     ]
   }
 }

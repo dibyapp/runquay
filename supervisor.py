@@ -903,6 +903,7 @@ class Supervisor:
             item["payload"] = json.loads(item["payload"])
         advisor = self.store.one("SELECT id,state,note,checkpoint FROM projects WHERE kind='advisor' ORDER BY created DESC LIMIT 1")
         return {"running": self.store.setting("running"), "quota_ceiling": self.store.setting("quota_ceiling"),
+                **self.brain.history_state(catalog),
                 "catalog": catalog, "catalog_error": self.store.setting("catalog_error"), "suggestions": suggestions,
                 "codex_tasks": self.store.setting("codex_tasks") or [],
                 "codex_tasks_error": self.store.setting("codex_tasks_error") or "",
@@ -1027,6 +1028,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     raise ValueError("Your computer could not open the folder. Find it under Task details and checks.") from None
             elif path == "/api/catalog/refresh":
                 sup.brain.discover()
+            elif path == "/api/history/import":
+                return self.send_data({"imported": sup.brain.import_history(data)}, 201)
             elif path == "/api/catalog/add":
                 ident = sup.brain.add_folder(data.get("path", ""), data.get("name", ""))
                 return self.send_data({"id": ident}, 201)

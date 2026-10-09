@@ -24,3 +24,4 @@ auth.json
 .DS_Store
 Thumbs.db
 .edit_*.py
+.edit_*.ps1

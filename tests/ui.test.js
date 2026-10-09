@@ -151,3 +151,13 @@ test("existing Codex tasks search and project filters stay separate from queue s
   assert.equal(ui.codexTasks(tasks).length,3);
   assert.equal(tasks.length,3);
 });
+
+test("all vendor histories filter by tool without mixing providers",()=>{
+  const tasks=[{id:"same",title:"Homepage",project_name:"Shop",catalog_id:"shop",tool:"Claude Code"},
+    {id:"same",title:"Homepage",project_name:"Shop",catalog_id:"shop",tool:"Gemini CLI"},
+    {id:"three",title:"Notes",project_name:"Unknown",catalog_id:"",tool:"Antigravity"}];
+  assert.equal(ui.savedTasks(tasks,"","","Claude Code").length,1);
+  assert.equal(ui.savedTasks(tasks,"gemini").length,1);
+  assert.equal(ui.savedTasks(tasks,"homepage","shop","Gemini CLI").length,1);
+  assert.equal(ui.savedTasks(tasks,"homepage","shop","Antigravity").length,0);
+});

@@ -384,6 +384,20 @@ class HttpTests(unittest.TestCase):
         self.assertFalse(self.sup.store.setting("running"))
         self.assertTrue(Store(self.temp.name).setting("onboarded"))
 
+    def test_history_import_is_local_authorized_metadata_only(self):
+        payload={"version":1,"tool":"Other editor","tasks":[{"id":"one","title":"A saved task","email":"fixture@example.com","turns":["excluded"]}]}
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            self.post("/api/history/import",payload,"https://attacker.example")
+        self.assertEqual(ctx.exception.code,403)
+        self.assertEqual(self.post("/api/history/import",payload)["imported"],1)
+        state=self.sup.state()
+        self.assertEqual(state["history_tasks"][0]["tool"],"Other editor")
+        self.assertFalse({"email","turns"}&state["history_tasks"][0].keys())
+        self.assertEqual(state["projects"],[])
+        self.assertEqual(state["runs"],[])
+        with self.assertRaises(urllib.error.HTTPError):self.post("/api/history/import",{"version":1,"tool":"Editor","tasks":[{}]})
+        self.assertEqual(len(self.sup.store.setting("imported_tasks")),1)
+
     def test_onboarding_rejects_relative_workspace_and_unknown_provider(self):
         for data in ({"acknowledged":True,"workspace_root":"relative"}, {"acknowledged":True,"provider":"unknown"}):
             with self.assertRaises(urllib.error.HTTPError): self.post("/api/onboarding",data)

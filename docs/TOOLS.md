@@ -29,9 +29,13 @@ Native permissions are not a guarantee of total filesystem/network containment. 
 
 ## Antigravity
 
-This adapter targets **Antigravity CLI (`agy`)**, not the graphical editor. Print mode uses cached vendor credentials and JSON/schema output; terminal sandboxing is requested. Permission-required commands can be soft-denied in headless mode. Configure narrow vendor permission rules yourself, never a blanket permission bypass.
+The execution adapter targets **Antigravity CLI (`agy`)**. Separately, the read-only history adapter can display available local desktop, IDE and CLI transcripts; this does not enable editor automation or decrypt older conversation files. [History sources and limitations](TASK_HISTORY.md). Print mode uses cached vendor credentials and JSON/schema output; terminal sandboxing is requested. Permission-required commands can be soft-denied in headless mode. Configure narrow vendor permission rules yourself, never a blanket permission bypass.
 
 No isolated-home override has been established from the inspected official interface. Runquay therefore accepts only the current login for the built-in adapter. Multiple isolated Antigravity accounts require a custom wrapper with a verified isolation mechanism. The advisor is disabled because a reliable read-only policy has not been established. No live account validation was available here.
+
+## Saved conversation history
+
+**Tasks → Existing AI tasks** detects native local Codex, Claude Code, Gemini CLI and available Antigravity histories. History detection does not require another connection or provider invocation. Other tools can import the documented metadata JSON format; execution through a custom wrapper remains a separate setup. [History guide](TASK_HISTORY.md).
 
 ## Any compatible headless tool
 
