@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1 - Windows first-launch compatibility
+
+- setup.cmd prepares missing Python/Git directly through fixed WinGet commands, without executing a PowerShell script file or changing execution policy.
+- Known vendor paths are refreshed only within the launcher after installation; existing tools remain reused.
+- Windows CI checks both the native batch entry point and the optional PowerShell helper without installing software.
+
+
 ## 0.5.0 — OS-aware automatic setup
 
 - First-launch setup files detect Windows, macOS or Linux and prepare missing Python/Git with the matching package manager.

@@ -28,7 +28,9 @@ jobs:
       - run: node --test tests/ui.test.js
       - name: Check Windows first-launch setup without installing
         if: runner.os == 'Windows'
-        run: powershell.exe -NoProfile -File Setup-Runquay.ps1 -CheckOnly
+        run: |
+          cmd /c setup.cmd --check
+          powershell.exe -NoProfile -File Setup-Runquay.ps1 -CheckOnly
       - name: Check Unix first-launch setup without installing
         if: runner.os != 'Windows'
         run: sh setup.sh --check

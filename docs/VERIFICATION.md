@@ -1,6 +1,6 @@
 # Verification record
 
-Current interface verification: 2026-10-09, version 0.5.0. The 70-test Python suite completed on Windows (68 passed, two platform/permission skips) and Ubuntu 24.04 under WSL (70 passed). Eighteen JavaScript UI tests cover the prior workflow and recommendations for verified accounts, installed tools and a fresh computer. Test commands and results are recorded separately from CI and account-dependent checks.
+Current interface verification: 2026-10-09, version 0.5.1. The 70-test Python suite completed on Windows (68 passed, two platform/permission skips) and Ubuntu 24.04 under WSL (70 passed). Eighteen JavaScript UI tests cover the prior workflow and recommendations for verified accounts, installed tools and a fresh computer. Test commands and results are recorded separately from CI and account-dependent checks.
 
 | Check | Status |
 | --- | --- |
@@ -73,3 +73,8 @@ Next created a connection without a name or path; the wizard progressed to the s
 Deterministic setup tests cover Windows/macOS/Linux fixed Git package recipes, OS permission boundaries, unsupported CPU/platform handling, checksum failure, archive traversal and special-file rejection, fixed npm package/registry/user prefix, setup concurrency, error recovery, native Codex reuse without Node, and local-session/CSRF protection. Work and login are blocked during setup. First-launch detection ran on Windows and Ubuntu without installation; CI repeats the detection check on all three OS families.
 
 Live Windows Python/Git installation was not executed because those were already present. Native macOS/Homebrew installation, Linux privileged package installation, provider sign-in and other vendor installation remain separate desktop integration checks. The setup guide describes restricted systems, older Python distributions and unsupported package managers honestly.
+
+
+## Windows bootstrap verification - 0.5.1
+
+The native setup.cmd --check entry point detected existing compatible Python and Git without installing software, launching a model, running a .ps1 file or changing execution policy. Windows CI checks this entry point and the optional PowerShell helper. The default batch launcher installs only missing fixed WinGet packages and uses known vendor locations within its own environment after installation; OS agreement and permission prompts remain interactive. The dashboard and Node/Gemini installation checks from 0.5.0 still apply.
