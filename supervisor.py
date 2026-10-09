@@ -322,6 +322,9 @@ class Supervisor:
         self.account_lock = threading.Lock()
         self.login_lock = threading.Lock()
         self.login_in_progress = False
+        self.login_status = None
+        self.login_proc = None
+        self.login_cancel = threading.Event()
         self.worker = None
         self.last_profile = None
         self.awake_proc = None
@@ -372,6 +375,8 @@ class Supervisor:
 
     def remove_profile(self, ident):
         # Unlink only. Keep vendor auth and historical logs recoverable.
+        if self.login_in_progress and self.login_status and self.login_status["profile_id"] == ident:
+            raise ValueError("Cancel sign-in before removing this connection")
         with self.idle_account():
             self.store.execute("DELETE FROM profiles WHERE id=?", (ident,))
             self.store.execute("UPDATE decisions SET state='expired' WHERE profile_id=? AND state='pending'", (ident,))
@@ -382,7 +387,9 @@ class Supervisor:
         var = providers.TOOLS[provider]["home_var"]
         env = {var: profile["home"]} if var else {}
         args = [executable, "login"] if provider == "codex" else [executable, "auth", "login"] if provider == "claude" else [executable]
-        return {"login": command_display(args, env), "note": "Run in your terminal; finish vendor sign-in there. Credentials are never entered in Runquay."}
+        browser_login = provider == "codex" and Path(profile["home"]).resolve() != (Path.home() / ".codex").resolve() and bool(self.profile_binary(profile))
+        return {"login": command_display(args, env), "browser_login": browser_login,
+                "note": "Run in your terminal; finish vendor sign-in there. Credentials are never entered in Runquay."}
 
     def refresh_external(self, profile):
         executable = self.profile_binary(profile)
@@ -590,31 +597,55 @@ class Supervisor:
             raise ValueError("Use the displayed terminal sign-in instructions, then Verify connection")
         if Path(profile["home"]).resolve() == (Path.home() / ".codex").resolve():
             raise ValueError("Account 1 uses the app's existing login. Sign in through Codex, then Refresh accounts.")
+        executable = self.profile_binary(profile)
+        if not executable:
+            raise ValueError("Install Codex before starting browser sign-in")
+        if self.store.one("SELECT id FROM runs WHERE profile_id=? AND state='running'", (ident,)):
+            raise ValueError("Pause work before signing in to this account")
         if not self.login_lock.acquire(blocking=False):
             raise ValueError("Finish the current browser sign-in first")
+        self.login_cancel.clear()
+        self.login_status = {"profile_id": ident, "state": "waiting", "message": "Finish sign-in in the browser that opens, then return here."}
         self.login_in_progress = True
 
         def perform():
             proc = None
             try:
                 self.store.execute("UPDATE profiles SET error='Complete sign-in in the browser' WHERE id=?", (ident,))
-                proc = subprocess.Popen(providers.native_command([self.profile_binary(profile), "login", "-c", 'forced_login_method="chatgpt"', "-c", 'cli_auth_credentials_store="keyring"']),
+                if self.login_cancel.is_set():
+                    raise InterruptedError("Sign-in cancelled. You can try again when ready.")
+                proc = subprocess.Popen(providers.native_command([executable, "login", "-c", 'forced_login_method="chatgpt"', "-c", 'cli_auth_credentials_store="keyring"']),
                                         env=profile_env(profile["home"]), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                         cwd=ROOT, **child_options())
+                self.login_proc = proc
                 self.children.add(proc)
+                if self.login_cancel.is_set():
+                    stop_tree(proc)
                 code = proc.wait(timeout=300)
+                if self.login_cancel.is_set():
+                    raise InterruptedError("Sign-in cancelled. You can try again when ready.")
                 if code:
                     raise ValueError(f"Codex login exited with code {code}; retry Sign in")
                 self.refresh(profile)
+                self.login_status = {"profile_id": ident, "state": "complete", "message": "Signed in. Your subscription connection has been checked."}
                 self.store.event(f"Signed in: {profile['name']}")
             except Exception as exc:
-                self.store.execute("UPDATE profiles SET error=? WHERE id=?", (str(exc), ident))
+                message = "Sign-in took too long. Try again or use the terminal steps." if isinstance(exc, subprocess.TimeoutExpired) else redact(str(exc))[:500]
+                self.store.execute("UPDATE profiles SET error=? WHERE id=?", (message, ident))
+                self.login_status = {"profile_id": ident, "state": "cancelled" if self.login_cancel.is_set() else "error", "message": message}
             finally:
                 stop_tree(proc)
+                self.login_proc = None
                 self.login_in_progress = False
                 self.login_lock.release()
                 self.wake.set()
         threading.Thread(target=perform, daemon=True).start()
+
+    def cancel_login(self, ident):
+        if not self.login_in_progress or not self.login_status or self.login_status["profile_id"] != ident:
+            raise ValueError("No browser sign-in is active for this account")
+        self.login_cancel.set()
+        stop_tree(self.login_proc)
 
     def begin(self):
         self.worker = threading.Thread(target=self.loop, daemon=True, name="autowork-worker")
@@ -879,7 +910,7 @@ class Supervisor:
                 "runs": self.store.rows("SELECT * FROM runs ORDER BY started DESC LIMIT 40"),
                 "decisions": self.store.rows("SELECT * FROM decisions ORDER BY created DESC LIMIT 40"),
                 "events": self.store.rows("SELECT * FROM events ORDER BY id DESC LIMIT 40"),
-                "login_in_progress": self.login_in_progress}
+                "login_in_progress": self.login_in_progress, "login_status": self.login_status}
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -1047,6 +1078,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     threading.Thread(target=lambda: sup.refresh_one_safely(profile), daemon=True).start()
                 elif data["action"] == "login":
                     sup.login(data["id"])
+                elif data["action"] == "cancel_login":
+                    sup.cancel_login(data["id"])
                 elif data["action"] == "toggle":
                     sup.store.execute("UPDATE profiles SET enabled=? WHERE id=?", (int(bool(data["enabled"])), data["id"]))
                 else:

@@ -106,3 +106,16 @@ test("onboarding selects a verified enabled account for the chosen tool",()=>{
   assert.equal(ui.setupAccount(state,"codex"),state.profiles[0]);
   assert.equal(ui.setupAccount(state,"gemini"),null);
 });
+
+test("browser sign-in progress is scoped to the selected account",()=>{
+  const profile={id:"one",instructions:{browser_login:true}};
+  assert.equal(ui.loginView({},profile).browser,true);
+  const state={login_in_progress:true,login_status:{profile_id:"two",state:"waiting",message:"Finish in browser"}};
+  assert.equal(ui.loginView(state,profile).waiting,false);
+  assert.equal(ui.loginView(state,profile).blocked,true);
+  state.login_status.profile_id="one";
+  assert.equal(ui.loginView(state,profile).waiting,true);
+  state.login_in_progress=false;state.login_status.state="complete";
+  assert.equal(ui.loginView(state,profile).complete,true);
+  assert.equal(ui.loginView({},{}).browser,false);
+});

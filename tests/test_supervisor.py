@@ -95,6 +95,60 @@ class RelativeDataTests(unittest.TestCase):
 
 
 class LifecycleTests(unittest.TestCase):
+    def test_browser_login_uses_isolated_vendor_auth_and_reports_completion(self):
+        commands=[]
+        class ImmediateThread:
+            def __init__(self,target,**kwargs): self.target=target
+            def start(self): self.target()
+        class LoginProcess:
+            def wait(self,timeout): return 0
+        def spawn(command,**kwargs):
+            commands.append((command,kwargs))
+            return LoginProcess()
+        with patch('supervisor.threading.Thread',ImmediateThread), patch('supervisor.subprocess.Popen',side_effect=spawn), patch.object(self.sup.children,'add'), patch('supervisor.stop_tree'), patch.object(self.sup,'refresh',return_value={}):
+            self.sup.login(self.profile['id'])
+        command,kwargs=commands[0]
+        self.assertIn('login',command)
+        self.assertIn('forced_login_method="chatgpt"',command)
+        self.assertIn('cli_auth_credentials_store="keyring"',command)
+        self.assertEqual(kwargs['env']['CODEX_HOME'],self.profile['home'])
+        self.assertNotIn('shell',kwargs)
+        self.assertEqual(self.sup.login_status['state'],'complete')
+        self.assertFalse(self.sup.login_in_progress)
+        self.assertTrue(self.sup.login_lock.acquire(blocking=False))
+        self.sup.login_lock.release()
+
+    def test_browser_login_cancellation_and_failure_release_the_lock(self):
+        class ImmediateThread:
+            def __init__(self,target,**kwargs): self.target=target
+            def start(self): self.target()
+        class LoginProcess:
+            def wait(inner,timeout):
+                with self.assertRaises(ValueError): self.sup.cancel_login('other-account')
+                with self.assertRaises(ValueError): self.sup.remove_profile(self.profile['id'])
+                self.sup.cancel_login(self.profile['id'])
+                return 1
+        with patch('supervisor.threading.Thread',ImmediateThread), patch('supervisor.subprocess.Popen',return_value=LoginProcess()), patch.object(self.sup.children,'add'), patch('supervisor.stop_tree'), patch.object(self.sup,'refresh') as refresh:
+            self.sup.login(self.profile['id'])
+            refresh.assert_not_called()
+        self.assertEqual(self.sup.login_status['state'],'cancelled')
+        self.assertFalse(self.sup.login_in_progress)
+        with self.assertRaises(ValueError): self.sup.cancel_login(self.profile['id'])
+        with patch('supervisor.threading.Thread',ImmediateThread), patch('supervisor.subprocess.Popen',side_effect=OSError('Cannot start')), patch('supervisor.stop_tree'):
+            self.sup.login(self.profile['id'])
+        self.assertEqual(self.sup.login_status['state'],'error')
+        self.assertFalse(self.sup.login_in_progress)
+
+    def test_browser_login_does_not_replace_shared_app_credentials(self):
+        ident=self.sup.add_profile({'provider':'codex','name':'Current','existing':True})
+        with patch('supervisor.subprocess.Popen') as spawn:
+            with self.assertRaises(ValueError): self.sup.login(ident)
+            spawn.assert_not_called()
+        self.sup.login_lock.acquire()
+        try:
+            with self.assertRaises(ValueError): self.sup.login(self.profile['id'])
+        finally: self.sup.login_lock.release()
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="autowork-tests-")
         self.sup = Supervisor(Path(self.temp.name), "test-codex")
@@ -254,6 +308,18 @@ class HttpTests(unittest.TestCase):
         request.add_header("X-AutoWork-CSRF", state["csrf"])
         self.client.open(request).close()
         self.assertTrue(self.sup.store.setting("running"))
+
+    def test_browser_login_and_cancel_require_local_csrf(self):
+        self.client.open(self.url + '/').close()
+        for action, method in (('login', 'login'), ('cancel_login', 'cancel_login')):
+            request = urllib.request.Request(self.url + '/api/account', data=json.dumps({'action':action,'id':'fixture-account'}).encode(), headers={'Content-Type':'application/json'})
+            with patch.object(self.sup, method) as callback:
+                with self.assertRaises(urllib.error.HTTPError) as ctx: self.client.open(request)
+                self.assertEqual(ctx.exception.code, 403)
+                callback.assert_not_called()
+                request.add_header('X-AutoWork-CSRF', self.server.token)
+                self.client.open(request).close()
+                callback.assert_called_once_with('fixture-account')
 
     def test_rebinding_host_rejected(self):
         request = urllib.request.Request(self.url + "/", headers={"Host":"attacker.example"})

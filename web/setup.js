@@ -23,6 +23,7 @@ function renderSetup() {
   $("setup-accounts").innerHTML=profile && !profile.eligible ? `<div class="controls"><button type="button" class="secondary" data-action="login-guide" data-id="${esc(profile.id)}">Sign-in guide</button><button type="button" class="secondary" data-action="verify" data-id="${esc(profile.id)}">Check connection</button></div><details class="advanced"><summary>Connection details</summary><p>${esc(profile.reason || profile.error || "Checking sign-in and allowance…")}</p></details>` : "";
   $("setup-connect-account").hidden=Boolean(profile);
   if($("account-dialog").open) drawAccount();
+  if($("login-guide").open) drawLoginGuide();
   $("setup-project-count").textContent = `${state.catalog.length} existing project folders found. You can use them from Tasks.`;
   if(!$("setup-workspace").value) $("setup-workspace").value = state.workspace_root;
   if(!state.onboarded && !setupDismissed && !$("setup-dialog").open) openSetup();
@@ -108,8 +109,32 @@ $("import-form").onsubmit = async event => {
 function openLoginGuide(id) {
   const profile=state.profiles.find(p=>p.id===id); if(!profile) return;
   loginProfile=id; $("login-command").textContent=profile.instructions.login;
-  $("login-note").textContent=profile.instructions.note; $("login-guide").showModal();
+  $("login-note").textContent=profile.instructions.note; $("login-fallback").open=false;
+  drawLoginGuide(); $("login-guide").showModal();
 }
+function drawLoginGuide() {
+  const profile=state.profiles.find(p=>p.id===loginProfile); if(!profile) return;
+  const view=RunquayUI.loginView(state,profile);
+  $("login-title").textContent=view.browser ? "Sign in with Codex" : "Sign in to your AI";
+  $("login-intro").textContent=view.browser ? "Continue with your ChatGPT account on OpenAI's website. Runquay checks the connection afterward." : profile.current_login && profile.provider==="codex" ? "This connection uses your Codex app login. Sign in through Codex, or add another account for a separate browser sign-in." : "Use this tool's sign-in instructions below. Each run still needs your approval when billing is unverified.";
+  $("browser-login").hidden=!view.browser;
+  $("browser-login").disabled=loginStarting || view.blocked;
+  $("browser-login").textContent=view.complete ? "Done" : view.waiting ? "Waiting for sign-in…" : "Sign in with Codex";
+  $("cancel-browser-login").hidden=!view.waiting;
+  $("login-status").textContent=view.message || (view.blocked ? "Finish the other browser sign-in first." : "");
+  $("login-fallback").querySelector("summary").textContent=view.browser ? "Use terminal instead" : "Sign-in instructions";
+}
+let loginStarting=false;
+$("browser-login").onclick=async()=>{
+  const profile=state.profiles.find(p=>p.id===loginProfile);
+  if(RunquayUI.loginView(state,profile).complete) {$("login-guide").close();return;}
+  if(loginStarting) return;
+  loginStarting=true;drawLoginGuide();
+  try {await api("/api/account",{action:"login",id:loginProfile});await refresh();}
+  catch(error) {$("login-status").textContent=error.message;toast(error.message);}
+  finally {loginStarting=false;drawLoginGuide();}
+};
+$("cancel-browser-login").onclick=async()=>{await act("/api/account",{action:"cancel_login",id:loginProfile});};
 document.addEventListener("click", async event => {
   const tool=event.target.closest("[data-account-tool]");
   if(tool) {$("account-provider").value=tool.dataset.accountTool; $("account-form").elements.separate.checked=false;drawAccount();return;}

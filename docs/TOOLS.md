@@ -15,6 +15,8 @@ The adapter uses official app-server methods for account, model, subscription qu
 
 Additional profiles have separate `CODEX_HOME` directories and request the vendor keyring credential store. Keyring availability varies by OS/session; complete sign-in in a usable desktop/session and verify quota. Runquay never copies the current login. The desktop's bundled Windows CLI is preferred when available; otherwise PATH is used. You can explicitly select a binary path.
 
+Separate Codex profiles offer **Sign in with Codex**, which launches the installed CLI's [official ChatGPT browser OAuth](https://learn.chatgpt.com/docs/cli/reference). Credentials remain under the vendor's [authentication and keyring handling](https://learn.chatgpt.com/docs/auth); Runquay does not collect passwords, proxy OAuth callbacks, or publish sign-in URLs. One browser login runs at a time. Finish in the browser, then return to Runquay for the automatic connection check. A desktop browser, an available local callback port and a usable OS keyring are needed; browser launch/callback or keyring failures may require the collapsed terminal fallback. Attempts time out after five minutes and can be cancelled. The current shared Codex app login is reused rather than replaced. Other tools retain their terminal flow.
+
 ## Claude Code
 
 Local flag inspection used version `2.1.251`. Print mode returns a structured JSON envelope. Read-only planning exposes only Read/Glob/Grep. Builds use `dontAsk`, Edit/Write and a small allowlist of test/status commands; other approval-required tools are denied. `--safe-mode` suppresses customizations, `--strict-mcp-config` with an empty config removes MCP servers, and user/project setting sources are omitted. No bypass mode is enabled.

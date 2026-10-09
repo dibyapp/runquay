@@ -69,6 +69,13 @@ const RunquayUI = (() => {
     const profiles=(state.profiles || []).filter(p=>p.provider===provider);
     return profiles.find(p=>p.enabled && p.eligible) || profiles.find(p=>p.enabled && p.current_login) || profiles.find(p=>p.enabled) || null;
   }
-  return {pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,label:state => labels[state] || state};
+  function loginView(state, profile) {
+    const own=state.login_status?.profile_id===profile?.id ? state.login_status : null;
+    const waiting=Boolean(state.login_in_progress && own?.state==="waiting");
+    const complete=own?.state==="complete";
+    return {browser:Boolean(profile?.instructions?.browser_login),waiting,complete,
+      blocked:Boolean(state.login_in_progress),message:own?.message || ""};
+  }
+  return {pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,loginView,label:state => labels[state] || state};
 })();
 if (typeof module !== "undefined") module.exports = RunquayUI;

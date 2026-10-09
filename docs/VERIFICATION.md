@@ -1,6 +1,6 @@
 # Verification record
 
-Current interface verification: 2026-10-09, version 0.4.1. The 58-test Python suite completed on Windows (56 passed, two platform/permission skips) and Ubuntu 24.04 under WSL (58 passed). Fifteen JavaScript UI regression tests cover navigation, next-step decisions, task filters, scoped ideas, beginner briefs, plain opening instructions and choosing current/separate accounts. Test commands and results are recorded separately from CI and account-dependent checks.
+Current interface verification: 2026-10-09, version 0.4.2. The 62-test Python suite completed on Windows (60 passed, two platform/permission skips) and Ubuntu 24.04 under WSL (62 passed). Sixteen JavaScript UI tests cover navigation, next steps, task filters, ideas, beginner briefs, account selection and account-scoped browser sign-in progress. Test commands and results are recorded separately from CI and account-dependent checks.
 
 | Check | Status |
 | --- | --- |
@@ -53,3 +53,12 @@ Regression checks cover authenticated delivery access, CSRF protection for folde
 ## Simpler account setup verification — 0.4.1
 
 In the separate paused Windows walkthrough, the real Codex account was detected and verified. Its setup step showed Codex is ready and Next without an account form. The account dialog displayed only installed-tool buttons, the connection message, the main action and collapsed More options. Names and the full provider selector were confirmed hidden until requested. Done closed an existing connection without adding a duplicate. Selecting the installed Claude tool and Connect created a named connection without typed fields; approval remained required and no vendor run was authorized. Sign in to another account created an isolated Codex profile and opened its sign-in guide without starting authentication. Both temporary connections were removed, retaining vendor credentials. Antigravity was disabled when absent, with separate login unavailable; custom setup remained accessible. There were no browser console errors, model requests, purchases or resets. The walkthrough remained paused and not onboarded, ready for the user's next step.
+
+
+## Codex browser sign-in verification — 0.4.2
+
+The actual Windows dashboard was tested in the Codex in-app browser. A temporary isolated connection launched the installed official Codex CLI with forced ChatGPT authentication and the vendor keyring. The local OAuth callback listener started; the UI displayed waiting progress and Cancel sign-in. Cancellation stopped the login and restored the retry action. The temporary connection was unlinked, preserving vendor credential storage, both user profiles, onboarding state and the paused queue. The fallback remains collapsed in the reviewed public screenshot.
+
+Lifecycle tests simulate successful login and automatic refresh, cancellation, executable failure, rejection of concurrent logins, rejection of unlink during login, and protection of the shared app login. HTTP tests require the local cookie and CSRF token before login/cancel callbacks can run. The UI test scopes status to its own profile. JavaScript syntax, both local Python suites and the 16 UI checks passed.
+
+No live OAuth consent or successful sign-in completion was performed by the agent. macOS/Linux browser sign-in and keyring behavior need their own desktop integration checks; the cross-platform deterministic CI matrix does not establish those. No model requests, paid credit purchases or reset actions were made in this check. See the [actual capture](SCREENSHOTS.md).

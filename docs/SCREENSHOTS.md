@@ -1,5 +1,13 @@
 # Actual Runquay screenshots and test record
 
+## Codex browser sign-in — 0.4.2, 9 October 2026
+
+Actual capture from the running Windows walkthrough in the Codex in-app browser. The separate account now offers one browser sign-in action, with terminal instructions collapsed. The screenshot contains no account email, sign-in URL, credentials or private home path. It was reviewed and hash-pinned before publication.
+
+![Sign in with Codex through its official browser flow](images/codex-browser-sign-in.jpg)
+
+A temporary isolated profile tested real CLI launch, local OAuth callback startup, waiting progress, cancellation and retry availability. It was unlinked afterward; the user's current and additional profiles were retained. No account credential was entered, OAuth consent completed, model request made, credit bought or reset redeemed. Successful sign-in completion and automatic verification are covered by mocked lifecycle tests; live completion requires the user's own sign-in.
+
 ## Current account setup — 0.4.1, 9 October 2026
 
 These are actual captures of the separate Windows walkthrough in the Codex in-app browser. The current Codex account was found and its subscription checked by the real backend. The account dialog shows the actual installed tools, with optional fields collapsed. No account email, credentials, private paths or unrelated project details are visible. Both images were reviewed and hash-pinned.

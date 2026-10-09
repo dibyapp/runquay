@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.2 — Browser sign-in for Codex
+
+- Separate Codex accounts offer Sign in with Codex, launching the official ChatGPT browser OAuth flow without a copied terminal command.
+- Sign-in progress, cancellation and automatic connection checking keep the next step clear. Only one browser login runs at a time.
+- Terminal instructions remain collapsed as a fallback; current shared app logins and other providers retain their existing sign-in instructions.
+- Login uses the separate profile and vendor keyring, with local session/CSRF protection. Active sign-ins cannot be unlinked.
+- Actual Windows browser launch/cancel testing, reviewed screenshot, authentication lifecycle tests and updated beginner guides.
+
 ## 0.4.1 — Fewer account choices
 
 - Detected AI tools appear as simple buttons. Account names are chosen automatically; existing connections are recognized without submitting duplicates.
