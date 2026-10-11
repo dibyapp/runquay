@@ -148,3 +148,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) to add adapters or platform support. Run
 Saved Codex, Claude Code, Gemini CLI and available Antigravity tasks appear in **Tasks → Existing AI tasks** with search, project and tool filters, short summaries and source status. Other tools can import compatible metadata JSON. Browsing stays local and starts no AI work. Older encrypted Antigravity history and arbitrary cloud exports are not automatically imported. [Task history guide](docs/TASK_HISTORY.md).
 
 ![Actual combined task history controls, with private task details outside the capture](docs/images/ai-task-history.jpg)
+
+## More from the creator
+
+For electronics projects, explore [PCBEditor — AI circuit and PCB design](https://pcbeditor.com/), a browser-based tool for designing schematics and printed circuit boards.
