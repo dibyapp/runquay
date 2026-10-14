@@ -27,6 +27,8 @@ Windows: open `start.cmd`. Mac: open `start.command`. Linux: run `sh start.sh` i
 
 Five pages keep the daily workflow clear: **Home → Tasks → Ideas → Accounts → Settings**. Home tells you what needs attention. Task forms show the essentials first; limits, models, file paths, usage and logs are available when needed.
 
+Choose **Open conversation** on a Runquay task to read your request and the AI's progress as messages. Expand individual activities to inspect commands and results. Live steps refresh automatically; **Jump to latest** returns to the newest update. Step reports separate the summary, checks and any question that needs your answer. [Following a task](docs/WORKFLOWS.md#follow-a-task-conversation).
+
 These are actual screenshots of the running 0.3.0 app tested in the Codex in-app browser on Windows. A real Codex task built a text cleaner and passed seven tests, independently rerun. The advisor inspected that project and proposed a README improvement. Screenshots exclude personal paths, account emails and unrelated project details. [Capture details](docs/SCREENSHOTS.md).
 
 ![The simpler Runquay Home page](docs/images/simple-home.jpg)

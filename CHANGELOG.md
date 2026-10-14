@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.3 - Readable task conversations
+
+- Replace raw event output with a conversation view: your request, provider messages, file activity and structured step reports.
+- Expand commands only when needed; show readable activity labels, command results, failures, checks and requests for input.
+- Follow live progress without losing reading position or expanded details, with Jump to latest and a selector for recorded work steps.
+- Render a safe local Markdown subset and omit reasoning events from messages and technical details. Keep the existing bounded recent-log window explicit.
+- Simplify saved-chat cards into compact project lists. Tool marks and account nicknames remain visible.
+
 ## 0.6.2 - Accurate session titles and project grouping
 
 - Normalize Windows extended drive and UNC paths before matching saved project folders across tools.

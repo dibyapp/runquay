@@ -1,4 +1,5 @@
 "use strict";
+let sessionRequest = 0;
 let state, token, resetDecision, activeLog, pollPromise = null, previousPending = new Set();
 let taskFilter = "active";
 let historyTaskLimit = 12;
@@ -58,7 +59,7 @@ function renderTasks() {
   replaceCards("project-list", tasks.length ? tasks.map(p => {
     const run = state.runs.find(r => r.project_id === p.id);
     const explanation = p.state === "queued" ? state.running ? "Waiting for the worker, an available account, or your approval." : "Saved. Start work from Home when you are ready." : p.state === "complete" ? "Review the files and checks before accepting the result." : p.state === "paused" ? "Your files are saved. Continue when you are ready." : "";
-    return `<article class="project"><div class="project-top"><h3>${esc(p.name)}</h3>${badge(p.state)}</div><div class="task-tool">${toolBadge(p.provider || "codex")}</div>${p.checkpoint.summary ? `<div class="project-detail">${esc(p.checkpoint.summary)}</div>` : `<p>${esc(p.goal.slice(0,180))}${p.goal.length > 180 ? "…" : ""}</p>`}${explanation ? `<p class="task-explanation">${esc(explanation)}</p>` : ""}${p.note && !/^none\.?$/i.test(p.note.trim()) ? `<p class="project-detail">${esc(p.note)}</p>` : ""}<details data-key="task-${p.id}"><summary>Task details and checks</summary><p class="project-goal">${esc(p.goal)}</p>${p.checkpoint.tests ? `<p>Checks: ${esc(p.checkpoint.tests)}</p>` : ""}<div class="project-meta"><span>${p.steps} / ${p.max_steps} steps</span><span>${esc(state.tools.find(t=>t.id===p.provider)?.name || "Codex")}</span><span>${esc(p.model || "Default model")}</span><span>${esc(p.path)}</span></div></details><div class="project-actions">${p.state === "complete" ? `<button data-action="result" data-id="${p.id}">See what was made</button>` : ""}${["paused","attention","complete","cancelled"].includes(p.state) ? `<button class="secondary" data-action="resume" data-id="${p.id}">${p.state === "complete" ? "Add follow-up" : "Continue"}</button>` : ""}${["running","queued"].includes(p.state) ? `<button class="secondary" data-action="pause-project" data-id="${p.id}">Pause task</button>` : ""}${run ? `<button class="text-button" data-action="log" data-id="${run.id}">View output</button>` : ""}${!["cancelled","complete"].includes(p.state) ? `<button class="text-button" data-action="cancel-project" data-id="${p.id}">Cancel task</button>` : ""}</div></article>`;
+    return `<article class="project"><div class="project-top"><h3>${esc(p.name)}</h3>${badge(p.state)}</div><div class="task-tool">${toolBadge(p.provider || "codex")}</div>${p.checkpoint.summary ? `<div class="project-detail">${esc(p.checkpoint.summary)}</div>` : `<p>${esc(p.goal.slice(0,180))}${p.goal.length > 180 ? "…" : ""}</p>`}${explanation ? `<p class="task-explanation">${esc(explanation)}</p>` : ""}${p.note && !/^none\.?$/i.test(p.note.trim()) ? `<p class="project-detail">${esc(p.note)}</p>` : ""}<details data-key="task-${p.id}"><summary>Task details and checks</summary><p class="project-goal">${esc(p.goal)}</p>${p.checkpoint.tests ? `<p>Checks: ${esc(p.checkpoint.tests)}</p>` : ""}<div class="project-meta"><span>${p.steps} / ${p.max_steps} steps</span><span>${esc(state.tools.find(t=>t.id===p.provider)?.name || "Codex")}</span><span>${esc(p.model || "Default model")}</span><span>${esc(p.path)}</span></div></details><div class="project-actions">${p.state === "complete" ? `<button data-action="result" data-id="${p.id}">See what was made</button>` : ""}${["paused","attention","complete","cancelled"].includes(p.state) ? `<button class="secondary" data-action="resume" data-id="${p.id}">${p.state === "complete" ? "Add follow-up" : "Continue"}</button>` : ""}${["running","queued"].includes(p.state) ? `<button class="secondary" data-action="pause-project" data-id="${p.id}">Pause task</button>` : ""}${run ? `<button class="text-button" data-action="log" data-id="${run.id}">Open conversation</button>` : ""}${!["cancelled","complete"].includes(p.state) ? `<button class="text-button" data-action="cancel-project" data-id="${p.id}">Cancel task</button>` : ""}</div></article>`;
   }).join("") : empty(emptyTitle,emptyText) + (taskFilter === "active" && state.projects.some(p=>["complete","cancelled"].includes(p.state)) ? '<div class="controls"><button class="text-button" data-show-finished>View finished tasks</button></div>' : ""));
 }
 function renderNextStep() {
@@ -151,7 +152,7 @@ function render() {
   }).join("") : '<p class="hint">Nothing needs your approval right now.</p>');
   for(const d of decisions) if(!previousPending.has(d.id) && window.Notification && Notification.permission === "granted") new Notification("Runquay: your decision is needed",{body:"Open Home to review a tool run or earned reset. You can keep waiting."});
   previousPending=new Set(decisions.map(d=>d.id));
-  replaceCards("run-list",state.runs.length ? state.runs.map(r=>`<div class="activity-row"><div class="row-content">${esc(state.projects.find(p=>p.id===r.project_id)?.name || (r.project_id.startsWith("advisor-") ? "Project ideas" : r.project_id))} ${badge(r.state)}<small>${esc(when(r.started))}</small></div><button class="text-button" data-action="log" data-id="${r.id}">View output</button></div>`).join("") : '<p class="hint">Your runs will appear here.</p>');
+  replaceCards("run-list",state.runs.length ? state.runs.map(r=>`<div class="activity-row"><div class="row-content">${esc(state.projects.find(p=>p.id===r.project_id)?.name || (r.project_id.startsWith("advisor-") ? "Project ideas" : r.project_id))} ${badge(r.state)}<small>${esc(when(r.started))}</small></div><button class="text-button" data-action="log" data-id="${r.id}">Open conversation</button></div>`).join("") : '<p class="hint">Your runs will appear here.</p>');
   replaceCards("event-list",state.events.map(e=>`<div class="activity-row"><div class="row-content">${esc(e.message)}<small>${esc(when(e.at))}</small></div></div>`).join(""));
   if(!$("settings-form").contains(document.activeElement)) for(const key of ["quota_ceiling","turn_minutes","keep_awake","advisor_auto","advisor_hours"]) {const input=$("settings-form").elements[key]; input[input.type === "checkbox" ? "checked" : "value"]=state[key];}
 }
@@ -164,13 +165,54 @@ function refresh(force=false) {
   return pollPromise;
 }
 async function loadLog(id) {
-  const data = await api("/api/run/" + id);
-  $("log-meta").textContent = `${data.run.state} · ${when(data.run.started)} · ${data.run.profile_id}`;
-  const log = $("log-content");
-  const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 80;
-  log.textContent = data.log;
-  if(atBottom) log.scrollTop = log.scrollHeight;
+  const request=++sessionRequest;
+  const data=await api("/api/run/"+id);
+  if(request!==sessionRequest || activeLog!==id) return;
+  const run=data.run, project=state.projects.find(p=>p.id===run.project_id), profile=state.profiles.find(p=>p.id===run.profile_id);
+  const provider=project?.provider || profile?.provider || "custom", tool=state.tools.find(t=>t.id===provider)?.name || "AI tool";
+  const viewport=$("session-scroll"), changed=viewport.dataset.run!==id;
+  const atBottom=changed || viewport.scrollHeight-viewport.scrollTop-viewport.clientHeight<90, scrollTop=viewport.scrollTop;
+  if(changed) {$("session-messages")._rendered=null;$("session-messages").innerHTML="";$("session-diagnostics").open=false;}
+  viewport.dataset.run=id;
+  $("session-title").textContent=project?.name || "Task progress";
+  replaceCards("log-meta",`${toolBadge(provider,tool)}<span>${esc(profile?.name || "Account unavailable")}</span><span>${esc(when(run.started))}</span>`);
+  const runs=state.runs.filter(r=>r.project_id===run.project_id).slice().reverse();
+  const options=runs.map((r,n)=>`<option value="${esc(r.id)}">Step ${n+1} · ${esc(RunquayUI.label(r.state))} · ${esc(when(r.started))}</option>`).join("");
+  if($("session-run")._options!==options) {$("session-run").innerHTML=options;$("session-run")._options=options;}
+  $("session-run").value=id;
+  const working=run.state==="running";
+  $("session-status").textContent=working ? "● Live · working" : RunquayUI.label(run.state);
+  $("session-status").classList.toggle("is-live",working);
+  const goal=project?.goal || "", requestPreview=goal.split(/\n\s*\n/)[0].slice(0,400);
+  replaceCards("session-request",goal ? `<article class="session-message session-user"><div class="message-author">You</div><div class="message-body">${RunquayUI.markdown(requestPreview+(requestPreview.length<goal.split(/\n\s*\n/)[0].length ? "…" : ""))}${goal.length>requestPreview.length ? `<details data-key="request"><summary>Read full request</summary>${RunquayUI.markdown(goal)}</details>` : ""}</div></article>` : "");
+  const parsed=RunquayUI.sessionEvents(data.log);
+  if(project?.state==="cancelled") $("session-status").textContent="Task cancelled";
+  else if(!working && parsed.entries.some(e=>e.kind==="result" && e.status==="blocked")) $("session-status").textContent="Needs your input";
+  $("session-window").textContent=parsed.cut || data.log.length>=78000 ? "Showing recent activity. Earlier events may be outside this view." : "";
+  replaceCards("session-messages",parsed.entries.map(entry=>{
+    if(entry.kind==="activity") {
+      const pending=["in_progress","running","pending"].includes(entry.status), failed=entry.status==="failed" || (typeof entry.exitCode==="number" && entry.exitCode!==0);
+      const presentation=entry.command ? RunquayUI.commandPresentation(entry.command) : {title:entry.title,preview:""};
+      const label=failed ? "Needs attention" : pending ? working ? "Working" : "Unfinished" : "Done";
+      return `<details class="session-activity ${failed ? "activity-error" : ""}" data-key="${esc(entry.key)}"><summary><span class="activity-symbol" aria-hidden="true">${failed ? "!" : pending ? "◌" : "✓"}</span><span class="activity-name">${esc(entry.title==="Run command" ? presentation.title : entry.title)}${entry.command ? `<small>${esc(presentation.preview.slice(0,110))}${presentation.preview.length>110 ? "…" : ""}</small>` : ""}</span><span class="activity-state">${label}</span></summary><div class="activity-body">${entry.command ? `<pre><code>${esc(entry.command)}</code></pre>` : ""}${entry.text ? `<pre><code>${esc(entry.text)}</code></pre>` : '<p class="hint">No output reported.</p>'}${typeof entry.exitCode==="number" ? `<p class="hint">Exit code ${entry.exitCode}</p>` : ""}</div></details>`;
+    }
+    if(entry.kind==="notice") return `<details class="session-notice session-tool-notice" data-key="${esc(entry.key)}"><summary>Tool notice · open details</summary><div class="message-body">${RunquayUI.markdown(entry.text)}</div></details>`;
+    const notice=entry.kind==="error";
+    return `<article class="session-message ${notice ? "session-notice" : "session-assistant"} ${entry.kind==="error" ? "message-error" : ""}"><div class="message-author">${notice ? esc(entry.kind==="error" ? "Task needs attention" : "Tool notice") : `<img src="${RunquayUI.toolIcon(provider)}" alt="" width="24" height="24">${esc(tool)}`}${entry.kind==="result" ? '<span class="result-label">Step report</span>' : ""}</div><div class="message-body">${RunquayUI.markdown(entry.text)}${entry.tests ? `<h4>Checks</h4>${RunquayUI.markdown(entry.tests)}` : ""}${entry.next ? `<h4>Next step</h4>${RunquayUI.markdown(entry.next)}` : ""}${entry.question ? `<h4>Your input</h4>${RunquayUI.markdown(entry.question)}` : ""}</div></article>`;
+  }).join(""));
+  $("log-content").textContent=parsed.diagnostics || "No diagnostic events yet.";
+  $("session-live").innerHTML=working ? `<span class="working-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>${parsed.entries.length ? "Working on this step…" : "Waiting for the first update…"}</span>` : `<span>${parsed.entries.length ? "End of this step’s recorded activity." : "No readable messages were recorded for this step. Check Details for available events."}</span>`;
+  $("session-footnote").textContent=working ? "Updates every few seconds · you can close this view." : "Review the result on the task card. Add a follow-up there.";
+  if(atBottom) viewport.scrollTop=viewport.scrollHeight;
+  else viewport.scrollTop=scrollTop;
+  updateSessionScroll();
 }
+function updateSessionScroll() {const view=$("session-scroll");$("session-latest").hidden=view.scrollHeight-view.scrollTop-view.clientHeight<90;}
+$("session-scroll").addEventListener("scroll",updateSessionScroll,{passive:true});
+$("session-latest").onclick=()=>{$("session-scroll").scrollTop=$("session-scroll").scrollHeight;updateSessionScroll();};
+$("session-run").onchange=async event=>{activeLog=event.target.value;try {await loadLog(activeLog);} catch(error) {toast(error.message);}};
+$("log-dialog").addEventListener("close",()=>{activeLog=null;sessionRequest++;});
+
 $("start").onclick = () => act("/api/control", {action:"start"});
 $("pause").onclick = () => act("/api/control", {action:"pause"});
 $("refresh").onclick = async () => { if(await act("/api/accounts/refresh", {})) toast("Checking accounts…"); };
@@ -227,7 +269,7 @@ document.addEventListener("click", async event => {
   if(action === "toggle") { const p = state.profiles.find(p => p.id === id); await act("/api/account", {action:"toggle",id,enabled:!p.enabled}); }
   if(action === "pause-project" || action === "cancel-project") await act("/api/project", {action:action === "pause-project" ? "pause" : "cancel",id});
   if(action === "resume") { const p = state.projects.find(p => p.id === id); const f = $("resume-form"); f.elements.id.value = id; f.elements.guidance.value = p.guidance || ""; f.elements.max_steps.value = Math.min(200,Math.max(p.max_steps,p.steps+10)); $("resume-dialog").showModal(); }
-  if(action === "log") { activeLog = id; await loadLog(id); $("log-dialog").showModal(); }
+  if(action === "log") {activeLog=id;try {await loadLog(id);$("log-dialog").showModal();$("session-scroll").scrollTop=0;updateSessionScroll();} catch(error) {toast(error.message);}}
   if(action === "decline-reset") await act("/api/decision", {id,approve:false});
   if(action === "review-reset") { resetDecision = id; const d = state.decisions.find(d => d.id === id); const profile = state.profiles.find(p => p.id === d.profile_id); $("reset-detail").textContent = `${profile?.name || d.profile_id}. Pause active work before approving. The queue will continue waiting if you close this dialog.`; $("reset-dialog").showModal(); }
 });

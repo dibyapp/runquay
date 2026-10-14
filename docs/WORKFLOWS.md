@@ -16,6 +16,19 @@ Expand **Use an existing project** in Tasks to see your saved folders. Folder pa
 
 The running supervisor checkout cannot queue edits to itself. Use a separate development checkout when improving Runquay.
 
+## Follow a task conversation
+
+1. Open **Tasks** and choose **Open conversation** on a task added in Runquay. Use **Finished** to find completed work.
+2. Read your request, then the AI's messages in order. The header identifies the tool, local account nickname and start time.
+3. Expand an activity such as **Read files**, **Explore project** or **Run checks** to inspect the original command, output and exit code. A failed command is marked even if the AI later recovers.
+4. During a running step, updates arrive every few seconds. Scroll up to read earlier activity; Runquay retains your reading position and open details. Choose **Jump to latest** to follow the newest update. Closing the viewer lets the task keep running.
+5. Use **Work step** to switch between the task's recorded runs. A step report shows its summary, checks, next step and any request for your input. A finished step can still need your clarification before the task continues.
+6. Close the viewer to use **Continue**, **Add follow-up** or **See what was made** on the task card. The conversation view displays recorded progress; it does not send live chat messages to the CLI.
+
+The viewer uses the existing recent-log limit (80 KB per run); earlier events can fall outside this window. Its step selector uses up to 40 recent runs across the installation. Imported **Existing AI tasks** provide saved titles and previews, not full transcripts. Codex supplies live events; tools configured to return final JSON may only show a report when the invocation finishes. Opening a conversation does not invoke any model or consume allowance.
+
+Markdown headings, lists, links and code blocks are rendered locally. Raw HTML and remote images do not execute or load. Reasoning events are omitted. **Details · technical log** contains the remaining recent tool events for troubleshooting; local project content may still be private.
+
 ## Write goals that can be reviewed
 
 A useful goal names the user-facing behavior, constraints, acceptance criteria and expected checks. For example:

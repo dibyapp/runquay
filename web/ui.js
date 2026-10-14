@@ -101,6 +101,115 @@ const RunquayUI = (() => {
     }
     return [...groups.values()];
   }
-  return {toolIcon,historyGroups,savedTasks,codexTasks:savedTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
+  const cleanText=value=>typeof value==="string" ? value.replace(/\x1b\[[0-?]*[ -/]*[@-~]/g,"").replace(/\r/g,"") : "";
+  const escapeHTML=value=>String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  // Deliberately small Markdown subset. Raw HTML, images and local/unsafe URLs never execute.
+  function markdown(value) {
+    function inline(text) {
+      return text.split(/(`[^`\n]+`|\[[^\]\n]+\]\([^\s)]+\))/g).map(part=>{
+        if(part.startsWith("`") && part.endsWith("`")) return `<code>${escapeHTML(part.slice(1,-1))}</code>`;
+        const link=part.match(/^\[([^\]\n]+)\]\(([^\s)]+)\)$/);
+        if(link) {
+          let safe=false;
+          try {const url=new URL(link[2]);safe=["https:","http:"].includes(url.protocol) && !url.username && !url.password;} catch {}
+          return safe ? `<a href="${escapeHTML(link[2])}" target="_blank" rel="noopener noreferrer">${escapeHTML(link[1])}</a>` : escapeHTML(link[1]);
+        }
+        return escapeHTML(part).replace(/\*\*([^*\n]+)\*\*/g,"<strong>$1</strong>");
+      }).join("");
+    }
+    const lines=cleanText(value).split("\n"), html=[];
+    let code=null,language="",paragraph=[],list=null;
+    const flush=()=>{if(paragraph.length) html.push(`<p>${paragraph.map(inline).join("<br>")}</p>`);paragraph=[];if(list) {html.push(`</${list}>`);list=null;}};
+    for(const line of lines) {
+      if(/^\s*```/.test(line)) {
+        if(code!==null) {html.push(`<pre><span class="code-language">${escapeHTML(language || "Code")}</span><code>${escapeHTML(code.join("\n"))}</code></pre>`);code=null;}
+        else {flush();code=[];language=line.trim().slice(3).trim().slice(0,30);}
+        continue;
+      }
+      if(code!==null) {code.push(line);continue;}
+      if(!line.trim()) {flush();continue;}
+      const heading=line.match(/^#{1,6}\s+(.+)/), bullet=line.match(/^\s*(?:([-*])|\d+[.)])\s+(.+)/);
+      if(heading) {flush();html.push(`<h4>${inline(heading[1])}</h4>`);}
+      else if(bullet) {if(paragraph.length) flush();const kind=bullet[1] ? "ul" : "ol";if(list!==kind) {flush();list=kind;html.push(`<${kind}>`);}html.push(`<li>${inline(bullet[2])}</li>`);}
+      else {if(list) flush();paragraph.push(line);}
+    }
+    if(code!==null) html.push(`<pre><span class="code-language">${escapeHTML(language || "Code")}</span><code>${escapeHTML(code.join("\n"))}</code></pre>`);
+    flush();return html.join("");
+  }
+  function sessionEvents(log) {
+    const entries=[], positions=new Map(), diagnostics=[];
+    let pending="",cut=false;
+    const add=(entry,id)=>{if(id && positions.has(id)) entries[positions.get(id)]={...entries[positions.get(id)],...entry,key:id};else {const key=id || "event-"+entries.length;positions.set(key,entries.length);entries.push({...entry,key});}};
+    function message(value,id) {
+      const text=cleanText(value);if(!text.trim()) return;
+      try {const structured=JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g,""));if(structured && typeof structured.summary==="string") {result(structured,id);return;}} catch {}
+      add({kind:"message",text},id);
+    }
+    function result(value,id) {
+      if(typeof value==="string") {message(value,id);return;}
+      if(!value || typeof value!=="object") return;
+      if(typeof value.summary==="string") add({kind:"result",text:cleanText(value.summary),tests:cleanText(value.tests),next:cleanText(value.next_step),question:cleanText(value.question),status:cleanText(value.status)},id);
+      else if(value.response && typeof value.response==="object") result(value.response,id);
+      else if(typeof value.response==="string") message(value.response,id);
+      else if(typeof value.result==="string") message(value.result,id);
+    }
+    function consume(record,index) {
+      if(!record || typeof record!=="object") return;
+      const type=record.type || "", item=record.item;
+      // Private reasoning is never rendered, including in the diagnostic disclosure.
+      if(/reasoning|thinking|analysis/.test(type) || /reasoning|thinking|analysis/.test(item?.type || "")) return;
+      if(!type && typeof record.text==="string") {
+        const text=cleanText(record.text);
+        if(pending || /^\s*[\[{]/.test(text)) {
+          pending+=text+"\n";
+          try {const value=JSON.parse(pending);pending="";consume(value,index);} catch {if(pending.length>80000) pending="";}
+          return;
+        }
+      }
+      diagnostics.push(JSON.stringify(record));
+      if(item && /^item\./.test(type)) {
+        const key="item:"+(item.id ?? index);
+        if(item.type==="agent_message") message(item.text,key);
+        else if(item.type==="command_execution") add({kind:"activity",title:"Run command",command:cleanText(item.command),text:cleanText(item.aggregated_output),status:cleanText(item.status) || (type==="item.completed" ? "completed" : "in_progress"),exitCode:item.exit_code},key);
+        else if(item.type==="file_change") add({kind:"activity",title:"Update files",text:(item.changes || []).map(c=>`${cleanText(c.kind) || "Update"} · ${cleanText(c.path)}`).join("\n"),status:cleanText(item.status) || "completed"},key);
+        else if(["mcp_tool_call","web_search"].includes(item.type)) add({kind:"activity",title:item.type==="web_search" ? "Search the web" : "Use tool",command:cleanText(item.tool || item.query),text:cleanText(item.error?.message),status:cleanText(item.status) || "completed"},key);
+      } else if(type==="assistant" && Array.isArray(record.message?.content)) {
+        record.message.content.forEach((block,n)=>{
+          if(block.type==="text") message(block.text,`assistant:${record.message.id || index}:${n}`);
+          else if(block.type==="tool_use") add({kind:"activity",title:cleanText(block.name) || "Use tool",command:cleanText(block.input?.command),text:cleanText(block.input?.file_path),status:"in_progress"},"tool:"+(block.id || `${index}:${n}`));
+        });
+        // Keep diagnostics useful without retaining thinking blocks from vendor envelopes.
+        diagnostics[diagnostics.length-1]=JSON.stringify({...record,message:{...record.message,content:record.message.content.filter(b=>!["thinking","redacted_thinking","reasoning"].includes(b.type))}});
+      } else if(type==="user" && Array.isArray(record.message?.content)) {
+        for(const block of record.message.content) if(block.type==="tool_result") {
+          const id="tool:"+block.tool_use_id;
+          const text=typeof block.content==="string" ? block.content : Array.isArray(block.content) ? block.content.filter(b=>b.type==="text").map(b=>cleanText(b.text)).join("\n") : "";
+          add({kind:"activity",title:positions.has(id) ? entries[positions.get(id)].title : "Tool result",text:cleanText(text),status:block.is_error ? "failed" : "completed"},id);
+        }
+      } else if(["error","turn.failed"].includes(type)) add({kind:"error",text:cleanText(record.message || record.error?.message) || "The tool reported an error. Open Details for diagnostics."});
+      else if(type==="stderr") {if(/error|failed|denied|not found|limit|quota/i.test(record.text || "")) add({kind:"notice",text:cleanText(record.text)});}
+      else if(record.is_error || record.error || ["ERROR","CANCELED","INTERRUPTED"].includes(record.status)) add({kind:"error",text:cleanText(record.result || record.error?.message || record.error) || "The tool reported an error."});
+      else if(record.structured_output) result(record.structured_output,"result:"+index);
+      else if(record.summary || record.result || record.response) result(record,"result:"+index);
+      else if(!type && typeof record.text==="string") {
+        const text=cleanText(record.text);
+        if(text.trim()) add({kind:"notice",text});
+      }
+    }
+    const lines=String(log || "").split("\n");
+    for(let index=0;index<lines.length;index++) {
+      const line=lines[index];if(!line.trim() || line==="No output yet") continue;
+      try {consume(JSON.parse(line),index);} catch {if(index===0) cut=true;}
+    }
+    return {entries,diagnostics:diagnostics.join("\n"),cut};
+  }
+  function commandPresentation(command) {
+    const text=cleanText(command).trim();
+    const wrapped=text.match(/\s(?:-Command|-c|-lc)\s+([\s\S]+)$/i);
+    const preview=(wrapped ? wrapped[1].replace(/^["']|["']$/g,"") : text).trim();
+    const title=/\b(unittest|pytest|npm test|npm run (?:test|lint|build)|node --test)\b/i.test(preview) ? "Run checks" : /\b(Get-Content|cat|head|tail)\b/i.test(preview) ? "Read files" : /\b(Get-ChildItem|Get-Location|rg|ls|find|pwd)\b/i.test(preview) ? "Explore project" : /\bgit (?:diff|status|log)\b/i.test(preview) ? "Review changes" : "Run command";
+    return {title,preview};
+  }
+  return {commandPresentation,markdown,sessionEvents,toolIcon,historyGroups,savedTasks,codexTasks:savedTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
 })();
 if (typeof module !== "undefined") module.exports = RunquayUI;
