@@ -7,7 +7,7 @@ Open **Tasks → Existing AI tasks**. Runquay finds saved conversations on this 
 ## Find the conversation you want
 
 1. Choose an **AI tool**, or keep **All tools** to see everything together.
-2. Use **Search tasks** for a title, preview or project name. Choose a **Project** to narrow the results further.
+2. Use **Search tasks** for a title, preview or project name. Sessions appear under **project headings**. Choose a **Project** to narrow the results further. Tool logos and text labels identify each session's provider; the group count explains when more results are available.
 3. Open **Task summary** for the bounded preview, recorded folder and source. **Show more** reveals another twelve results.
 4. Choose **Refresh tasks** after using an AI tool. Expand **History sources and privacy** to see counts and any incomplete sources.
 5. Open the original tool to continue its conversation. Browsing a saved task does not resume it or start AI work.
@@ -20,7 +20,7 @@ To start separate work, choose **Add a new task in this project**, write your ne
 
 | Tool | Local source | Limits |
 | --- | --- | --- |
-| Codex | Official read-only app-server task metadata for the current login | Up to 1,000 recent top-level tasks; archived, ephemeral and child tasks are excluded. Isolated Codex login histories are not combined. |
+| Codex | Official read-only app-server task metadata for the current login; bounded read-only desktop title and project metadata | Up to 1,000 recent top-level tasks; archived, ephemeral and child tasks are excluded. Custom names take priority, then saved titles and prompt previews. Explicit app project membership and No project take priority over a working-folder guess. Isolated Codex login histories are not combined. |
 | Claude Code | Session files under `~/.claude/projects`; configured `CLAUDE_CONFIG_DIR` and registered profile homes | Text previews and titles only; sidechain/subagent, hidden and empty sessions are skipped. A later title outside bounded reads can be missed. |
 | Gemini CLI | JSON and JSONL session files under `~/.gemini/tmp/*/chats`; configured `GEMINI_CLI_HOME` and registered profile homes | Startup-only and subagent sessions are skipped. Folder association requires the local `.project_root` marker. |
 | Antigravity | Available desktop, IDE and CLI transcripts under the three Antigravity directories in `~/.gemini`; CLI cached conversation references | Older encrypted conversation files are not decoded. A cached reference may be stale. A folder is linked only when an explicit working directory is retained. Missing information is shown in the app. |

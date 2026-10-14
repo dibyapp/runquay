@@ -147,6 +147,6 @@ If Runquay helps your workflow, star the repository to follow its progress. Repr
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) to add adapters or platform support. Runquay is independent of OpenAI, Anthropic, and Google.
 
-Saved Codex, Claude Code, Gemini CLI and available Antigravity tasks appear in **Tasks → Existing AI tasks** with search, project and tool filters, short summaries and source status. Other tools can import compatible metadata JSON. Browsing stays local and starts no AI work. Older encrypted Antigravity history and arbitrary cloud exports are not automatically imported. [Task history guide](docs/TASK_HISTORY.md).
+Saved Codex, Claude Code, Gemini CLI and available Antigravity tasks appear in **Tasks → Existing AI tasks**, grouped by project with tool logos, search, project and tool filters, short summaries and source status. Codex custom names and explicit project membership are preserved; sessions marked No project remain separate. Other tools can import compatible metadata JSON. Browsing stays local and starts no AI work. Older encrypted Antigravity history and arbitrary cloud exports are not automatically imported. [Task history guide](docs/TASK_HISTORY.md) · [Tool mark sources](docs/TOOL_LOGOS.md).
 
 ![Actual combined task history controls, with private task details outside the capture](docs/images/ai-task-history.jpg)

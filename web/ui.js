@@ -89,6 +89,18 @@ const RunquayUI = (() => {
     return {browser:Boolean(profile?.instructions?.browser_login),waiting,complete,
       blocked:Boolean(state.login_in_progress),message:own?.message || ""};
   }
-  return {savedTasks,codexTasks:savedTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
+  function toolIcon(provider) {
+    return "/tool-icons/" + (["codex","claude","gemini","antigravity"].includes(provider) ? provider : "custom") + ".svg";
+  }
+  function historyGroups(tasks) {
+    const groups=new Map();
+    for(const item of tasks) {
+      const key=item.catalog_id ? "project:"+item.catalog_id : item.projectless ? "no-project" : item.project_id ? "unconnected:"+item.project_id : item.path ? "folder:"+item.path : "unknown";
+      if(!groups.has(key)) groups.set(key,{key,name:item.project_name || "Folder not recorded",tasks:[]});
+      groups.get(key).tasks.push(item);
+    }
+    return [...groups.values()];
+  }
+  return {toolIcon,historyGroups,savedTasks,codexTasks:savedTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
 })();
 if (typeof module !== "undefined") module.exports = RunquayUI;

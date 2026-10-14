@@ -2,22 +2,79 @@
 import hashlib
 import json
 import os
+import ntpath
 from pathlib import Path
+import re
+import sqlite3
+from contextlib import closing
 import time
 import threading
 import uuid
 import providers
-from task_history import read_local_tasks, task, bind_tasks, import_tasks, NAMES
+from task_history import read_local_tasks, task, bind_tasks, import_tasks, NAMES, text, safe_file
+
+
+def clean_path(path):
+    value = str(path)
+    windows = value.replace("/", "\\")
+    if windows.startswith("\\\\?\\UNC\\"):
+        value = "\\\\" + windows[8:]
+    elif windows.startswith("\\\\?\\") and re.match(r"[A-Za-z]:\\", windows[4:]):
+        value = windows[4:]
+    return value
 
 
 def path_key(path):
-    return os.path.normcase(os.path.abspath(str(path))).rstrip("\\/")
+    value = clean_path(path)
+    if re.match(r"^[A-Za-z]:[\\/]", value) or value.startswith("\\\\"):
+        return ntpath.normcase(ntpath.normpath(value)).rstrip("\\/")
+    return os.path.normcase(os.path.abspath(value)).rstrip("\\/")
 
 
-def read_codex_tasks(rpc, library, max_pages=10):
+def path_contains(path, root):
+    key, base = path_key(path), path_key(root)
+    separator = "\\" if re.match(r"^[a-z]:", base) or base.startswith("\\\\") else os.sep
+    return key == base or key.startswith(base + separator)
+
+
+def desktop_metadata(state_file=None, database=None):
+    """Read only bounded title/project metadata; never logs or credentials."""
+    home = Path.home() / ".codex"
+    result = {"threads": {}, "assignments": {}, "projectless": []}
+    state_file = Path(state_file) if state_file else home / ".codex-global-state.json"
+    try:
+        if safe_file(state_file, state_file.parent) and state_file.stat().st_size <= 10_000_000:
+            state = json.loads(state_file.read_text(encoding="utf-8"))
+            assignments = state.get("thread-project-assignments", {})
+            if isinstance(assignments, dict):
+                result["assignments"] = {k: v["projectId"] for k, v in list(assignments.items())[:5000]
+                    if isinstance(k, str) and isinstance(v, dict) and v.get("projectKind") == "local" and isinstance(v.get("projectId"), str)}
+            projectless = state.get("projectless-thread-ids", [])
+            if isinstance(projectless, list):
+                result["projectless"] = [v for v in projectless[:5000] if isinstance(v, str)]
+    except (OSError, ValueError, TypeError, AttributeError):
+        pass
+    try:
+        if database is None:
+            candidates = [(int(p.stem.split("_")[-1]), p) for p in home.glob("state_*.sqlite") if re.fullmatch(r"state_\d+", p.stem)]
+            database = max(candidates, default=(0, None))[1]
+        if database is not None and safe_file(Path(database), Path(database).parent):
+            with closing(sqlite3.connect(Path(database).resolve().as_uri() + "?mode=ro", uri=True, timeout=1)) as db:
+                columns = {r[1] for r in db.execute("PRAGMA table_info(threads)")}
+                if {"id", "title", "archived"} <= columns:
+                    name = "substr(name,1,240)" if "name" in columns else "NULL"
+                    for ident, title, custom_name in db.execute(f"SELECT id,substr(title,1,240),{name} FROM threads WHERE archived=0 ORDER BY rowid DESC LIMIT 5000"):
+                        result["threads"][ident] = {"title": text(title, 240), "name": text(custom_name, 240)}
+    except (OSError, ValueError, sqlite3.Error):
+        pass
+    return result
+
+
+def read_codex_tasks(rpc, library, max_pages=10, metadata=None):
     """Read bounded metadata only. Never resume a thread or request a model turn."""
     tasks, seen, cursors = [], set(), set()
     cursor = None
+    metadata = metadata or {}
     deadline = time.monotonic() + 20
     roots = sorted(library, key=lambda p: len(path_key(p["path"])), reverse=True)
     for _ in range(max_pages):
@@ -39,14 +96,18 @@ def read_codex_tasks(rpc, library, max_pages=10):
                 continue
             seen.add(ident)
             cwd = thread.get("cwd")
-            cwd = cwd if isinstance(cwd, str) and Path(cwd).is_absolute() else ""
+            cwd = clean_path(cwd) if isinstance(cwd, str) and Path(cwd).is_absolute() else ""
             key = path_key(cwd) if cwd else ""
-            project = next((p for p in roots if key and
-                            (key == path_key(p["path"]) or key.startswith(path_key(p["path"]) + os.sep))), None)
+            project = next((p for p in roots if key and path_contains(cwd, p["path"])), None)
             updated = thread.get("updatedAt")
-            tasks.append({"id": ident, "title": str(thread.get("name") or "Untitled Codex task")[:240],
-                          "preview": str(thread.get("preview") or "")[:700],
+            stored = metadata.get("threads", {}).get(ident, {})
+            preview = text(thread.get("preview"))
+            title = text(thread.get("name"), 240) or stored.get("name") or text(thread.get("title"), 240) or stored.get("title") or (preview.splitlines()[0][:120] if preview else "Untitled Codex task")
+            tasks.append({"id": ident, "title": title,
+                          "preview": preview,
                           "updated_at": updated if isinstance(updated, (int, float)) else None,
+                          "project_id": metadata.get("assignments", {}).get(ident, ""),
+                          "projectless": ident in metadata.get("projectless", []),
                           "catalog_id": project["id"] if project else "", "path": cwd,
                           "project_name": project["name"] if project else Path(cwd).name if cwd else "No saved folder"})
         cursor = result.get("nextCursor")
@@ -72,6 +133,7 @@ def saved_projects(state_file):
         for n, root in enumerate(record.get("rootPaths", [])):
             if not isinstance(root, str) or not Path(root).is_absolute():
                 continue
+            root = clean_path(root)
             result.append({"id": str(record.get("id") or hashlib.sha256(path_key(root).encode()).hexdigest()[:16]) + (f"-{n}" if n else ""),
                            "name": str(record.get("name") or Path(root).name), "path": str(Path(root)), "source": "Codex desktop"})
     return result
@@ -137,7 +199,9 @@ class CodexBrain:
             from supervisor import Rpc
             rpc = Rpc(self.sup.binary, Path.home() / ".codex", self.sup.children)
             library = self.store.rows("SELECT * FROM catalog ORDER BY name")
-            tasks, limited = read_codex_tasks(rpc, library)
+            tasks, limited = read_codex_tasks(rpc, library, metadata=desktop_metadata())
+            tasks = bind_tasks([dict(task("codex", t["id"], t["title"], t["preview"], t["path"], t["updated_at"]),
+                                     project_id=t["project_id"], projectless=t["projectless"]) for t in tasks], library)
             self.store.set("codex_tasks", tasks)
             self.store.set("codex_tasks_limited", limited)
             self.store.set("codex_tasks_checked", time.time())
@@ -178,7 +242,8 @@ class CodexBrain:
         self.store.set("history_sources", statuses)
 
     def history_state(self, library):
-        codex = [task("codex", t.get("id"), t.get("title"), t.get("preview"), t.get("path"), t.get("updated_at"))
+        codex = [dict(task("codex", t.get("id"), t.get("title"), t.get("preview"), t.get("path"), t.get("updated_at")) or {},
+                      project_id=t.get("project_id", ""), projectless=bool(t.get("projectless")))
                  for t in self.store.setting("codex_tasks") or []]
         imported = self.store.setting("imported_tasks") or []
         tasks = bind_tasks([*codex, *(self.store.setting("other_tasks") or []), *imported], library)

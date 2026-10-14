@@ -161,3 +161,18 @@ test("all vendor histories filter by tool without mixing providers",()=>{
   assert.equal(ui.savedTasks(tasks,"homepage","shop","Gemini CLI").length,1);
   assert.equal(ui.savedTasks(tasks,"homepage","shop","Antigravity").length,0);
 });
+
+test("history grouping respects project IDs and keeps projectless sessions separate",()=>{
+  const items=[{id:"a",catalog_id:"one",project_name:"App"},{id:"b",catalog_id:"two",project_name:"App"},
+    {id:"c",catalog_id:"one",project_name:"App",tool:"Claude Code"},{id:"d",projectless:true,project_name:"No project",path:"/app"}];
+  const groups=ui.historyGroups(items);
+  assert.equal(groups.length,3);
+  assert.deepEqual(groups[0].tasks.map(t=>t.id),["a","c"]);
+  assert.equal(groups[2].name,"No project");
+  assert.equal(items.length,4);
+});
+
+test("tool logo paths use a fixed local allowlist with a generic custom fallback",()=>{
+  for(const provider of ["codex","claude","gemini","antigravity"]) assert.equal(ui.toolIcon(provider),`/tool-icons/${provider}.svg`);
+  for(const provider of [undefined,"custom","../../private","https://untrusted.example/track"]) assert.equal(ui.toolIcon(provider),"/tool-icons/custom.svg");
+});

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.2 - Accurate session titles and project grouping
+
+- Normalize Windows extended drive and UNC paths before matching saved project folders across tools.
+- Prefer Codex custom names, then bounded read-only saved title metadata, then a prompt preview when no title exists.
+- Respect explicit Codex desktop project assignments and chats marked No project. Keep working folders separate from project membership.
+- Group session cards under project headings with filtered counts and retain search, tool filters, folder shortcuts and pagination.
+- Show locally served tool marks and visible labels on session, task and account cards. Unknown custom tools use a generic terminal icon; no external image requests are made.
+
 ## 0.6.1 - Recognizable account labels
 
 - Show a masked Codex sign-in hint while discarding the full provider email before caching.

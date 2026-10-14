@@ -269,6 +269,18 @@ class LifecycleTests(unittest.TestCase):
 
 
 class HttpTests(unittest.TestCase):
+    def test_tool_logos_are_local_svg_assets_from_a_fixed_route_allowlist(self):
+        import xml.etree.ElementTree as ET
+        for provider in ('codex','claude','gemini','antigravity','custom'):
+            with self.client.open(self.url+'/tool-icons/'+provider+'.svg') as response:
+                self.assertTrue(response.headers['Content-Type'].startswith('image/svg+xml'))
+                document=ET.fromstring(response.read())
+                self.assertTrue(document.tag.endswith('svg'))
+                self.assertFalse(any(n.tag.endswith(('script','foreignObject','image')) for n in document.iter()))
+        self.client.open(self.url+'/').close()
+        with self.assertRaises(urllib.error.HTTPError):
+            self.client.open(self.url+'/tool-icons/unknown.svg')
+
     def test_state_identifies_current_login_without_exposing_email(self):
         current = self.sup.add_profile({"provider":"codex", "name":"Current", "existing":True})
         separate = self.sup.add_profile({"provider":"codex", "name":"Separate", "existing":False})

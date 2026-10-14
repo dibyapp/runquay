@@ -56,19 +56,29 @@ def task(provider, ident, title="", preview="", cwd="", updated=None, tool="", s
 
 
 def bind_tasks(tasks, library):
-    from codex_brain import path_key
+    from codex_brain import path_key, clean_path, path_contains
     roots = sorted(library, key=lambda p: len(path_key(p["path"])), reverse=True)
     result, seen = [], set()
     for original in tasks:
-        if not original or original["key"] in seen:
+        if not original or not original.get("key") or original["key"] in seen:
             continue
         seen.add(original["key"])
         item = dict(original)
+        item["path"] = clean_path(item["path"]) if item["path"] else ""
         key = path_key(item["path"]) if item["path"] else ""
-        root = next((r for r in roots if key and (key == path_key(r["path"]) or
-                    key.startswith(path_key(r["path"]) + os.sep))), None)
+        candidates = roots
+        explicit = item.get("project_id") if item.get("provider") == "codex" else ""
+        if explicit:
+            candidates = [r for r in roots if r["id"] == explicit or
+                          (r["id"].startswith(explicit + "-") and r["id"][len(explicit) + 1:].isdigit())]
+        root = next((r for r in candidates if key and path_contains(item["path"], r["path"])), None)
+        if explicit and not root:
+            root = next((r for r in candidates if r["id"] == explicit), next(iter(candidates), None))
+        projectless = item.get("provider") == "codex" and item.get("projectless") and not explicit
+        if projectless:
+            root = None
         item.update(catalog_id=root["id"] if root else "",
-                    project_name=root["name"] if root else Path(item["path"]).name if item["path"] else "Folder not recorded")
+                    project_name=root["name"] if root else "No project" if projectless else "Project not connected" if explicit else Path(item["path"]).name if item["path"] else "Folder not recorded")
         result.append(item)
     return sorted(result, key=lambda t: t["updated_at"] or 0, reverse=True)
 
