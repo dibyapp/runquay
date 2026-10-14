@@ -81,6 +81,8 @@ Runquay is extensible to other tools; **not every AI product provides a compatib
 
 ## Accounts and billing
 
+Account cards show a masked sign-in hint when Codex provides an email. Full sign-in emails are not cached. Use **Rename** to give any connection a local nickname such as Personal or Work; this does not change its vendor account, credentials or scheduling eligibility.
+
 Setup creates the chosen connection automatically when needed. Later, use **Accounts → Add account**; names are filled for you. Separate Codex profiles offer browser sign-in, with the correct profile command under the terminal fallback. Runquay never requests passwords, copies auth files, or exports vendor sessions. Non-Codex detection confirms the executable; the first approved invocation verifies authentication.
 
 **Codex:** requires ChatGPT subscription auth and verified zero paid credits with no unlimited credit entitlement. Official quota checks run before each milestone and every 15 seconds. Positive or unknown paid balances fail closed. At the reserve (90% used by default), Runquay stops and selects another eligible Codex profile; otherwise it waits for natural refresh. Existing earned resets require approval. Durable idempotency IDs protect reset retries. No purchase or paid-continuation feature is implemented.

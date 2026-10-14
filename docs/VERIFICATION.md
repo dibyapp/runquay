@@ -99,3 +99,9 @@ A deliberately invalid metadata export was rejected without changing history. A 
 The public JPEG is an actual browser capture of the final default controls and total count; private titles, previews, folder names, paths and account information are outside its frame. The image is visually reviewed and hash-pinned in the release manifest. Histories remain in excluded local data. No vendor sign-in, model request, install, credit purchase or reset was performed for these checks.
 
 Local native histories were exercised on Windows. Deterministic CI on macOS/Linux checks the parser and filesystem contracts, not live vendor desktop integrations. Older encrypted Antigravity files, missing bounded metadata, arbitrary vendor exports and cloud-only conversations remain unsupported or partial as documented in the [history guide](TASK_HISTORY.md). Additional-tool previews are not automatically added to AI planning context.
+
+## Account labels - 0.6.1
+
+The Python suite ran 93 tests: Windows passed 90 with three POSIX skips; Ubuntu 24.04 under WSL passed all 93. The 20 UI checks and JavaScript syntax passed. New checks cover masking malformed/missing emails, discarding full provider identity before persistence, preserving nicknames across refresh, rename input validation, unchanged account fields/work, and local-session/CSRF/origin enforcement.
+
+In the actual Windows in-app browser, all three connected Codex profiles displayed masked sign-in hints and Rename controls. The rename dialog opened with its existing nickname; saving that unchanged nickname closed it successfully. Existing profile IDs/providers/enabled states, task IDs/states/steps, run records and scheduling/onboarding settings were preserved. All three connections remained eligible. No build, model turn, login or reset was started for this check. Full provider emails were absent from the returned account state. The read-only account refresh uses the existing official account and quota methods.

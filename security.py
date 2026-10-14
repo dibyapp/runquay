@@ -16,6 +16,15 @@ def redact(value):
     return text
 
 
+def account_hint(value):
+    """Return a bounded masked hint; never retain the full provider email."""
+    if not isinstance(value, str) or len(value) > 254 or not re.fullmatch(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,24}", value):
+        return ""
+    local, domain = value.rsplit("@", 1)
+    prefix = local[:2] if len(local) > 2 else local[:1] if len(local) > 1 else ""
+    return prefix + "•••@" + domain[:1] + "•••." + domain.rsplit(".", 1)[1].lower()
+
+
 def sanitize(value):
     if isinstance(value, dict):
         return {k: "[REDACTED CREDENTIAL]" if re.search(r"(?i)(?:api.?key|access.?token|refresh.?token|password|authorization)$", k) else sanitize(v) for k, v in value.items()}

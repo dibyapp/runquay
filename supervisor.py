@@ -27,7 +27,7 @@ from delivery import result_details
 import providers
 import sys
 import signal
-from security import redact, sanitize
+from security import redact, sanitize, account_hint
 from install_setup import SetupManager, search_path
 
 ROOT = Path(__file__).resolve().parent
@@ -375,6 +375,16 @@ class Supervisor:
         self.wake.set()
         return ident
 
+    def rename_profile(self, ident, name):
+        if not isinstance(name, str) or not 1 <= len(name.strip()) <= 80 or any(ord(c) < 32 or ord(c) == 127 for c in name):
+            raise ValueError("Use an account name of 1–80 characters on one line")
+        name = name.strip()
+        if redact(name) != name:
+            raise ValueError("Use a nickname without credentials")
+        with self.profile_lock:
+            if not self.store.execute("UPDATE profiles SET name=? WHERE id=?", (name, ident)):
+                raise ValueError("Account not found")
+
     def remove_profile(self, ident):
         # Unlink only. Keep vendor auth and historical logs recoverable.
         if self.login_in_progress and self.login_status and self.login_status["profile_id"] == ident:
@@ -466,6 +476,7 @@ class Supervisor:
                 raise ValueError("Sign in with a ChatGPT subscription account; API-key authentication is disabled")
             limits = rpc.call("account/rateLimits/read")
             snapshot = {"account": {k: account[k] for k in ("type", "planType") if k in account}, "limits": sanitize(limits)}
+            snapshot["account"]["signInHint"] = account_hint(account.get("email"))
             self.store.execute("UPDATE profiles SET snapshot=?,checked=?,error='' WHERE id=?", (json.dumps(snapshot), time.time(), profile["id"]))
             if quota_gate(limits, self.store.setting("quota_ceiling"))[0]:
                 self.store.execute("UPDATE decisions SET state='expired',result='Subscription allowance is available again; no reset was consumed' WHERE profile_id=? AND state IN ('pending','declined')", (profile["id"],))
@@ -879,7 +890,10 @@ class Supervisor:
                 default_home = Path.home() / ".gemini/antigravity-cli"
             profile["current_login"] = Path(profile["home"]).resolve() == default_home.resolve()
             profile["snapshot"] = json.loads(profile["snapshot"])
-            profile["snapshot"].get("account", {}).pop("email", None)
+            account = profile["snapshot"].get("account", {})
+            legacy_email = account.pop("email", None)
+            if legacy_email:
+                account["signInHint"] = account_hint(legacy_email)
             if profile.get("provider", "codex") != "codex":
                 profile["eligible"] = False
                 profile["reason"] = profile["error"] or "Approval required for every run; vendor quota and costs are unverified"
@@ -1094,6 +1108,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     return self.send_data({"id": ident}, 201)
                 elif data["action"] == "remove":
                     sup.remove_profile(data["id"])
+                elif data["action"] == "rename":
+                    sup.rename_profile(data["id"], data.get("name"))
                 elif data["action"] == "verify":
                     profile = sup.store.one("SELECT * FROM profiles WHERE id=?", (data["id"],))
                     if not profile:

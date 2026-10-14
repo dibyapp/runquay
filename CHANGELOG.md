@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1 - Recognizable account labels
+
+- Show a masked Codex sign-in hint while discarding the full provider email before caching.
+- Add Rename to account cards for local nicknames without changing login homes, credentials, eligibility or queued work.
+- Validate names and protect the rename endpoint with the existing local-session, CSRF and origin checks.
+
 ## 0.6.0 - Saved tasks across AI tools
 
 - Combine Codex, Claude Code, Gemini CLI and readable Antigravity histories in Existing AI tasks, with project/tool filters, bounded summaries, folder shortcuts and per-source status.
