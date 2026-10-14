@@ -196,7 +196,7 @@ test("private reasoning is excluded from messages and technical details",()=>{
   const parsed=ui.sessionEvents(eventLog([
     {type:"item.completed",item:{id:"r",type:"reasoning",text:"PRIVATE_REASONING"}},
     {type:"thinking",text:"PRIVATE_REASONING"},
-    {type:"assistant",message:{id:"msg",content:[{type:"thinking",thinking:"PRIVATE_REASONING"},{type:"text",text:"Here is the result."}]}}
+    {type:"assistant",message:{id:"msg",content:[{type:"thinking",thinking:"PRIVATE_REASONING"},{type:"analysis",text:"PRIVATE_REASONING"},{type:"redacted_thinking",data:"PRIVATE_REASONING"},{type:"text",text:"Here is the result."}]}}
   ]));
   assert.equal(parsed.entries.length,1);
   assert.equal(parsed.entries[0].text,"Here is the result.");
@@ -205,6 +205,9 @@ test("private reasoning is excluded from messages and technical details",()=>{
   const wrapped=ui.sessionEvents(eventLog(JSON.stringify(pretty,null,2).split("\n").map(text=>({text}))));
   assert.equal(wrapped.entries[0].text,"Public response");
   assert.ok(!JSON.stringify(wrapped).includes("PRIVATE_REASONING"));
+  const tail='cut byte fragment\n'+eventLog([{text:'  "thinking": "PRIVATE_REASONING",'},{text:'  "type": "thinking"'},{text:'}'}]);
+  assert.equal(ui.sessionEvents(tail).entries.length,0);
+  assert.ok(!JSON.stringify(ui.sessionEvents(tail)).includes("PRIVATE_REASONING"));
 });
 
 test("Claude tool events keep results together and provider envelopes show readable reports",()=>{

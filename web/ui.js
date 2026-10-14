@@ -160,7 +160,7 @@ const RunquayUI = (() => {
       if(/reasoning|thinking|analysis/.test(type) || /reasoning|thinking|analysis/.test(item?.type || "")) return;
       if(!type && typeof record.text==="string") {
         const text=cleanText(record.text);
-        if(pending || /^\s*[\[{]/.test(text)) {
+        if(pending || /^\s*(?:[\[\]{},]|"[^"\n]+"\s*:)/.test(text)) {
           pending+=text+"\n";
           try {const value=JSON.parse(pending);pending="";consume(value,index);} catch {if(pending.length>80000) pending="";}
           return;
@@ -179,7 +179,7 @@ const RunquayUI = (() => {
           else if(block.type==="tool_use") add({kind:"activity",title:cleanText(block.name) || "Use tool",command:cleanText(block.input?.command),text:cleanText(block.input?.file_path),status:"in_progress"},"tool:"+(block.id || `${index}:${n}`));
         });
         // Keep diagnostics useful without retaining thinking blocks from vendor envelopes.
-        diagnostics[diagnostics.length-1]=JSON.stringify({...record,message:{...record.message,content:record.message.content.filter(b=>!["thinking","redacted_thinking","reasoning"].includes(b.type))}});
+        diagnostics[diagnostics.length-1]=JSON.stringify({...record,message:{...record.message,content:record.message.content.filter(b=>!/thinking|reasoning|analysis/.test(b.type || ""))}});
       } else if(type==="user" && Array.isArray(record.message?.content)) {
         for(const block of record.message.content) if(block.type==="tool_result") {
           const id="tool:"+block.tool_use_id;
