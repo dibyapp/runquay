@@ -41,66 +41,42 @@ Setup does not purchase a plan or authorize a reset. If a sign-in command report
 
 ![Actual account step after automatic Codex verification](images/simple-account-setup.jpg)
 
-To connect another tool later, open **Accounts → Add account**. Choose an installed tool; an existing connection says **Done**, otherwise choose **Connect**. No name or path is required. **Sign in to another account** creates a separate profile. For Codex, choose **Continue to sign in → Sign in with Codex** to start browser sign-in; **Cancel sign-in** stops a pending attempt. Other tools show their terminal instructions. **More options** contains optional names, uninstalled tools and custom setup. Connecting a detected program does not prove its authentication or billing.
+To connect another tool later, open **More → AI connections → Add account**. Choose an installed tool; an existing connection says **Done**, otherwise choose **Connect**. No name or path is required. **Sign in to another account** creates a separate profile. For Codex, choose **Continue to sign in → Sign in with Codex** to start browser sign-in; **Cancel sign-in** stops a pending attempt. Other tools show their terminal instructions. **More options** contains optional names, uninstalled tools and custom setup. Connecting a detected program does not prove its authentication or billing.
 
-## 4. Describe one idea
+## 4. Say what you want
 
-On Home, choose **Help me build something**. Or expand **Not sure where to start? Try an example** and choose an editable starter. Selecting a starter does not use AI allowance or start a task.
+Open **Your work**. Type something like:
 
-![Actual beginner idea form](images/beginner-idea.jpg)
+> Make a daily checklist. Let me add tasks, tick them off and save them in this browser. Make it easy to use on my phone.
 
-Fill in:
+Choose **Let’s do it**. That’s the everyday flow. You do not have to name a task, choose a programming language, configure a model, or start a queue afterward.
 
-- **What are you making?** Choose a website, tracker, tool, or something else.
-- **Describe your idea:** say what someone should be able to do. For example: “A page for my bakery with a menu and opening hours.”
-- **Who is it for?** Optional. “My customers” is enough.
-- **What must it include?** Optional. “Works on my phone and uses large text” is a useful requirement.
+**New project** is selected for you. It creates a separate folder. To improve something you already have, choose its name from that menu before sending. Runquay shows the folder name and AI tool underneath. **Change AI** is optional. One unfinished task can use a folder at a time; open its existing card to continue it.
 
-You can leave the name and AI tool at their suggested values. Expand **Name and AI tool (optional)** to change them. If you already know exactly what to ask, choose **I prefer to write my own task** for the original form.
+Sending uses your connected AI allowance. The selected provider receives the request and can access the selected workspace through its coding tool. Other providers ask before each run because their charges are unverified. Codex requires verified subscription allowance and a zero paid balance. Resets need your approval. No purchase or publishing happens automatically.
 
-Choose **Next: check my idea**. Read the summary. **Back** keeps your answers so you can change them.
+## 5. Come back to your work
 
-![Actual review before submitting a beginner task](images/beginner-review.jpg)
+The work appears below your message:
 
-Read the work-status note before **Add this task**. If work is paused, your idea is saved and waits for **Start work** on Home. If work is already on, adding it can start AI work immediately when an account is available. The guide uses up to three work sessions before asking for review; this is a limit, not a promise of completion.
+- **Up next:** it will start when the worker and AI are available.
+- **Working on it:** follow **See progress**, or come back later.
+- **Waiting for your AI:** check sign-in or wait for allowance to refresh.
+- **Needs you:** choose **Reply** and answer the question.
+- **Ready to try:** choose **View result**.
 
-## 5. Let the AI work
+For a pause, open **More** on that card and choose **Pause**. Files already written remain. **Continue** starts just that task again. To stop everything, expand **Work controls and activity** and choose **Pause work**. Your computer must stay awake, running and connected while work continues; closing the browser alone does not stop it.
 
-Home explains what is happening. **Waiting** means the task is saved. **Working** means an AI session is active. **Needs you** means the AI or app needs your help. Use **Pause work** on Home whenever you need to stop; files already written remain.
+## 6. Try the result and ask for changes
 
-The computer must stay on and connected. Runquay cannot continue working while it is shut down. Other AI tools ask before each run because Runquay cannot verify their billing. You can decline a request or wait. No credits or resets are purchased automatically.
+Choose **View result**, read the opening instructions and choose **Open project folder**. Try the result yourself. The AI may make mistakes, so check it before relying on it or sharing it.
 
-## 6. Open and try the result
+Choose **Ask for a change** to describe what should be different. Your follow-up starts automatically when the AI is available. If you cannot open the project, choose **Ask for help** in the result window and describe where you got stuck. Work limits stay under an optional control.
 
-When Home says a result is ready, choose **Review results**, then **See what was made** on the finished task.
+## 7. Your earlier conversations
 
-![Actual result instructions for the beginner test project](images/beginner-result.jpg)
+Saved conversations from supported tools appear in the same list, with the tool’s icon and project name. Use **Find your work** to search by name. **View** opens the available local preview. Continue the original conversation in its original tool. If its folder is available, **Work on [project]** selects that folder for a new request; the preview is not silently added to your request.
 
-1. Read **How to use it**.
-2. Choose **Open project folder**. This asks your computer's file manager to show the project's files; it does not run them.
-3. Follow the opening instructions. A simple self-contained webpage usually uses a file called **index.html** that you can double-click. More complex apps may require additional setup; read their instructions first.
-4. Try a small example. For a checklist, add an item, mark it done and reload the page to check the stated saving behavior.
+**Browse all conversations and folders** provides detailed filters, refresh and import when needed. Missing history is not a signal that a conversation was deleted. [History support and limitations](TASK_HISTORY.md).
 
-The guided task asks the AI to write **START_HERE.md**, a file with plain opening instructions. Older projects may show their README instead. If no instructions exist, the screen explains how to ask for them.
-
-**Done** means the AI reported completion. Try the result yourself before relying on it. The dashboard displays instructions as text and does not automatically execute generated code. The project is not automatically published to the internet.
-
-## 7. Ask for a change or help
-
-Choose **Ask for help** from the result screen. Add your difficulty after the suggested message, such as “I cannot find the file” or “the Add button does nothing.” Review the message and choose **Continue task** to submit it. Merely opening the help form does not start another AI request.
-
-For a change, choose **Add follow-up** on the finished task and describe the new behavior: “Make the text larger” or “Add a way to delete an entry.” You do not need to diagnose the code yourself. More AI work can consume allowance or need another approval.
-
-## A few words you may see
-
-| Word | Meaning here |
-| --- | --- |
-| Task | One thing you ask your AI to make or improve. |
-| Project | The files that belong to something you are building. |
-| AI tool / helper / CLI | The provider's program that Runquay asks to do the work. CLI means command-line interface. |
-| Step / work session | One bounded attempt by the AI, with progress saved afterward. |
-| Allowance / quota | How much AI usage your provider currently permits. |
-| Check / test | A way to see whether the result behaves as expected. |
-| Publish / deploy | Make the project available to other people, usually online. This is a separate action. |
-
-For more detail, see [getting started](GETTING_STARTED.md), [daily workflows](WORKFLOWS.md) and the [tested-platform record](VERIFICATION.md).
+**Learnings** helps find useful lessons across work you choose. **More** contains optional ideas, AI connections and settings. You can keep using the original tools alongside Runquay. [How sessions work](WORKFLOWS.md).

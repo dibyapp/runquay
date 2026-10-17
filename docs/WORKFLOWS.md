@@ -1,5 +1,16 @@
 # Runquay workflow guide
 
+## Everyday work
+
+In **Your work**, say what you want and choose **Let’s do it**. Keep **New project** for a separate folder, or select an existing project before sending. The provider is shown before you send; Runquay never silently switches providers. Only that request is started when the global queue is paused. Normal account, quota, permission and billing rules still apply.
+
+Your work and saved native conversations share a searchable list. **View result** opens instructions; **Ask for a change** sends a follow-up. A native conversation’s **View** shows its available local preview, not a live two-way chat; continue it in the original tool. **Work on [project]** selects its folder without sending its preview to an AI.
+
+**More → Pause** on a card pauses only that task. **Work controls and activity → Pause work** stops all scheduling and active child work. A retry of the same send does not create a second workspace. A second unfinished task cannot write to an already occupied folder.
+
+The sections below describe the optional detailed controls. **Tasks** refers to the task list under **Your work → Browse all conversations and folders**. **Home** refers to **Work controls and activity**. **Accounts**, **Ideas** and **Settings** live under **More**.
+
+
 Use this guide after [initial setup](GETTING_STARTED.md). Runquay is a local task queue around coding CLIs. It preserves goals, milestone results and file-based handoffs; it does not transfer full conversations between tools or certify generated code.
 
 ## Improve an existing repository

@@ -250,6 +250,7 @@ class Store:
                 state TEXT DEFAULT 'running', started TEXT NOT NULL, finished TEXT, result TEXT DEFAULT '', log TEXT NOT NULL);
               CREATE TABLE IF NOT EXISTS decisions(id TEXT PRIMARY KEY, profile_id TEXT NOT NULL, kind TEXT NOT NULL,
                 state TEXT DEFAULT 'pending', payload TEXT DEFAULT '{}', result TEXT DEFAULT '', created TEXT NOT NULL);
+              CREATE TABLE IF NOT EXISTS work_requests(key TEXT PRIMARY KEY, digest TEXT NOT NULL, project_id TEXT NOT NULL);
               CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, message TEXT NOT NULL);
               CREATE TABLE IF NOT EXISTS catalog(id TEXT PRIMARY KEY,name TEXT NOT NULL,path TEXT NOT NULL,
                 source TEXT NOT NULL,details TEXT DEFAULT '{}',recent TEXT DEFAULT '[]',checked REAL DEFAULT 0);
@@ -261,7 +262,7 @@ class Store:
             if "kind" not in {row[1] for row in db.execute("PRAGMA table_info(projects)")}:
                 db.execute("ALTER TABLE projects ADD COLUMN kind TEXT DEFAULT 'work'")
             for table, column, definition in (("profiles", "provider", "TEXT DEFAULT 'codex'"), ("profiles", "options", "TEXT DEFAULT '{}'"),
-                                              ("projects", "provider", "TEXT DEFAULT 'codex'"), ("projects", "learning_context", "TEXT DEFAULT '[]'")):
+                                              ("projects", "run_requested", "INTEGER DEFAULT 0"), ("projects", "provider", "TEXT DEFAULT 'codex'"), ("projects", "learning_context", "TEXT DEFAULT '[]'")):
                 if column not in {row[1] for row in db.execute(f"PRAGMA table_info({table})")}:
                     db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
             db.execute("INSERT OR IGNORE INTO settings VALUES('running','false')")
@@ -321,6 +322,7 @@ class Supervisor:
         self.wake = threading.Event()
         self.active_proc = None
         self.active_lock = threading.Lock()
+        self.request_lock = threading.Lock()
         self.account_lock = threading.Lock()
         self.login_lock = threading.Lock()
         self.login_in_progress = False
@@ -437,7 +439,7 @@ class Supervisor:
         profile = self.store.one("SELECT * FROM profiles WHERE id=?", (decision["profile_id"],))
         payload = json.loads(decision["payload"])
         project = self.store.one("SELECT * FROM projects WHERE id=?", (payload["project_id"],))
-        if decision["state"] != "pending" or not profile or not project or self.external_key(project, profile) != payload["key"]:
+        if decision["state"] != "pending" or not profile or not project or project['state'] != 'queued' or self.external_key(project, profile) != payload["key"]:
             raise ValueError("This approval is stale; refresh the queue")
         self.store.execute("UPDATE decisions SET state=?,result=? WHERE id=? AND state='pending'", ("approved" if approve else "declined", "One invocation authorized" if approve else "Run declined", decision["id"]))
         if not approve:
@@ -534,9 +536,9 @@ class Supervisor:
             existing = next((p for p in self.store.rows("SELECT * FROM projects WHERE kind='work'") if path_key(p["path"]) == path_key(path)), None)
             if existing:
                 if existing["state"] not in ("complete", "cancelled"):
-                    raise ValueError("This workspace already has a task. Resume or manage it in the task queue.")
-                self.store.execute("UPDATE projects SET name=?,goal=?,state='queued',steps=0,failures=0,checkpoint='{}',guidance='',note='',max_steps=?,priority=?,model=?,provider=?,learning_context=? WHERE id=?",
-                                   (name, goal, steps, priority, model, provider, learning_context, existing["id"]))
+                    raise ValueError("This project already has unfinished work. Open it in Your work to continue, or finish it before adding another request.")
+                self.store.execute("UPDATE projects SET name=?,goal=?,state='queued',steps=0,failures=0,checkpoint='{}',guidance='',note='',max_steps=?,priority=?,model=?,provider=?,learning_context=?,run_requested=0,created=? WHERE id=?",
+                                   (name, goal, steps, priority, model, provider, learning_context, utcnow(), existing["id"]))
                 self.wake.set()
                 return existing["id"]
         else:
@@ -553,6 +555,43 @@ class Supervisor:
         self.store.event(f"Queued project: {name}")
         self.wake.set()
         return ident
+
+    def create_request(self, data):
+        """One explicit request starts only its own workspace, with retry protection."""
+        text = str(data.get('text', '')).strip()
+        key = str(data.get('request_key', ''))
+        catalog_id = str(data.get('catalog_id', ''))
+        chosen = str(data.get('provider', ''))
+        if not text or len(text) > 10000:
+            raise ValueError('Describe what you want in up to 10,000 characters.')
+        if not re.fullmatch(r'[a-zA-Z0-9-]{16,80}', key):
+            raise ValueError('Refresh this page before sending your request.')
+        digest = hashlib.sha256(json.dumps([text, catalog_id, chosen]).encode()).hexdigest()
+        with self.request_lock:
+            prior = self.store.one('SELECT * FROM work_requests WHERE key=?', (key,))
+            if prior:
+                if prior['digest'] != digest:
+                    raise ValueError('This request changed. Send it as a new request.')
+                return prior['project_id']
+            if self.setup.lock.locked():
+                raise ValueError('Finish connecting your AI tool before sending work.')
+            profiles = self.store.rows('SELECT * FROM profiles WHERE enabled=1 ORDER BY id')
+            if chosen and chosen not in providers.TOOLS:
+                raise ValueError('Unknown AI tool')
+            provider = chosen or next((p['provider'] for p in profiles if p['provider'] == 'codex'),
+                                      profiles[0]['provider'] if profiles else '')
+            if not any(p['provider'] == provider for p in profiles):
+                raise ValueError('Connect an account for this AI tool first.')
+            goal = text + "\n\nExplain progress and any questions in everyday words. Choose sensible implementation details. " \
+                "Complete a useful, working result and run appropriate checks. Leave simple opening instructions in START_HERE.md. " \
+                "Use fictional content when examples are needed. Do not publish, purchase, install software, " \
+                "read credentials, or change other projects without separate approval."
+            ident = self.create_project({'name': text.splitlines()[0][:95], 'goal': goal,
+                                         'provider': provider, 'catalog_id': catalog_id})
+            self.store.execute('UPDATE projects SET run_requested=1 WHERE id=?', (ident,))
+            self.store.execute('INSERT INTO work_requests VALUES(?,?,?)', (key, digest, ident))
+            self.wake.set()
+            return ident
 
     def request_reset(self, profile, snapshot):
         resets = snapshot.get("limits", {}).get("rateLimitResetCredits") or {}
@@ -691,14 +730,20 @@ class Supervisor:
         self.set_awake(False)
 
     def work_allowed(self, project):
-        return bool(self.store.setting('running') or project.get('kind') == 'learnings' and
+        if self.setup.lock.locked():
+            return False
+        requested = self.store.one('SELECT run_requested FROM projects WHERE id=?', (project['id'],))
+        return bool(self.store.setting('running') or requested and requested['run_requested'] or project.get('kind') == 'learnings' and
                     self.store.one('SELECT id FROM learning_batches WHERE id=? AND run_now=1', (project['id'],)))
 
     def pending_project(self):
+        if self.setup.lock.locked():
+            return None
         if self.store.setting('running'):
             return self.store.one("SELECT * FROM projects WHERE state='queued' ORDER BY priority DESC,created ASC")
-        return self.store.one("""SELECT p.* FROM projects p JOIN learning_batches b ON b.id=p.id
-            WHERE p.kind='learnings' AND p.state='queued' AND b.run_now=1 ORDER BY p.created ASC LIMIT 1""")
+        return self.store.one("""SELECT p.* FROM projects p LEFT JOIN learning_batches b ON b.id=p.id
+            WHERE p.state='queued' AND (p.run_requested=1 OR p.kind='learnings' AND b.run_now=1)
+            ORDER BY p.priority DESC,p.created ASC LIMIT 1""")
 
     def step(self, project):
         if project["steps"] >= project["max_steps"]:
@@ -995,7 +1040,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if self.headers.get("Sec-Fetch-Site") == "cross-site":
             return self.send_data({"error": "Cross-site access denied"}, 403)
         path = urllib.parse.urlparse(self.path).path
-        static = {"/beginner.js": ("beginner.js", "text/javascript; charset=utf-8"), "/mark.svg": ("mark.svg", "image/svg+xml"), "/": ("index.html", "text/html; charset=utf-8"), "/app.js": ("app.js", "text/javascript; charset=utf-8"), "/setup.js": ("setup.js", "text/javascript; charset=utf-8"), "/ui.js": ("ui.js", "text/javascript; charset=utf-8"), "/simple.css": ("simple.css", "text/css; charset=utf-8"), "/style.css": ("style.css", "text/css; charset=utf-8")}
+        static = {"/workspace.js": ("workspace.js", "text/javascript; charset=utf-8"), "/beginner.js": ("beginner.js", "text/javascript; charset=utf-8"), "/mark.svg": ("mark.svg", "image/svg+xml"), "/": ("index.html", "text/html; charset=utf-8"), "/app.js": ("app.js", "text/javascript; charset=utf-8"), "/setup.js": ("setup.js", "text/javascript; charset=utf-8"), "/ui.js": ("ui.js", "text/javascript; charset=utf-8"), "/simple.css": ("simple.css", "text/css; charset=utf-8"), "/style.css": ("style.css", "text/css; charset=utf-8")}
         static["/learnings.js"] = ("learnings.js", "text/javascript; charset=utf-8")
         static.update({f"/tool-icons/{provider}.svg": (f"tool-icons/{provider}.svg", "image/svg+xml") for provider in providers.TOOLS})
         if path in static:
@@ -1055,8 +1100,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     sup.store.set("running", action == "start")
                     if action == "pause":
                         sup.store.execute('UPDATE learning_batches SET run_now=0')
+                        sup.store.execute('UPDATE projects SET run_requested=0')
+                        sup.store.execute("UPDATE decisions SET state='expired' WHERE kind='external_run' AND state IN ('pending','approved')")
                         stop_tree(sup.active_proc)
                 sup.store.event("Queue started" if action == "start" else "Queue paused")
+            elif path == "/api/requests":
+                ident = sup.create_request(data)
+                return self.send_data({'id': ident}, 201)
             elif path == "/api/projects":
                 ident = sup.create_project(data)
                 return self.send_data({"id": ident}, 201)
@@ -1121,10 +1171,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         steps = int(data.get("max_steps", project["max_steps"]))
                         if not project["steps"] < steps <= 200:
                             raise ValueError("Set the cap above completed milestones (maximum 200)")
-                        sup.store.execute("UPDATE projects SET state='queued',failures=0,guidance=?,note='Queued with your guidance',max_steps=? WHERE id=?",
-                                          (str(data.get("guidance", project.get("guidance", "")))[:10000], steps, project["id"]))
+                        if data.get('run_now') is True and sup.setup.lock.locked():
+                            raise ValueError('Finish tool setup before continuing.')
+                        sup.store.execute("UPDATE projects SET state='queued',failures=0,guidance=?,note='Queued with your guidance',max_steps=?,run_requested=? WHERE id=?",
+                                          (str(data.get("guidance", project.get("guidance", "")))[:10000], steps, int(data.get("run_now") is True), project["id"]))
                     elif action in ("pause", "cancel"):
-                        sup.store.execute("UPDATE projects SET state=?,note=? WHERE id=?", ("paused" if action == "pause" else "cancelled", "Paused by user" if action == "pause" else "Cancelled by user", project["id"]))
+                        sup.store.execute("UPDATE projects SET state=?,note=?,run_requested=0 WHERE id=?", ("paused" if action == "pause" else "cancelled", "Paused by user" if action == "pause" else "Cancelled by user", project["id"]))
+                        sup.store.execute("UPDATE decisions SET state='expired' WHERE kind='external_run' AND state IN ('pending','approved') AND json_extract(payload,'$.project_id')=?", (project['id'],))
                         if project["state"] == "running":
                             stop_tree(sup.active_proc)
                     else:

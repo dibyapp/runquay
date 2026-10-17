@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.0 — One request, one place
+
+- A single everyday composer replaces the default two-step idea form and separate start-queue action. A new isolated project and a connected AI are selected for you, with optional project and provider choices shown before sending.
+- Requests, results and saved native conversations share a searchable list with tool icons and plain progress. Payment decisions appear where you work. Detailed histories, queue controls, models and limits are secondary.
+- Explicit sends, single-task starts and follow-ups can run without enabling unrelated queued work. Global pause disarms scoped work; task pause also expires outstanding vendor approvals. Request keys prevent duplicate workspace creation on retries, including concurrent sends.
+- Native chat previews remain read-only. One unfinished task per folder, billing approvals, reset consent and the publication privacy gate are preserved.
+
+
 ## 0.8.0 - Easier Collective Learnings
 
 - Ask a question or choose a suggested topic; Runquay automatically finds matching work, fits the context budget, and recommends a connected analysis tool.

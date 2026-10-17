@@ -11,6 +11,19 @@ test("setup recommends a verified account, then an installed tool, then Codex",(
 });
 const base = {running:true, projects:[], decisions:[], profiles:[{provider:"codex",enabled:true,eligible:true}]};
 
+test("everyday work describes the next action without queue jargon",()=>{
+  const project={id:"one",state:"queued",provider:"codex",run_requested:1};
+  assert.equal(ui.workStatus(project,{...base,running:false}).label,"Up next");
+  assert.equal(ui.workStatus({...project,run_requested:0},{...base,running:false}).label,"Ready when you are");
+  assert.equal(ui.workStatus(project,{...base,profiles:[]}).label,"Connect your AI");
+  assert.equal(ui.workStatus(project,{...base,profiles:[{provider:"codex",enabled:true,eligible:false}]}).label,"Waiting for your AI");
+  assert.equal(ui.workStatus({...project,state:"complete"},base).label,"Ready to try");
+  assert.equal(ui.workStatus({...project,state:"attention"},base).label,"Needs you");
+  const decision={state:"pending",kind:"external_run",payload:JSON.stringify({project_id:"one"})};
+  assert.equal(ui.workStatus(project,{...base,decisions:[decision]}).label,"Needs your OK");
+  assert.notEqual(ui.workStatus({...project,id:"other"},{...base,decisions:[decision]}).label,"Needs your OK");
+});
+
 test("legacy bookmarks and unknown routes always resolve to an accessible page",()=>{
   for(const route of ["overview","projects","advisor","learnings","accounts","settings"]) assert.equal(ui.pageFor("#"+route),route);
   assert.equal(ui.pageFor("#approvals"),"overview");

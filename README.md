@@ -17,15 +17,15 @@ Created and maintained by [Dibyaprakash Pradhan](https://github.com/dibyapp). [D
 
 ## New to coding?
 
-[Start with the beginner guide](docs/BEGINNERS.md). Describe an idea in everyday words, review it before starting, then use **See what was made** for opening instructions and an **Open project folder** button. The setup assistant detects your OS, recommends an installed tool, and offers to install missing dependencies. Verified Codex accounts need only Next. Optional account settings stay under More options. Editable starters help with a small website, checklist or expense tracker. Setup still requires Python, Git and a supported AI helper.
+[Start with the beginner guide](docs/BEGINNERS.md). After connecting your AI once, type what you want in **Your work** and choose **Let’s do it**. Runquay creates a separate folder and starts that request when its AI is available. Pick an existing project only when you want its files changed. You do not need to name the task, choose a model, set work limits, or turn on a queue.
 
-Windows: open `start.cmd`. Mac: open `start.command`. Linux: run `sh start.sh` in the extracted folder. If something is missing, the launcher explains the next step.
+Results and saved conversations appear together, with recognizable tool icons, search, plain progress, **View result**, and **Ask for a change**. Saved native conversations are previews; their original chat continues in its own tool. AI choices, connections, work controls and detailed history remain available when needed. [Everyday workflow](docs/WORKFLOWS.md).
 
-![Actual beginner task review](docs/images/beginner-review.jpg)
+Windows: open `start.cmd`. Mac: open `start.command`. Linux: run `sh start.sh` in the extracted folder. First-time setup can prepare missing dependencies; provider sign-in and OS permission prompts still need you.
 
 ## See Runquay in use
 
-Six pages keep the daily workflow clear: **Home → Tasks → Ideas → Learnings → Accounts → Settings**. Home tells you what needs attention. Task forms show the essentials first; limits, models, file paths, usage and logs are available when needed.
+The everyday navigation is **Your work** and **Learnings**. **More** contains ideas, AI connections and settings. Sending a request starts only that request when the global queue is paused. Other tools still require one-run billing approval; resets always require approval. **More → Pause** on a work card pauses it. **Work controls and activity → Pause work** stops all scheduling, including individually started requests.
 
 Choose **Open conversation** on a Runquay task to read your request and the AI's progress as messages. Expand individual activities to inspect commands and results. Live steps refresh automatically; **Jump to latest** returns to the newest update. Step reports separate the summary, checks and any question that needs your answer. [Following a task](docs/WORKFLOWS.md#follow-a-task-conversation).
 
@@ -56,7 +56,7 @@ The guided onboarding walks through four steps:
 3. **Folder** — choose where new projects live and connect existing project folders.
 4. **Ready** — understand workspace access, tool permissions, and billing before finishing.
 
-Describe a goal and its acceptance criteria, choose its AI tool, then choose **Start work** on Home. First installations start paused. Finishing setup does not start work. Revisit the setup guide from Settings anytime.
+Describe your goal in **Your work**, then choose **Let’s do it**. Finishing setup alone does not start AI work. Sending a request authorizes that request to start when its AI is available; payment and reset approvals remain separate. Revisit the setup guide from **More → Settings** anytime.
 
 ## AI coding workflow automation
 

@@ -116,49 +116,27 @@ Choose an absolute writable **New-project folder** on this computer. Each new ta
 
 Review workspace access and billing, select **I understand the workspace access and billing rules**, then **Finish setup**. First installations stay paused. This acknowledgement does not authorize a reset, a paid tool run or a purchase.
 
-## 4. Learn the five pages
+## 4. Describe what you want
 
-![Actual Home page after a real task completed](images/simple-home.jpg)
+Open **Your work**, describe your request in everyday words and choose **Let’s do it**. A new project folder is selected by default. Choose a saved project from the menu only when you want its files changed. The AI tool is shown underneath; **Change AI** is optional.
 
-| Page | Use it for |
-| --- | --- |
-| **Home** | See the next step, start/pause work, and review approval requests. |
-| **Tasks** | Create work, view in-progress/finished tasks, and use existing folders. |
-| **Ideas** | Ask AI for project suggestions, then review a proposal before adding it. |
-| **Accounts** | Connect tools, check sign-in and expand usage/account options. |
-| **Settings** | Configure automatic ideas, work limits, setup and troubleshooting output. |
+This starts only your request when an account is available. It does not enable unrelated work in a paused queue. Existing global queue controls remain under **Work controls and activity** for users who want them.
 
-## 5. Add one small task
+## 5. Follow progress
 
-Choose **Help me build something** on Home or **New task** in Tasks. The two-screen guide asks what you want to make, who it is for and any must-have features. Review the idea before adding it. Starter examples are available on Home. See the [beginner walkthrough](BEGINNERS.md).
+Your request appears below the composer alongside saved conversations. It says **Up next**, **Working on it**, **Waiting for your AI**, **Needs you**, or **Ready to try**. Use **See progress** to follow a running request. Choose **Reply** when the AI needs input. Use the card’s **More → Pause** to pause it, and **Continue** to resume just that request.
 
-For the original form pictured below, choose **I prefer to write my own task**. Enter a name, goal and AI tool. Expand **Limits and model (optional)** only if you need a step cap, priority or model. A step is one bounded work session.
+Codex needs verified subscription quota and zero paid balance. Other providers ask for approval before each invocation because billing is unverified. Requests appear above your work. Waiting or declining remains available. Runquay never purchases credits or resets. **Work controls and activity → Pause work** also disarms individually started requests and stops active child work; written files remain.
 
-![Actual text-cleaner goal in the shorter task form](images/simple-new-task.jpg)
+## 6. Try the result
 
-The browser test used a Python CLI that reads a UTF-8 file, trims lines, skips blanks, and includes tests for empty input, whitespace, Unicode and multiple lines. It required no dependencies, network access or publication.
+Choose **View result** for opening instructions and **Open project folder**. The handoff reads START_HERE.md, with README fallback, and does not execute files. Check the result yourself before accepting or publishing it. Choose **Ask for a change** for a follow-up, or **Ask for help** if you cannot open it. Sending a follow-up starts that request when its AI is available.
 
-Choose **Add task**. If work is paused, the task shows **Waiting**, and Home offers **Start work**. When work is already enabled, adding a task can start it as soon as an eligible account is available. Read the form's note before submitting.
-
-For an existing repository, choose **Tasks → Use an existing project**, find the folder and choose **Add task**. Use **Connect folder** if it is missing. Review or back up current changes before an agent edits that repository.
-
-## 6. Start work and review the result
-
-Use **Start work** on Home. The next-step card explains whether work is waiting, active or needs your approval. **View task** opens the in-progress task. **Pause work** stops scheduling and active child work; written files remain.
-
-Codex needs verified subscription quota and zero paid balance. Other providers ask for approval before each invocation because billing is unverified. Review any request on Home; declining or waiting remains available. Runquay does not purchase credits or resets.
-
-When a task finishes, choose **Review results** on Home or **Finished** in Tasks. Choose **See what was made** for opening instructions, **Open project folder**, and **Ask for help**. The handoff displays START_HERE.md when present, with README fallback. It does not execute project files. Expand **Task details and checks** for its goal, reported tests, folder, tool and step count. **View output** opens the detailed run log, which may contain private project information.
-
-![Real text-cleaner completion and checks, cropped before its private path](images/simple-result.jpg)
-
-Inspect the files and `AUTOWORK_CHECKPOINT.md`, and independently run relevant checks. **Done** means the agent reported completion; it does not certify the code. The illustrated text cleaner passed all seven tests independently. Choose **Add follow-up** for further work; inspect existing edits before continuing an interrupted task.
-
-Launch completed apps separately: worker-launched development servers stop with the step. Publishing, deployments and purchases require separate action.
+[Beginner walkthrough](BEGINNERS.md) · [Daily workflows and detailed controls](WORKFLOWS.md)
 
 ## 7. Find your next task
 
-Open **Ideas**, choose a project and optionally enter a focus. Select **Get ideas**. If work is paused, choose **Start work to get ideas**. The selected project also filters saved proposals; **All my projects** includes new-project ideas.
+Open **More → Find ideas**, choose a project and optionally enter a focus. Select **Get ideas**. If work is paused, choose **Start work to get ideas**. The selected project also filters saved proposals; **All my projects** includes new-project ideas.
 
 ![Actual scoped AI suggestion after inspecting the text-cleaner project](images/simple-ideas.jpg)
 
@@ -179,7 +157,7 @@ For a fresh computer, use **setup.cmd**, **setup.command** or **sh setup.sh** in
 
 ## Find tasks you already have in Codex
 
-The current **Tasks → Existing AI tasks** view combines Codex, Claude Code, Gemini CLI and available Antigravity local histories. Choose an **AI tool**, search for a title or project, then open **Task summary**. **Refresh tasks** checks again without starting AI work. Other tools can use **Import history** with a compatible metadata JSON file.
+The detailed **Your work → Browse all conversations and folders → Existing AI tasks** view combines Codex, Claude Code, Gemini CLI and available Antigravity local histories. Choose an **AI tool**, search for a title or project, then open **Task summary**. **Refresh tasks** checks again without starting AI work. Other tools can use **Import history** with a compatible metadata JSON file.
 
 The local queue belongs to this Runquay installation. A saved conversation is separate from that queue; open its original tool to continue it. Missing folders, older encrypted history and unsupported cloud exports are explained rather than guessed. [Detailed guide, supported sources and import example](TASK_HISTORY.md).
 

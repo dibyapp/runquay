@@ -1,5 +1,33 @@
 # Verification record
 
+## Everyday workspace — 0.9.0
+
+Verified on Windows on 2026-10-17: 125 Python tests (122 passed, three POSIX
+skips) and 33 JavaScript tests. New checks cover concurrent request retries,
+idempotent schema upgrades, explicit provider selection, missing accounts,
+selected folders, scoped work across multiple milestones, paused global queues,
+installation blocking, per-run approval and HTTP pause disarming scoped work.
+Task pause expires outstanding vendor approvals; approving a paused request is
+rejected. Existing quota, paid-credit, permission and reset tests remain in place.
+
+A Chromium walkthrough exercised the actual HTTP handler, UI and worker with
+fictional projects and a deterministic subprocess. It covered a single composer,
+safe new-folder default, saved-chat preview and folder selection, automatic
+request execution, unrelated work staying paused, opening instructions, follow-up,
+single-task start, visible vendor approval, pause, search, empty-account guidance,
+inline errors retaining input, legacy Home navigation, and layouts from 320 to
+1440 pixels. No browser errors or horizontal page overflow were observed. Test
+captures were visually reviewed and stay private; no new public screenshots were
+added. In-app browser automation remains unavailable, so this used local Chromium.
+
+This release did not make new live vendor model calls. Native chat previews are
+still bounded local metadata, not full conversations or live two-way sessions.
+Desktop/macOS/Linux behavior beyond the CI matrix and previously recorded vendor
+checks is not asserted. One unfinished work task per folder remains a limit.
+The local upgrade preserves connected accounts and the global queue setting.
+These checks do not establish that arbitrary AI-generated work is correct or safe.
+
+
 
 ## Automatic Collective Learnings experience — 0.8.0
 

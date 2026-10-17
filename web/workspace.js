@@ -1,0 +1,118 @@
+"use strict";
+// The everyday surface: a request, its progress, and its result.
+window.RunquayWorkspace = (() => {
+  let limit=10, sending=false, retry=null, selectedHistory="";
+  function navigate(page) {
+    const workspace=$("everyday-work");
+    if(["overview","projects"].includes(page)) {
+      document.querySelector(`.page[data-page="${page}"]`).prepend(workspace);
+      document.querySelector('[data-workspace-link]').setAttribute("aria-current","page");
+      document.querySelector('[data-workspace-link]').classList.add("active");
+    }
+  }
+  function syncSelect(id, options) {
+    const select=$(id), value=select.value;
+    const html=options.map(([key,label])=>`<option value="${esc(key)}">${esc(label)}</option>`).join("");
+    if(select._options!==html) {
+      select.innerHTML=html;select._options=html;
+      if(options.some(([key])=>key===value)) select.value=value;
+    }
+  }
+  function updateContext() {
+    if(!state) return;
+    const folder=state.catalog.find(p=>p.id===$("request-target").value);
+    const tool=state.tools.find(t=>t.id===$("request-provider").value);
+    $("request-context").textContent=`${folder ? "Works in "+folder.name : "A new folder on this computer"} · ${tool?.name || "Connect an AI to begin"}`;
+    $("request-text").placeholder=folder ? `What would you like changed in ${folder.name}?` : "Make a website for my bakery, with a menu and opening hours…";
+  }
+  function render(s) {
+    if($("approvals").parentElement!==$("workspace-decisions")) $("workspace-decisions").append($("approvals"));
+    if($("workspace-controls").parentElement!==$("workspace-extra")) $("workspace-extra").append($("workspace-controls"));
+    if($("workspace-library").parentElement!==$("workspace-extra")) $("workspace-extra").append($("workspace-library"));
+    const pending=s.decisions.some(d=>["pending","uncertain","redeeming"].includes(d.state));
+    $("approvals").hidden=!pending;
+    const profiles=s.profiles.filter(p=>p.enabled);
+    const providers=[...new Set(profiles.map(p=>p.provider))].sort((a,b)=>Number(b==="codex")-Number(a==="codex"));
+    // A visible choice is fixed before sending; never silently change providers.
+    syncSelect("request-provider",providers.map(p=>[p,s.tools.find(t=>t.id===p)?.name || p]));
+    if(!$("request-provider").value && providers.length) $("request-provider").value=providers.includes("codex") ? "codex" : providers[0];
+    syncSelect("request-target",[["","New project"],...s.catalog.filter(p=>!p.is_supervisor && p.details.exists).map(p=>[p.id,p.name])]);
+    $("workspace-connect").hidden=profiles.length>0;
+    $("request-send").disabled=sending || !profiles.length;
+    updateContext();
+    const query=$("workspace-search").value.trim().toLocaleLowerCase();
+    const work=s.projects.map(p=>({kind:"work",item:p,time:Date.parse(s.runs.find(r=>r.project_id===p.id)?.started || p.created)||0,active:["running","attention"].includes(p.state)}));
+    const history=(s.history_tasks || []).map(t=>({kind:"history",item:t,time:typeof t.updated_at==="number" ? t.updated_at*1000 : Date.parse(t.updated_at)||0,active:false}));
+    const all=[...work,...history].filter(row=>!query || `${row.item.name || row.item.title} ${row.item.project_name || ""}`.toLocaleLowerCase().includes(query))
+      .sort((a,b)=>Number(b.active)-Number(a.active) || b.time-a.time);
+    replaceCards("everyday-list",all.length ? all.slice(0,limit).map(row=>row.kind==="work" ? workCard(row.item,s) : historyCard(row.item)).join("") :
+      `<div class="workspace-empty"><span aria-hidden="true">✧</span><h3>${query ? "No matching work" : "Your next idea starts here"}</h3><p>${query ? "Try another name." : "Describe something above. Your progress and results will appear here."}</p></div>`);
+    $("workspace-more").hidden=all.length<=limit;
+  }
+  function workCard(p,s) {
+    const run=s.runs.find(r=>r.project_id===p.id);
+    const status=RunquayUI.workStatus(p,s);
+    const summary=p.checkpoint.question || p.checkpoint.summary || p.goal.split("\n\n")[0];
+    const primary=p.state==="complete" ? `<button data-action="result" data-id="${p.id}">View result</button>` :
+      p.state==="attention" ? `<button data-action="resume" data-id="${p.id}">Reply</button>` :
+      ["paused","cancelled"].includes(p.state) || p.state==="queued" && !s.running && !p.run_requested ? `<button data-work-start="${p.id}">${p.state==="queued" ? "Start" : "Continue"}</button>` :
+      run ? `<button class="secondary" data-action="log" data-id="${run.id}">See progress</button>` : "";
+    return `<article class="work-card" id="work-${p.id}" tabindex="-1"><div class="work-card-icon"><img src="${RunquayUI.toolIcon(p.provider)}" alt="${esc(s.tools.find(t=>t.id===p.provider)?.name || p.provider)}" width="26" height="26"></div><div class="work-card-body"><div class="work-card-heading"><h3>${esc(p.name)}</h3><span class="work-status ${esc(p.state)}">${esc(status.label)}</span></div><p class="work-card-summary">${esc(summary.slice(0,240))}</p><p class="work-status-note">${esc(status.text)}</p><div class="work-card-actions">${primary}${p.state==="complete" ? `<button class="text-button" data-action="resume" data-id="${p.id}">Ask for a change</button>` : ""}<details data-key="work-more-${p.id}" class="work-more"><summary>More</summary><div>${["running","queued"].includes(p.state) ? `<button class="text-button" data-action="pause-project" data-id="${p.id}">Pause</button>` : ""}${!["complete","cancelled"].includes(p.state) ? `<button class="text-button" data-action="cancel-project" data-id="${p.id}">Stop this task</button>` : ""}${run ? `<button class="text-button" data-action="log" data-id="${run.id}">Conversation</button>` : ""}<p>${esc(p.checkpoint.tests || "No checks reported yet.")}</p>${p.note ? `<p>${esc(p.note)}</p>` : ""}<p>${esc(p.path)}</p></div></details></div></div></article>`;
+  }
+  function historyCard(t) {
+    return `<article class="work-card history-work"><div class="work-card-icon"><img src="${RunquayUI.toolIcon(t.provider)}" alt="${esc(t.tool || t.provider)}" width="26" height="26"></div><div class="work-card-body"><button class="history-title" data-work-history="${esc(t.key)}">${esc(t.title)}</button><p class="work-status-note">${esc(t.project_name || "Saved conversation")} · Saved in ${esc(t.tool || t.provider)} · ${esc(when(t.updated_at))}</p></div><button class="text-button" data-work-history="${esc(t.key)}" aria-label="View ${esc(t.title)}">View</button></article>`;
+  }
+  function focusRequest(catalogId="",text="") {
+    location.hash="#projects";navigate("projects");
+    $("request-target").value=catalogId;
+    if(text) $("request-text").value=text;
+    updateContext();$("request-text").focus();$("everyday-work").scrollIntoView({block:"start"});
+  }
+  $("request-target").onchange=updateContext;$("request-provider").onchange=updateContext;
+  $("workspace-search").oninput=()=>{limit=10;if(state) render(state);};
+  $("workspace-more").onclick=()=>{limit+=15;render(state);};
+  $("request-form").onsubmit=async event=>{
+    event.preventDefault();if(sending || !state) return;
+    const fields={text:$("request-text").value.trim(),catalog_id:$("request-target").value,provider:$("request-provider").value};
+    if(!fields.text) return $("request-text").focus();
+    const signature=JSON.stringify(fields);
+    if(retry?.signature!==signature) retry={signature,key:crypto.randomUUID()};
+    sending=true;$("request-send").disabled=true;$("request-send").textContent="Sending…";$("request-error").hidden=true;
+    try {
+      const result=await api("/api/requests",{...fields,request_key:retry.key});
+      retry=null;$("request-text").value="";$("workspace-search").value="";limit=10;
+      $("request-receipt").hidden=false;$("request-receipt").textContent="Got it. We’ll start when your AI is available. Follow it below.";
+      await refresh();$("work-"+result.id)?.focus({preventScroll:true});
+    } catch(error) {$("request-error").hidden=false;$("request-error").textContent=error.message+" Your words are still here; you can try again.";}
+    finally {sending=false;$("request-send").disabled=!state.profiles.some(p=>p.enabled);$("request-send").innerHTML='Let’s do it <span aria-hidden="true">↑</span>';}
+  };
+  document.addEventListener("click",async event=>{
+    const example=event.target.closest("[data-request-example]");if(example) focusRequest("",example.dataset.requestExample);
+    const start=event.target.closest("[data-work-start]");
+    if(start) {
+      const p=state.projects.find(p=>p.id===start.dataset.workStart);if(!p) return;
+      start.disabled=true;
+      await act("/api/project",{id:p.id,action:"resume",run_now:true,max_steps:Math.min(200,Math.max(p.max_steps,p.steps+10))});
+      start.disabled=false;
+    }
+    const history=event.target.closest("[data-work-history]");
+    if(history) {
+      const t=state.history_tasks.find(t=>t.key===history.dataset.workHistory);if(!t) return;
+      selectedHistory=t.key;$("saved-conversation-title").textContent=t.title;
+      $("saved-conversation-preview").textContent=t.preview || "This tool has not saved a preview here.";
+      $("saved-conversation-note").textContent=`Saved in ${t.tool || t.provider}. This is a local preview. Continue the original conversation in that tool.`;
+      const folder=state.catalog.find(p=>p.id===t.catalog_id && !p.is_supervisor && p.details.exists);
+      $("saved-conversation-work").hidden=!folder;$("saved-conversation-work").textContent="Work on "+(folder?.name || "this project");
+      $("saved-conversation-dialog").showModal();
+    }
+  });
+  $("saved-conversation-work").onclick=()=>{
+    const t=state.history_tasks.find(t=>t.key===selectedHistory);if(!t) return;
+    $("saved-conversation-dialog").close();focusRequest(t.catalog_id);
+  };
+  // Older entry points lead to the same composer rather than another wizard.
+  $("home-new").onclick=()=>focusRequest();$("new-project").onclick=()=>focusRequest();
+  $("home-existing").onclick=()=>{focusRequest();$("request-target").focus();};
+  navigate(RunquayUI.pageFor(location.hash));
+  return {render,navigate,focusRequest};
+})();

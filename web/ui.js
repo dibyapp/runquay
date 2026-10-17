@@ -11,6 +11,21 @@ const RunquayUI = (() => {
   }
   const routes = {overview:"overview",projects:"projects",advisor:"advisor",learnings:"learnings",accounts:"accounts",settings:"settings",approvals:"overview",activity:"settings"};
   const labels = {queued:"Waiting",running:"Working",paused:"Paused",attention:"Needs you",complete:"Done",cancelled:"Cancelled"};
+  function workStatus(project,state) {
+    const decision=(state.decisions || []).find(d=>["pending","uncertain","redeeming"].includes(d.state) &&
+      (d.kind==="external_run" ? (()=>{try {return JSON.parse(d.payload).project_id===project.id;} catch {return false;}})() : false));
+    if(decision && ["queued","running"].includes(project.state)) return {label:"Needs your OK",text:"Review the approval above. Nothing is charged automatically."};
+    if(project.state==="running") return {label:"Working on it",text:"Progress is saved as we go. You can come back later."};
+    if(project.state==="complete") return {label:"Ready to try",text:"Open the result and check that it works for you."};
+    if(project.state==="attention") return {label:"Needs you",text:"Your AI stopped for your input. Reply to continue."};
+    if(project.state==="paused") return {label:"Paused",text:"Your files are saved. Continue whenever you’re ready."};
+    if(project.state==="cancelled") return {label:"Stopped",text:"Your files are still on this computer."};
+    if(!state.running && !project.run_requested) return {label:"Ready when you are",text:"Choose Start to work on just this request."};
+    const connected=(state.profiles || []).filter(p=>p.enabled && p.provider===(project.provider || "codex"));
+    if(!connected.length) return {label:"Connect your AI",text:"Open More → AI connections to connect the tool for this request."};
+    if((project.provider || "codex")==="codex" && !connected.some(p=>p.eligible)) return {label:"Waiting for your AI",text:"Waiting for sign-in or available allowance. Check AI connections if needed."};
+    return {label:"Up next",text:"We’ll start when the worker and your AI are available."};
+  }
   function pageFor(hash) { return routes[String(hash || "").replace(/^#/, "")] || "overview"; }
   function nextStep(state) {
     const tasks = state.projects || [];
@@ -212,6 +227,6 @@ const RunquayUI = (() => {
     const title=/\b(unittest|pytest|npm test|npm run (?:test|lint|build)|node --test)\b/i.test(preview) ? "Run checks" : /\b(Get-Content|cat|head|tail)\b/i.test(preview) ? "Read files" : /\b(Get-ChildItem|Get-Location|rg|ls|find|pwd)\b/i.test(preview) ? "Explore project" : /\bgit (?:diff|status|log)\b/i.test(preview) ? "Review changes" : "Run command";
     return {title,preview};
   }
-  return {commandPresentation,markdown,sessionEvents,toolIcon,historyGroups,savedTasks,codexTasks:savedTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
+  return {workStatus,commandPresentation,markdown,sessionEvents,toolIcon,historyGroups,savedTasks,codexTasks:savedTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
 })();
 if (typeof module !== "undefined") module.exports = RunquayUI;

@@ -190,6 +190,15 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual((p["state"], p["steps"]), ("complete", 2))
         self.assertEqual(len(self.store.rows("SELECT * FROM runs WHERE state='complete'")), 2)
 
+    def test_scoped_request_continues_across_milestones_with_global_queue_paused(self):
+        self.store.set('running',False)
+        self.store.execute("UPDATE projects SET run_requested=1 WHERE id='fixture'")
+        self.run_fixture('continue')
+        self.assertEqual(self.sup.pending_project()['id'],'fixture')
+        self.assertFalse(self.store.setting('running'))
+        self.run_fixture('complete')
+        self.assertEqual(self.store.one("SELECT state FROM projects WHERE id='fixture'")['state'],'complete')
+
     def test_blocked_project_requests_attention(self):
         self.run_fixture("blocked")
         p = self.store.one("SELECT * FROM projects")

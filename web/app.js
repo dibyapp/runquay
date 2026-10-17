@@ -117,14 +117,16 @@ function renderBrain() {
   replaceCards("suggestion-list",ideas.length ? ideas.map(s=>{const p=s.payload; const target=library.find(c=>c.id===p.catalog_id);return `<article class="suggestion"><div class="idea-meta">${badge(p.kind === "new" ? "New project" : "Improvement")}<span>${esc(target?.name || "New project")}</span><span>${esc(p.effort)}</span></div><h3>${esc(p.title)}</h3><p>${esc(p.why)}</p><div class="first-step">First step: ${esc(p.first_milestone)}</div><details data-key="idea-${s.id}"><summary>Why this idea?</summary><p>${esc(p.evidence)}</p><p>${esc(p.goal)}</p></details><div class="controls"><button data-action="review-suggestion" data-id="${s.id}">Review idea</button><button class="text-button" data-action="dismiss-suggestion" data-id="${s.id}">Dismiss</button></div></article>`;}).join("") : empty(busy ? "Your ideas are on the way" : "No ideas in this view",busy ? "The AI is preparing suggestions from the selected context." : "Choose a project and select Get ideas above."));
 }
 function render() {
+  window.RunquayWorkspace?.render(state);
   window.RunquayLearnings?.render(state);
   const running = state.projects.find(p=>p.state === "running");
   const learningBusy = (state.learnings?.batches || []).some(b=>b.state==="running");
+  const scopedWork = state.projects.some(p=>p.run_requested && ["queued","running"].includes(p.state));
   const scopedAnalysis = (state.learnings?.batches || []).some(b=>b.run_now && ["queued","running"].includes(b.state));
   const advising = state.advisor?.state === "running" || learningBusy;
-  $("status").textContent = learningBusy ? "Learning" : scopedAnalysis && !state.running ? "Waiting" : !state.running ? "Paused" : running ? "Working" : advising ? "Planning" : "Ready";
+  $("status").textContent = running ? "Working" : learningBusy ? "Learning" : (scopedAnalysis || scopedWork) && !state.running ? "Waiting" : !state.running ? "Paused" : advising ? "Planning" : "Ready";
   $("status-detail").textContent = running ? running.name : learningBusy ? "Collecting lessons from your past work" : scopedAnalysis ? "Your analysis is waiting for an available account" : advising ? "Finding your next task" : state.running ? "Ready for your next task" : "Work is paused";
-  $("pause").hidden = !state.running && !scopedAnalysis;
+  $("pause").hidden = !state.running && !scopedAnalysis && !scopedWork;
   $("start").hidden = state.running || scopedAnalysis;
   $("queued").textContent = state.projects.filter(p=>p.state === "queued").length;
   $("ready").innerHTML = `${state.profiles.filter(p=>p.eligible && p.enabled).length} <em>/ ${state.profiles.length}</em>`;
@@ -246,7 +248,7 @@ $("project-form").onsubmit = async event => {
   data.learning_ids = new FormData(event.target).getAll("learning_ids");
   try { await api(data.suggestion_id ? "/api/suggestion" : "/api/projects", data.suggestion_id ? {...data,id:data.suggestion_id,action:"start"} : data); $("project-dialog").close(); event.target.reset(); toast(state.running ? "Task added. Work can start when an account is available." : "Task saved. Choose Start work on Home when ready."); setTaskFilter("active"); location.hash="#projects"; await refresh(); } catch(error) { toast(error.message); }
 };
-$("resume-form").onsubmit = async event => { event.preventDefault(); const data = Object.fromEntries(new FormData(event.target)); try { await api("/api/project", {...data,action:"resume"}); $("resume-dialog").close(); setTaskFilter("active"); await refresh(); } catch(error) { toast(error.message); } };
+$("resume-form").onsubmit = async event => { event.preventDefault(); const data = Object.fromEntries(new FormData(event.target)); try { await api("/api/project", {...data,action:"resume",run_now:true}); $("resume-dialog").close(); setTaskFilter("active"); await refresh(); } catch(error) { toast(error.message); } };
 $("settings-form").onsubmit = async event => {event.preventDefault(); const data = Object.fromEntries(new FormData(event.target)); if(await act("/api/settings", {...data, keep_awake:event.target.elements.keep_awake.checked,advisor_auto:event.target.elements.advisor_auto.checked})) toast("Settings saved");};
 $("notifications").onclick = async () => {if(!window.Notification) return toast("This browser does not support notifications"); const permission = await Notification.requestPermission(); toast(permission === "granted" ? "Notifications enabled while this dashboard is open" : "Notifications were not enabled");};
 document.addEventListener("click", async event => {
@@ -284,7 +286,8 @@ function updateNavigation() {
   const page=RunquayUI.pageFor(location.hash);
   document.querySelectorAll(".page").forEach(p=>p.hidden=p.dataset.page !== page);
   document.querySelectorAll(".nav a").forEach(a=>{const active=a.hash === "#" + page; a.classList.toggle("active",active); if(active) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");});
-  $("page-title").textContent={overview:"Home",projects:"Tasks",advisor:"Ideas",learnings:"Collective Learnings",accounts:"Accounts",settings:"Settings"}[page];
+  window.RunquayWorkspace?.navigate(page);
+  $("page-title").textContent={overview:"Your work",projects:"Your work",advisor:"Ideas",learnings:"Collective Learnings",accounts:"Accounts",settings:"Settings"}[page];
   if(location.hash === "#activity") $("activity").open=true;
   if(location.hash === "#projects" && taskFilter !== "finished") setTaskFilter("active");
   if(location.hash === "#approvals" || location.hash === "#activity") document.querySelector(location.hash).scrollIntoView({block:"start",behavior:"instant"});
