@@ -1,5 +1,20 @@
 # Actual Runquay screenshots and test record
 
+## Runquay Field — 0.10.0, 17 October 2026
+
+Actual JPEGs captured from the running local app in Chromium on Windows. The isolated walkthrough used 26 fictional source summaries, including 20 example SEO projects, plus DNS, security, DevOps, accessibility, testing and performance reports. The browser exercised real HTTP handlers and a deterministic worker subprocess. These captures show the actual interface; they are not generated images or evidence of live model outcomes. Animation was frozen only for the still capture.
+
+![Actual Learn interface with fictional history](images/field-learnings.jpg)
+
+![Actual Create interface with fictional history](images/field-workspace.jpg)
+
+![Actual mobile Learn interface](images/field-mobile.jpg)
+
+Exact pixels were reviewed for personal names, emails, account details, private paths and unrelated project/chat content. No such findings remained. Metadata contains JFIF encoding information and a reviewed standard sRGB color profile with public vendor credit; no personal metadata, comments, EXIF or XMP. Their exact SHA256 hashes are pinned in the release manifest. Test reports and other captures stay private. [Interface guide](INTERFACE.md) · [Verification](VERIFICATION.md).
+
+Older screenshots below document earlier versions.
+
+
 ## Existing AI tasks - 0.6.0, 9 October 2026
 
 This is an actual JPEG captured from the running Windows walkthrough in the Codex in-app browser after native history detection and end-to-end filter/import checks. It shows 107 saved local tasks and the new AI tool filter. The local queue remains empty and paused.

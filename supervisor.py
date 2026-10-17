@@ -566,13 +566,18 @@ class Supervisor:
             raise ValueError('Describe what you want in up to 10,000 characters.')
         if not re.fullmatch(r'[a-zA-Z0-9-]{16,80}', key):
             raise ValueError('Refresh this page before sending your request.')
-        digest = hashlib.sha256(json.dumps([text, catalog_id, chosen]).encode()).hexdigest()
+        learning_ids = data.get('learning_ids', [])
+        if not isinstance(learning_ids, list):
+            raise ValueError('Choose up to 12 saved learnings')
+        request_parts = [text, catalog_id, chosen] + ([learning_ids] if learning_ids else [])
+        digest = hashlib.sha256(json.dumps(request_parts).encode()).hexdigest()
         with self.request_lock:
             prior = self.store.one('SELECT * FROM work_requests WHERE key=?', (key,))
             if prior:
                 if prior['digest'] != digest:
                     raise ValueError('This request changed. Send it as a new request.')
                 return prior['project_id']
+            self.learnings.context(learning_ids)
             if self.setup.lock.locked():
                 raise ValueError('Finish connecting your AI tool before sending work.')
             profiles = self.store.rows('SELECT * FROM profiles WHERE enabled=1 ORDER BY id')
@@ -587,7 +592,7 @@ class Supervisor:
                 "Use fictional content when examples are needed. Do not publish, purchase, install software, " \
                 "read credentials, or change other projects without separate approval."
             ident = self.create_project({'name': text.splitlines()[0][:95], 'goal': goal,
-                                         'provider': provider, 'catalog_id': catalog_id})
+                                         'provider': provider, 'catalog_id': catalog_id, 'learning_ids': learning_ids})
             self.store.execute('UPDATE projects SET run_requested=1 WHERE id=?', (ident,))
             self.store.execute('INSERT INTO work_requests VALUES(?,?,?)', (key, digest, ident))
             self.wake.set()
@@ -1041,6 +1046,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return self.send_data({"error": "Cross-site access denied"}, 403)
         path = urllib.parse.urlparse(self.path).path
         static = {"/workspace.js": ("workspace.js", "text/javascript; charset=utf-8"), "/beginner.js": ("beginner.js", "text/javascript; charset=utf-8"), "/mark.svg": ("mark.svg", "image/svg+xml"), "/": ("index.html", "text/html; charset=utf-8"), "/app.js": ("app.js", "text/javascript; charset=utf-8"), "/setup.js": ("setup.js", "text/javascript; charset=utf-8"), "/ui.js": ("ui.js", "text/javascript; charset=utf-8"), "/simple.css": ("simple.css", "text/css; charset=utf-8"), "/style.css": ("style.css", "text/css; charset=utf-8")}
+        static["/field.css"] = ("field.css", "text/css; charset=utf-8")
+        static["/field.js"] = ("field.js", "text/javascript; charset=utf-8")
         static["/learnings.js"] = ("learnings.js", "text/javascript; charset=utf-8")
         static.update({f"/tool-icons/{provider}.svg": (f"tool-icons/{provider}.svg", "image/svg+xml") for provider in providers.TOOLS})
         if path in static:

@@ -118,7 +118,7 @@ Review workspace access and billing, select **I understand the workspace access 
 
 ## 4. Describe what you want
 
-Open **Your work**, describe your request in everyday words and choose **Let’s do it**. A new project folder is selected by default. Choose a saved project from the menu only when you want its files changed. The AI tool is shown underneath; **Change AI** is optional.
+Open **Create**, describe your request in everyday words and choose **↑**. A new project folder is selected by default. Choose a saved project from the menu only when you want its files changed. The AI tool is shown underneath; **Change AI** is optional.
 
 This starts only your request when an account is available. It does not enable unrelated work in a paused queue. Existing global queue controls remain under **Work controls and activity** for users who want them.
 
@@ -130,7 +130,7 @@ Codex needs verified subscription quota and zero paid balance. Other providers a
 
 ## 6. Try the result
 
-Choose **View result** for opening instructions and **Open project folder**. The handoff reads START_HERE.md, with README fallback, and does not execute files. Check the result yourself before accepting or publishing it. Choose **Ask for a change** for a follow-up, or **Ask for help** if you cannot open it. Sending a follow-up starts that request when its AI is available.
+Choose **↗** on a finished work row for opening instructions and **Open project folder**. The handoff reads START_HERE.md, with README fallback, and does not execute files. Check the result yourself before accepting or publishing it. Choose **··· → Ask for a change** for a follow-up, or **Ask for help** if you cannot open it. Sending a follow-up starts that request when its AI is available.
 
 [Beginner walkthrough](BEGINNERS.md) · [Daily workflows and detailed controls](WORKFLOWS.md)
 
@@ -164,6 +164,6 @@ The local queue belongs to this Runquay installation. A saved conversation is se
 
 ## Reuse what you learned
 
-Open **Learnings** to collect lessons from work across projects and AI tools. Ask about any topic or choose a suggestion. Runquay finds matching work and an
+Open **Learn** to collect lessons from work across projects and AI tools. Ask about any topic or choose a suggestion. Runquay finds matching work and an
 analysis tool. Review the context and choose Analyze; lessons appear automatically
 without starting unrelated paused tasks. Use a useful lesson in a task with one action. [Collective Learnings walkthrough](COLLECTIVE_LEARNINGS.md).

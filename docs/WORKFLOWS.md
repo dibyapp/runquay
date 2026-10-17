@@ -2,7 +2,7 @@
 
 ## Everyday work
 
-In **Your work**, say what you want and choose **Let’s do it**. Keep **New project** for a separate folder, or select an existing project before sending. The provider is shown before you send; Runquay never silently switches providers. Only that request is started when the global queue is paused. Normal account, quota, permission and billing rules still apply.
+In **Create**, say what you want and choose **↑**. Keep **New project** for a separate folder, or select an existing project before sending. The provider is shown before you send; Runquay never silently switches providers. Only that request is started when the global queue is paused. Normal account, quota, permission and billing rules still apply.
 
 Your work and saved native conversations share a searchable list. **View result** opens instructions; **Ask for a change** sends a follow-up. A native conversation’s **View** shows its available local preview, not a live two-way chat; continue it in the original tool. **Work on [project]** selects its folder without sending its preview to an AI.
 

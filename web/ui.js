@@ -11,6 +11,18 @@ const RunquayUI = (() => {
   }
   const routes = {overview:"overview",projects:"projects",advisor:"advisor",learnings:"learnings",accounts:"accounts",settings:"settings",approvals:"overview",activity:"settings"};
   const labels = {queued:"Waiting",running:"Working",paused:"Paused",attention:"Needs you",complete:"Done",cancelled:"Cancelled"};
+  function commandChoices(state,query="") {
+    const q=query.trim().toLocaleLowerCase();
+    const routes=[{kind:"route",id:"projects",label:"Create something",detail:"Your workspace",symbol:"✧"},
+      {kind:"route",id:"learnings",label:"Explore your learnings",detail:"Knowledge from your work",symbol:"◌"},
+      {kind:"route",id:"advisor",label:"Find an idea",detail:"Ask your connected AI",symbol:"↗"},
+      {kind:"route",id:"accounts",label:"AI connections",detail:"Accounts and allowance",symbol:"◎"},
+      {kind:"route",id:"settings",label:"Settings",detail:"Make it yours",symbol:"⚙"}];
+    const entries=q ? [...routes,...(state.projects || []).map(p=>({kind:"work",id:p.id,label:p.name,detail:"Your work",symbol:"↗"})),
+      ...(state.history_tasks || []).map(t=>({kind:"history",id:t.key,label:t.title,detail:t.project_name || t.tool || "Saved preview",symbol:"◷"})),
+      ...(state.learnings?.cards || []).filter(c=>["saved","review"].includes(c.state)).map(c=>({kind:"insight",id:c.id,label:c.payload.title,detail:"Your knowledge",symbol:"✧"}))] : routes;
+    return entries.filter(item=>!q || `${item.label} ${item.detail}`.toLocaleLowerCase().includes(q)).slice(0,12);
+  }
   function workStatus(project,state) {
     const decision=(state.decisions || []).find(d=>["pending","uncertain","redeeming"].includes(d.state) &&
       (d.kind==="external_run" ? (()=>{try {return JSON.parse(d.payload).project_id===project.id;} catch {return false;}})() : false));
@@ -227,6 +239,6 @@ const RunquayUI = (() => {
     const title=/\b(unittest|pytest|npm test|npm run (?:test|lint|build)|node --test)\b/i.test(preview) ? "Run checks" : /\b(Get-Content|cat|head|tail)\b/i.test(preview) ? "Read files" : /\b(Get-ChildItem|Get-Location|rg|ls|find|pwd)\b/i.test(preview) ? "Explore project" : /\bgit (?:diff|status|log)\b/i.test(preview) ? "Review changes" : "Run command";
     return {title,preview};
   }
-  return {workStatus,commandPresentation,markdown,sessionEvents,toolIcon,historyGroups,savedTasks,codexTasks:savedTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
+  return {commandChoices,workStatus,commandPresentation,markdown,sessionEvents,toolIcon,historyGroups,savedTasks,codexTasks:savedTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
 })();
 if (typeof module !== "undefined") module.exports = RunquayUI;

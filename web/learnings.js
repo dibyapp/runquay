@@ -17,14 +17,19 @@ window.RunquayLearnings = (() => {
     get('learning-prepare').disabled=busy || loading || !loaded || !sources.length || !get('learning-provider').value || manual && !selected.size;
   }
   function renderDiscovery() {
-    get('learning-connected').textContent=loading ? 'Finding your experience…' : sources.length ? `${discovery.source_count} work summaries · ${discovery.project_count} projects · ${discovery.tool_count} tools` : 'Your next completed task can become your first learning.';
+    get('learning-connected').textContent=loading ? 'Finding local work…' : sources.length ? `${discovery.project_count} projects · ${discovery.tool_count} tools` : 'Your experience starts with your first completed task.';
     const groups=discovery.topics || [];
-    replaceCards('learning-topic-suggestions',groups.map(t=>`<button type="button" class="learning-topic-choice" data-learning-topic="${esc(t.topic)}"><span>${esc(t.topic)}</span><small>${t.count} related ${t.count===1?'summary':'summaries'} <span aria-hidden="true">↗</span></small></button>`).join(''));
+    replaceCards('learning-topic-suggestions',groups.map((t,index)=>{
+      return `<button type="button" class="learning-topic-choice" data-learning-topic="${esc(t.topic)}" aria-label="Explore ${esc(t.topic)}, ${t.count} matching summaries"><span class="node-light" aria-hidden="true"></span><span class="node-title">${esc(t.topic)}</span><small>${t.count} related ${t.count===1?'summary':'summaries'}</small></button>`;
+    }).join(''));
     get('learning-topics-label').hidden=!groups.length;
+    get('field-total').textContent=loaded ? String(sources.length) : '—';
+    get('field-unit').textContent=sources.length===1 ? 'work summary' : 'work summaries';
     const provider=get('learning-provider').value;
     const name=current?.tools.find(t=>t.id===provider)?.name;
-    get('learning-auto-note').textContent=name ? `Matching work chosen for you · ${name}${toolChosen ? '' : ' selected automatically'}` : 'Connect an AI tool to get started';
-    get('learning-prepare').textContent=busy ? 'Finding the useful parts…' : get('learning-topic').value.trim() ? 'Find learnings' : 'Discover patterns';
+    get('learning-auto-note').textContent=name ? `${name} · ${manual ? 'Your chosen context' : 'Automatic context'}` : 'Connect an AI to explore';
+    get('learning-prepare').innerHTML=busy ? '<span class="send-thinking" aria-hidden="true">···</span>' : '<span aria-hidden="true">↑</span>';
+    get('learning-prepare').setAttribute('aria-label',busy ? 'Finding matching work' : 'Find learnings');
   }
   async function loadSources() {
     if(loading || !current)return;
@@ -37,24 +42,33 @@ window.RunquayLearnings = (() => {
     }catch(error){get('learning-error').textContent=error.message;}
     finally{loading=false;renderSources();renderDiscovery();}
   }
+  function openInsight(id) {
+    const card=current?.learnings?.cards.find(c=>c.id===id);if(!card)return;
+    const p=card.payload;
+    if(get('learning-library-dialog').open)get('learning-library-dialog').close();
+    get('insight-content').innerHTML=`<p class="eyebrow">${card.state==='saved'?'KEPT BY YOU':'AI DRAFT · REVIEW BEFORE USE'}</p><h2 id="insight-title">${esc(p.title)}</h2><p class="insight-lesson">${esc(p.lesson)}</p><div class="learning-tags">${p.tags.map(t=>`<button class="learning-tag" type="button" data-learning-tag="${esc(t)}">${esc(t)}</button>`).join('')}</div><details class="insight-context"><summary>${card.sources.length} supporting ${card.sources.length===1?'summary':'summaries'} · explore context</summary><h3>Use this when</h3><p>${esc(p.apply_when)}</p><h3>What to watch for</h3><p>${esc(p.caveats)}</p><p class="hint">${p.confidence==='hypothesis'?'A hypothesis to test.':'From reported work; not independently verified.'}</p><ul>${card.sources.map(source=>`<li>${esc(source.title)}<small>${esc(source.project)} · ${esc(source.tool)}</small></li>`).join('')}</ul></details><div class="insight-actions"><button type="button" data-learning-action="use" data-id="${esc(card.id)}">Use this <span aria-hidden="true">↗</span></button>${card.state==='review'?`<button type="button" data-learning-action="approve" data-id="${esc(card.id)}">Keep</button>`:''}<details class="learning-card-menu"><summary aria-label="More insight actions">•••</summary><button type="button" data-learning-action="edit" data-id="${esc(card.id)}">Edit</button><button type="button" data-learning-action="dismiss" data-id="${esc(card.id)}">Hide</button></details></div>`;
+    get('learning-insight-dialog').showModal();
+  }
   function renderCards() {
     if(!current)return;
-    const cards=current.learnings?.cards || [], query=get('learning-search').value.trim().toLocaleLowerCase(),tag=get('learning-tag').value,view=get('learning-view').value;
+    const cards=current.learnings?.cards || [],query=get('learning-search').value.trim().toLocaleLowerCase(),tag=get('learning-tag').value,view=get('learning-view').value;
     const filtered=cards.filter(c=>(!tag || c.payload.tags.includes(tag)) && (!view || c.state===view) && (!query || `${c.payload.title} ${c.payload.lesson} ${c.payload.tags.join(' ')}`.toLocaleLowerCase().includes(query)));
-    get('learning-library-count').textContent=cards.length ? `${cards.filter(c=>c.state==='saved').length} kept · ${cards.filter(c=>c.state==='review').length} new` : 'Useful lessons will find a home here.';
+    get('field-library-count').textContent=String(cards.length);
+    get('learning-library-count').textContent=cards.length ? `${cards.filter(c=>c.state==='saved').length} kept · ${cards.filter(c=>c.state==='review').length} to explore` : 'The useful parts of your experience.';
     replaceCards('learning-card-list',filtered.length ? filtered.map(c=>{
-      const p=c.payload,projects=new Set(c.sources.map(s=>s.project)).size;
-      return `<article class="learning-card panel"><div class="learning-card-top"><span class="learning-card-state">${c.state==='saved'?'✓ Kept in your library':'AI draft · check before use'}</span><details class="learning-card-menu" data-key="menu-${esc(c.id)}"><summary aria-label="Options for ${esc(p.title)}">•••</summary><button type="button" data-learning-action="edit" data-id="${esc(c.id)}">Edit lesson</button><button type="button" data-learning-action="dismiss" data-id="${esc(c.id)}">Hide lesson</button></details></div><h3>${esc(p.title)}</h3><p class="learning-copy">${esc(p.lesson)}</p><div class="learning-tags">${p.tags.map(t=>`<button class="learning-tag" type="button" data-learning-tag="${esc(t)}">${esc(t)}</button>`).join('')}</div><details class="learning-evidence" data-key="learning-${esc(c.id)}"><summary>From ${c.sources.length} ${c.sources.length===1?'summary':'summaries'}${projects>1?' across '+projects+' projects':''} <span>View context</span></summary><h4>Use this when</h4><p class="learning-copy">${esc(p.apply_when)}</p><h4>What to watch for</h4><p class="learning-copy">${esc(p.caveats)}</p><p class="hint">${p.confidence==='hypothesis'?'An idea to test, not an established result.':'Drawn from reported work; not independently verified.'}</p><ul>${c.sources.map(s=>`<li>${esc(s.title)}<small>${esc(s.project)} · ${esc(s.tool)}</small></li>`).join('')}</ul></details><div class="controls"><button type="button" class="secondary" data-learning-action="use" data-id="${esc(c.id)}">Use in a task <span aria-hidden="true">↗</span></button>${c.state==='review'?`<button type="button" class="text-button" data-learning-action="approve" data-id="${esc(c.id)}">Keep lesson</button>`:''}</div></article>`;
-    }).join('') : `<div class="learning-empty"><span class="learning-empty-mark" aria-hidden="true">✧</span><h3>${cards.length?'Nothing matches yet':'You shouldn’t have to learn the same thing twice.'}</h3><p>${cards.length?'Try another search or topic.':'Find what worked, what failed, and what to try next—from the work you’ve already done.'}</p>${!cards.length?'<button type="button" class="text-button" data-learning-action="focus">Discover your first learnings ↑</button>':''}</div>`);
+      const p=c.payload;
+      return `<article class="learning-index-row"><button type="button" class="learning-index-open" data-learning-open="${esc(c.id)}"><span class="learning-index-meta"><i class="${c.state==='saved'?'':'is-draft'}" aria-hidden="true"></i>${c.state==='saved'?'Kept by you':'AI draft'} · ${c.sources.length} ${c.sources.length===1?'source':'sources'}</span><h3>${esc(p.title)}</h3></button><div class="learning-index-bottom"><div class="learning-tags">${p.tags.map(t=>`<button class="learning-tag" type="button" data-learning-tag="${esc(t)}">${esc(t)}</button>`).join('')}</div><button type="button" class="text-button learning-index-arrow" data-learning-open="${esc(c.id)}" aria-label="Read ${esc(p.title)}">↗</button></div></article>`;
+    }).join('') : `<div class="learning-empty"><span class="learning-empty-mark" aria-hidden="true">✧</span><h3>${cards.length?'No matching insight.':'Nothing here. Yet.'}</h3><p>${cards.length?'Try another topic.':'Explore a topic in your knowledge field. Useful lessons will land here.'}</p>${!cards.length?'<button type="button" class="text-button" data-learning-action="focus">Find a first connection ↗</button>':''}</div>`);
   }
   function renderBatches() {
     const batches=current.learnings?.batches || [],active=batches.filter(b=>['queued','running','attention','paused'].includes(b.state));
     const shown=active.length ? active : batches.slice(0,1);
+    get('knowledge-stage').dataset.phase=active.some(b=>b.state==='running')?'running':'idle';
     replaceCards('learning-batches',shown.map(b=>{
       const paused=b.state==='paused' || b.state==='queued' && !b.run_now && !current.running;
       const label=paused?'Analysis paused':b.state==='running'?'Connecting the dots':b.state==='queued'?'Ready to analyze':b.state==='complete'?'Your learnings are ready':b.state==='cancelled'?'Analysis cancelled':'Needs your attention';
       const note=paused?'Continue just this analysis; your other paused tasks stay paused.':b.state==='queued' ? b.note || 'Waiting for the worker and an available account. No need to start other tasks.' : b.state==='running'?'Looking for patterns, useful checks and lessons worth keeping. You can leave this page.':b.summary || b.note;
-      return `<article class="learning-batch"><span class="learning-progress-icon ${!paused && ['queued','running'].includes(b.state)?'is-working':''}" aria-hidden="true">${b.state==='complete'?'✓':'✧'}</span><div><strong>${esc(label)}</strong><p>${esc(b.topic)} · ${b.source_count} summaries</p><small>${esc(note)}</small></div><div class="controls">${paused || b.state==='attention'?`<button class="secondary" data-learning-action="continue" data-id="${esc(b.id)}">Continue analysis</button>`:''}${['queued','running','attention','paused'].includes(b.state)?`<button class="text-button" data-learning-action="cancel" data-id="${esc(b.id)}">Cancel</button>`:''}</div></article>`;
+      return `<article class="learning-batch"><span class="learning-progress-icon ${!paused && ['queued','running'].includes(b.state)?'is-working':''}" aria-hidden="true">${b.state==='complete'?'✓':'✧'}</span><div><strong>${esc(label)}</strong><p>${esc(b.topic)}</p><details><summary>Details</summary><small>${esc(note)} · ${b.source_count} summaries</small></details></div><div class="controls">${paused || b.state==='attention'?`<button class="secondary" data-learning-action="continue" data-id="${esc(b.id)}">Continue analysis</button>`:''}${['queued','running','attention','paused'].includes(b.state)?`<button class="text-button" data-learning-action="cancel" data-id="${esc(b.id)}">Cancel</button>`:''}</div></article>`;
     }).join(''));
   }
   function render(value) {
@@ -89,6 +103,7 @@ window.RunquayLearnings = (() => {
   }
   async function prepare() {
     if(busy)return;
+    if(!get('learning-provider').value){location.hash='#accounts';return;}
     busy=true;get('learning-error').textContent='';renderSources();renderDiscovery();
     try {
       const data={topic:get('learning-topic').value.trim(),focus:get('learning-focus').value,provider:get('learning-provider').value};
@@ -123,23 +138,25 @@ window.RunquayLearnings = (() => {
     catch(error){get('learning-preview-error').textContent=error.message;}
     finally{busy=false;get('learning-confirm').disabled=false;}
   };
+  get('field-library-trigger').onclick=()=>get('learning-library-dialog').showModal();
   document.addEventListener('click',async event=>{
+    const insight=event.target.closest('[data-learning-open]');if(insight){openInsight(insight.dataset.learningOpen);return;}
     const topic=event.target.closest('[data-learning-topic]');
     if(topic){get('learning-topic').value=topic.dataset.learningTopic;manual=false;selected.clear();renderSources();renderDiscovery();void prepare();return;}
-    const tag=event.target.closest('[data-learning-tag]');if(tag){get('learning-tag').value=tag.dataset.learningTag;renderCards();return;}
+    const tag=event.target.closest('[data-learning-tag]');if(tag){get('learning-tag').value=tag.dataset.learningTag;renderCards();if(get('learning-insight-dialog').open)get('learning-insight-dialog').close();if(!get('learning-library-dialog').open)get('learning-library-dialog').showModal();return;}
     const button=event.target.closest('[data-learning-action]');if(!button)return;
     const action=button.dataset.learningAction,id=button.dataset.id;
-    if(action==='focus'){get('learning-topic').focus();get('learning-topic').scrollIntoView({behavior:'smooth',block:'center'});return;}
+    if(action==='focus'){if(get('learning-library-dialog').open)get('learning-library-dialog').close();get('learning-topic').focus();get('learning-topic').scrollIntoView({behavior:'smooth',block:'center'});return;}
     if(action==='cancel')return void act('/api/project',{id,action:'cancel'});
     if(action==='continue')return void act('/api/learnings/run',{id});
     const card=current?.learnings?.cards.find(c=>c.id===id);if(!card)return;
+    if(get('learning-insight-dialog').open)get('learning-insight-dialog').close();
     if(action==='edit'){selectedCard=id;const form=get('learning-edit-form');for(const key of ['title','lesson','apply_when','caveats'])form.elements[key].value=card.payload[key];form.elements.tags.value=card.payload.tags.join(', ');get('learning-edit-dialog').showModal();return;}
     button.disabled=true;
     try {
       if(action==='use'){
         if(card.state!=='saved'){await api('/api/learnings/review',{id,action:'approve'});await refresh();}
-        showProjectForm();for(const input of get('task-learning-ids').querySelectorAll('input'))input.checked=input.value===id;
-        get('task-learning-details').open=true;
+        window.RunquayWorkspace.attachLearning(card);
       }else{await api('/api/learnings/review',{id,action});await refresh();toast(action==='approve'?'Kept. Ready for your next task.':'Lesson hidden.');}
     }catch(error){toast(error.message);}finally{button.disabled=false;}
   });
@@ -149,5 +166,5 @@ window.RunquayLearnings = (() => {
     catch(error){toast(error.message);}finally{button.disabled=false;}
   };
   window.addEventListener('hashchange',()=>{if(location.hash==='#learnings' && current && !loaded)void loadSources();});
-  return {render};
+  return {render,openInsight};
 })();

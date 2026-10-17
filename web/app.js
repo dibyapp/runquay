@@ -97,7 +97,7 @@ function renderBrain() {
   const signature = JSON.stringify([library,(state.history_tasks || []).map(t=>[t.id,t.catalog_id])]);
   if (catalogSignature !== signature) {
     catalogSignature = signature;
-    replaceCards("catalog-list",library.length ? library.map(p=>{const count=(state.history_tasks || []).filter(t=>t.catalog_id===p.id).length;return `<article class="catalog-card"><div class="project-top"><h3>${esc(p.name)}</h3>${p.is_supervisor ? badge("app") : !p.details.exists ? badge("missing") : ""}</div>${count ? `<button class="text-button" data-action="view-saved-tasks" data-id="${esc(p.id)}">View ${count} existing ${count===1 ? "task" : "tasks"}</button>` : '<p class="hint">No saved tasks linked to this folder.</p>'}<details data-key="folder-${p.id}"><summary>Folder details</summary><div class="catalog-path">${esc(p.path)}</div><div class="catalog-files">${esc(p.details.files.slice(0,7).join(" · ") || "No files found")}</div></details><div class="controls"><button class="secondary" data-action="work-existing" data-id="${esc(p.id)}" ${p.is_supervisor || !p.details.exists ? "disabled" : ""}>${p.is_supervisor ? "This app" : "Add task"}</button><button class="text-button" data-action="advise-project" data-id="${esc(p.id)}">Find ideas</button></div></article>`;}).join("") : empty("Connect an existing project","Choose Connect folder above to add a project you already have."));
+    replaceCards("catalog-list",library.length ? library.map(p=>{const count=(state.history_tasks || []).filter(t=>t.catalog_id===p.id).length;return `<article class="catalog-card"><div class="project-top"><h3>${esc(p.name)}</h3>${p.is_supervisor ? badge("app") : !p.details.exists ? badge("missing") : ""}</div>${count ? `<button class="text-button" data-action="view-saved-tasks" data-id="${esc(p.id)}">View ${count} existing ${count===1 ? "task" : "tasks"}</button>` : '<p class="hint">No saved tasks linked to this folder.</p>'}<details data-key="folder-${p.id}"><summary>Folder details</summary><div class="catalog-path">${esc(p.path)}</div><div class="catalog-files">${esc((p.details.files || []).slice(0,7).join(" · ") || "No files found")}</div></details><div class="controls"><button class="secondary" data-action="work-existing" data-id="${esc(p.id)}" ${p.is_supervisor || !p.details.exists ? "disabled" : ""}>${p.is_supervisor ? "This app" : "Add task"}</button><button class="text-button" data-action="advise-project" data-id="${esc(p.id)}">Find ideas</button></div></article>`;}).join("") : empty("Connect an existing project","Choose Connect folder above to add a project you already have."));
     const selected = $("advisor-target").value;
     $("advisor-target").innerHTML = '<option value="">All my projects</option>' + library.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
     if(library.some(p=>p.id===selected)) $("advisor-target").value = selected;
@@ -118,6 +118,7 @@ function renderBrain() {
 }
 function render() {
   window.RunquayWorkspace?.render(state);
+  window.RunquayField?.render(state);
   window.RunquayLearnings?.render(state);
   const running = state.projects.find(p=>p.state === "running");
   const learningBusy = (state.learnings?.batches || []).some(b=>b.state==="running");
@@ -287,6 +288,7 @@ function updateNavigation() {
   document.querySelectorAll(".page").forEach(p=>p.hidden=p.dataset.page !== page);
   document.querySelectorAll(".nav a").forEach(a=>{const active=a.hash === "#" + page; a.classList.toggle("active",active); if(active) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");});
   window.RunquayWorkspace?.navigate(page);
+  window.RunquayField?.navigate(page);
   $("page-title").textContent={overview:"Your work",projects:"Your work",advisor:"Ideas",learnings:"Collective Learnings",accounts:"Accounts",settings:"Settings"}[page];
   if(location.hash === "#activity") $("activity").open=true;
   if(location.hash === "#projects" && taskFilter !== "finished") setTaskFilter("active");

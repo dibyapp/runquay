@@ -1,5 +1,12 @@
 # Collective Learnings
 
+## The Field interface
+
+Open **Learn** in the floating dock. Matching topics surround the source count; choose one or ask in the **↑** composer. Topic matches are local counts, not AI conclusions. Your exact source preview and explicit Analyze approval remain unchanged.
+
+**Library** opens the lesson index; choose a title to read one insight. Evidence and caveats expand under its supporting-summary control. **Use this** keeps the lesson and visibly attaches it to **Create**, where you describe the task and send **↑**. Remove the attachment with **×** if needed. Only the approved lesson text is copied into the task, not source histories. [Visual controls, keyboard search and motion](INTERFACE.md).
+
+
 Turn experience across projects and AI tools into practical lessons you can reuse.
 Topics are open-ended: SEO, security, DNS, DevOps, accessibility, deployment,
 customer research, or anything else supported by your past work.

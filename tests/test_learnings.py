@@ -209,6 +209,31 @@ class LearningTests(unittest.TestCase):
         self.assertEqual(self.learn.state()['cards'],[])
         with self.assertRaises(ValueError):self.learn.save(ident,{**self.result(item),'status':'blocked'})
 
+    def test_everyday_request_requires_kept_lesson_and_copies_no_source_history(self):
+        ident,data=self.queue()
+        self.learn.save(ident,self.result(self.lesson(data['source_ids'][0])))
+        card=self.learn.state()['cards'][0]
+        request={'text':'Make an SEO checklist','request_key':secrets.token_hex(16),'provider':'codex','learning_ids':[card['id']]}
+        with self.assertRaises(ValueError):self.sup.create_request(request)
+        self.assertEqual(self.store.rows("SELECT * FROM projects WHERE kind='work'"),[])
+        self.learn.review({'id':card['id'],'action':'approve'})
+        project_id=self.sup.create_request(request)
+        project=self.store.one('SELECT * FROM projects WHERE id=?',(project_id,))
+        context=json.loads(project['learning_context'])
+        self.assertEqual(context[0]['lesson'],card['payload']['lesson'])
+        self.assertFalse({'source_ids','sources'} & set(context[0]))
+        self.assertTrue(project['run_requested'])
+        with self.assertRaises(ValueError):self.sup.create_request({**request,'learning_ids':[]})
+        self.learn.review({'id':card['id'],'action':'dismiss'})
+        # A lost response can be retried even after a lesson is hidden; it reuses the fixed original task.
+        self.assertEqual(self.sup.create_request(request),project_id)
+        with self.assertRaises(ValueError):self.sup.create_request({**request,'request_key':secrets.token_hex(16)})
+
+    def test_everyday_request_rejects_invalid_learning_selection_without_writing(self):
+        for ids in (None,'lesson',{},['missing'],['duplicate','duplicate'],['missing']*13):
+            with self.assertRaises(ValueError):self.sup.create_request({'text':'A small task','request_key':secrets.token_hex(16),'learning_ids':ids})
+        self.assertEqual(self.store.rows("SELECT * FROM projects WHERE kind='work'"),[])
+
     def test_analysis_dispatch_is_read_only_and_persists_review_cards(self):
         ident,data=self.queue()
         self.store.execute("UPDATE projects SET state='queued' WHERE id=?",(ident,))

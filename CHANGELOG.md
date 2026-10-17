@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.0 — Runquay Field
+
+- Replaced the sidebar with a floating navigation dock, an atmospheric workspace, compact work rows and on-demand drawers. The creation surface opens directly into a message rather than a marketing headline.
+- Collective Learnings becomes an interactive topic field built from real local source matches. Read one insight at a time; supporting evidence, editing and library filters stay available on demand.
+- Added keyboard command search, ambient motion with stationary hit targets, an explicit motion pause, system reduced-motion support and canvas scheduling that stops away from Learnings or when the tab is hidden.
+- A lesson’s Use this action attaches it visibly to the everyday composer. Only kept lessons can be sent; task context excludes source histories and stays fixed. Retrying an existing request reuses its original snapshot even if a lesson is later hidden.
+- Approval requests are available from every page. Existing sign-in, billing, quota, reset and publication controls remain in place. Added actual browser screenshots with fictional history and reviewed image hashes.
+
+
 ## 0.9.0 — One request, one place
 
 - A single everyday composer replaces the default two-step idea form and separate start-queue action. A new isolated project and a connected AI are selected for you, with optional project and provider choices shown before sending.

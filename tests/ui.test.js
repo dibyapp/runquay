@@ -11,6 +11,16 @@ test("setup recommends a verified account, then an installed tool, then Codex",(
 });
 const base = {running:true, projects:[], decisions:[], profiles:[{provider:"codex",enabled:true,eligible:true}]};
 
+test("command search navigates actual local work without inventing actions or searching private logs",()=>{
+  const state={projects:[{id:'one',name:'Garden calendar',goal:'private phrase must not be searched'}],history_tasks:[{key:'two',title:'Seed planting',project_name:'Garden',preview:'another private phrase'}],learnings:{cards:[{id:'three',state:'saved',payload:{title:'Use a garden checklist'}},{id:'hidden',state:'dismissed',payload:{title:'Hidden garden'}}]}};
+  assert.equal(ui.commandChoices(state).length,5);
+  assert.deepEqual(ui.commandChoices(state,'garden').map(r=>r.kind),['work','history','insight']);
+  assert.equal(ui.commandChoices(state,'private phrase').length,0);
+  assert.equal(ui.commandChoices(state,'hidden').length,0);
+  assert.equal(ui.commandChoices({},'no match').length,0);
+  assert.equal(ui.commandChoices({},'connections')[0].id,'accounts');
+});
+
 test("everyday work describes the next action without queue jargon",()=>{
   const project={id:"one",state:"queued",provider:"codex",run_requested:1};
   assert.equal(ui.workStatus(project,{...base,running:false}).label,"Up next");

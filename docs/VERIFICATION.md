@@ -1,5 +1,16 @@
 # Verification record
 
+## Runquay Field — 0.10.0
+
+Verified on Windows on 2026-10-17: 127 Python tests (124 passed, three POSIX skips) and 34 JavaScript tests. New request tests reject invalid/unkept lesson attachments before creating work, exclude source history from the fixed task context, and preserve retry identity after a lesson is hidden. Command-search tests use real titles and route data and exclude hidden lessons and raw logs.
+
+The Chromium walkthrough used the real HTTP handler, fictional metadata and a deterministic worker subprocess. It exercised topic hit targets, animation pause, system reduced motion, canvas shutdown off-page, exact source review and exclusion, analysis-to-library-to-insight, escaped provider text, lesson-to-composer attachment, task-to-result, native previews, keyboard navigation, global vendor approval/decline and all five pages at 320/390/768/1024/1440 widths. No browser errors or content-security violations were observed. The UI keeps the strict same-origin policy; no inline-style exception was added.
+
+The actual running installation was checked without submitting work or exporting personal screenshots. Connected accounts, the global queue setting and already-authorized waiting work were preserved during the idle upgrade. Three new public JPEGs use only fictional history and were reviewed visually, inspected for metadata and hash-pinned. Other verification captures stay excluded.
+
+No new live vendor model calls, paid credits or resets were used. Topic geometry is a visual index of keyword matches, not a learned relationship graph. Full native chats are not fetched or resumed. Local Chromium was used because the in-app automation connection remains unavailable. CI covers Windows, macOS and Ubuntu with Python 3.11/3.13; this does not establish a manual native-vendor walkthrough on every OS.
+
+
 ## Everyday workspace — 0.9.0
 
 Verified on Windows on 2026-10-17: 125 Python tests (122 passed, three POSIX

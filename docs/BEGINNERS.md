@@ -45,11 +45,11 @@ To connect another tool later, open **More → AI connections → Add account**.
 
 ## 4. Say what you want
 
-Open **Your work**. Type something like:
+Open **Create**. Type something like:
 
 > Make a daily checklist. Let me add tasks, tick them off and save them in this browser. Make it easy to use on my phone.
 
-Choose **Let’s do it**. That’s the everyday flow. You do not have to name a task, choose a programming language, configure a model, or start a queue afterward.
+Choose **↑**. That’s the everyday flow. You do not have to name a task, choose a programming language, configure a model, or start a queue afterward.
 
 **New project** is selected for you. It creates a separate folder. To improve something you already have, choose its name from that menu before sending. Runquay shows the folder name and AI tool underneath. **Change AI** is optional. One unfinished task can use a folder at a time; open its existing card to continue it.
 
@@ -63,15 +63,15 @@ The work appears below your message:
 - **Working on it:** follow **See progress**, or come back later.
 - **Waiting for your AI:** check sign-in or wait for allowance to refresh.
 - **Needs you:** choose **Reply** and answer the question.
-- **Ready to try:** choose **View result**.
+- **Ready to try:** choose **↗** on a finished work row.
 
 For a pause, open **More** on that card and choose **Pause**. Files already written remain. **Continue** starts just that task again. To stop everything, expand **Work controls and activity** and choose **Pause work**. Your computer must stay awake, running and connected while work continues; closing the browser alone does not stop it.
 
 ## 6. Try the result and ask for changes
 
-Choose **View result**, read the opening instructions and choose **Open project folder**. Try the result yourself. The AI may make mistakes, so check it before relying on it or sharing it.
+Choose **↗** on a finished work row, read the opening instructions and choose **Open project folder**. Try the result yourself. The AI may make mistakes, so check it before relying on it or sharing it.
 
-Choose **Ask for a change** to describe what should be different. Your follow-up starts automatically when the AI is available. If you cannot open the project, choose **Ask for help** in the result window and describe where you got stuck. Work limits stay under an optional control.
+Choose **··· → Ask for a change** to describe what should be different. Your follow-up starts automatically when the AI is available. If you cannot open the project, choose **Ask for help** in the result window and describe where you got stuck. Work limits stay under an optional control.
 
 ## 7. Your earlier conversations
 
@@ -79,4 +79,4 @@ Saved conversations from supported tools appear in the same list, with the tool�
 
 **Browse all conversations and folders** provides detailed filters, refresh and import when needed. Missing history is not a signal that a conversation was deleted. [History support and limitations](TASK_HISTORY.md).
 
-**Learnings** helps find useful lessons across work you choose. **More** contains optional ideas, AI connections and settings. You can keep using the original tools alongside Runquay. [How sessions work](WORKFLOWS.md).
+**Learn** helps find useful lessons across work you choose. **More** contains optional ideas, AI connections and settings. You can keep using the original tools alongside Runquay. [How sessions work](WORKFLOWS.md).

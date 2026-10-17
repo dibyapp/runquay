@@ -17,7 +17,7 @@ Created and maintained by [Dibyaprakash Pradhan](https://github.com/dibyapp). [D
 
 ## New to coding?
 
-[Start with the beginner guide](docs/BEGINNERS.md). After connecting your AI once, type what you want in **Your work** and choose **Let’s do it**. Runquay creates a separate folder and starts that request when its AI is available. Pick an existing project only when you want its files changed. You do not need to name the task, choose a model, set work limits, or turn on a queue.
+[Start with the beginner guide](docs/BEGINNERS.md). After connecting your AI once, type what you want in **Your work** and choose the **↑** send control. Runquay creates a separate folder and starts that request when its AI is available. Pick an existing project only when you want its files changed. You do not need to name the task, choose a model, set work limits, or turn on a queue.
 
 Results and saved conversations appear together, with recognizable tool icons, search, plain progress, **View result**, and **Ask for a change**. Saved native conversations are previews; their original chat continues in its own tool. AI choices, connections, work controls and detailed history remain available when needed. [Everyday workflow](docs/WORKFLOWS.md).
 
@@ -25,17 +25,13 @@ Windows: open `start.cmd`. Mac: open `start.command`. Linux: run `sh start.sh` i
 
 ## See Runquay in use
 
-The everyday navigation is **Your work** and **Learnings**. **More** contains ideas, AI connections and settings. Sending a request starts only that request when the global queue is paused. Other tools still require one-run billing approval; resets always require approval. **More → Pause** on a work card pauses it. **Work controls and activity → Pause work** stops all scheduling, including individually started requests.
+**Create** is a message, a selected AI and a quiet stream of your work. **Learn** is an interactive field of topics from local experience. The floating dock and **Ctrl K / ⌘ K** take you between them. Insights, detailed history and task controls open when you need them. [Interface guide](docs/INTERFACE.md).
 
-Choose **Open conversation** on a Runquay task to read your request and the AI's progress as messages. Expand individual activities to inspect commands and results. Live steps refresh automatically; **Jump to latest** returns to the newest update. Step reports separate the summary, checks and any question that needs your answer. [Following a task](docs/WORKFLOWS.md#follow-a-task-conversation).
+![Actual Runquay Field Learn view](docs/images/field-learnings.jpg)
 
-These are actual screenshots of the running 0.3.0 app tested in the Codex in-app browser on Windows. A real Codex task built a text cleaner and passed seven tests, independently rerun. The advisor inspected that project and proposed a README improvement. Screenshots exclude personal paths, account emails and unrelated project details. [Capture details](docs/SCREENSHOTS.md).
+![Actual Runquay Field Create view](docs/images/field-workspace.jpg)
 
-![The simpler Runquay Home page](docs/images/simple-home.jpg)
-
-![A real completed Codex task with seven passing tests](docs/images/simple-result.jpg)
-
-**Detailed guides:** [Getting started](docs/GETTING_STARTED.md) · [Daily workflows](docs/WORKFLOWS.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Screenshot gallery](docs/SCREENSHOTS.md)
+These are real browser screenshots of the running 0.10.0 app with fictional local history. They show the interface, not live model performance. Pixels and metadata were reviewed and exact hashes pinned before publication. [Capture record and mobile view](docs/SCREENSHOTS.md).
 
 ## Start in one command
 
@@ -56,7 +52,7 @@ The guided onboarding walks through four steps:
 3. **Folder** — choose where new projects live and connect existing project folders.
 4. **Ready** — understand workspace access, tool permissions, and billing before finishing.
 
-Describe your goal in **Your work**, then choose **Let’s do it**. Finishing setup alone does not start AI work. Sending a request authorizes that request to start when its AI is available; payment and reset approvals remain separate. Revisit the setup guide from **More → Settings** anytime.
+Describe your goal in **Your work**, then choose the **↑** send control. Finishing setup alone does not start AI work. Sending a request authorizes that request to start when its AI is available; payment and reset approvals remain separate. Revisit the setup guide from **More → Settings** anytime.
 
 ## AI coding workflow automation
 
