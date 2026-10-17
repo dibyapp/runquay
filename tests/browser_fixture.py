@@ -41,6 +41,8 @@ with tempfile.TemporaryDirectory(prefix='runquay-learnings-browser-') as directo
     real_popen=subprocess.Popen
     def fixture_popen(command,**kwargs):
         if command[0]!='fixture-never-executed':return real_popen(command,**kwargs)
+        if '--output-last-message' not in command:
+            return real_popen([sys.executable,'-u',str(Path('tests/fake_provider.py').resolve())],**kwargs)
         output=command[command.index('--output-last-message')+1]
         mode='advisor' if 'advisor-schema.json' in ' '.join(command) else 'slow' if sup.active_test_slow else 'complete'
         return real_popen([sys.executable,'-u',str(Path('tests/fake_worker.py').resolve()),mode,output],**kwargs)
@@ -67,13 +69,14 @@ with tempfile.TemporaryDirectory(prefix='runquay-learnings-browser-') as directo
                 pending=sup.store.one("SELECT * FROM projects WHERE kind='advisor' AND state='queued'")
             if pending and pending['kind'] in ('work','advisor'):
                 profile=sup.store.one('SELECT * FROM profiles WHERE provider=?',(pending['provider'],))
-                if pending['provider']!='codex':sup.select_external(pending,profile)
-                else:
+                external = pending['provider']!='codex'
+                authorized = sup.select_external(pending,profile) if external else True
+                if authorized:
                     sup.active_test_slow=pending['name'].startswith('Browser slow task')
                     path=Path(pending['path'])
                     (path/'START_HERE.md').write_text('Open index.html in your browser. This is a fictional test result.',encoding='utf-8')
                     (path/'index.html').write_text('<!doctype html><title>Example result</title><h1>Example result</h1>',encoding='utf-8')
-                    with patch('supervisor.subprocess.Popen',side_effect=fixture_popen):sup.run_step(pending,profile,FakeRpc())
+                    with patch('supervisor.subprocess.Popen',side_effect=fixture_popen):sup.run_step(pending,profile,None if external else FakeRpc())
             time.sleep(.15)
         server.shutdown()
     threading.Thread(target=complete,daemon=True).start()

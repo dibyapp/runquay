@@ -1,5 +1,13 @@
 # Verification record
 
+## Auto team — 0.11.0
+
+Windows checks cover 136 Python tests (133 passed, three POSIX-only skips) and 35 JavaScript tests. New subprocess tests exercise plan/build/review transitions, persisted handoffs after reopening storage, a bounded repair loop, external approval identity, stale-selection rejection, adapter permissions and clearing model overrides between providers.
+
+The Chromium suite exercises the real local HTTP handler and deterministic subprocesses using fictional projects. It checks the visible team, a completed build waiting for a second-tool approval, approved review, saved handoffs after reload, original tool identity on earlier runs, follow-up work, declined review, label clipping and overlap at five widths, and reduced-motion behavior. The broader onboarding, accounts, settings, tasks and learnings walkthrough remains part of the same suite.
+
+These are integration fixtures, not new live Codex/Claude/Gemini model calls. The previous real Codex checklist verification is recorded below; a live multi-provider run is not claimed. In-app automation remains unavailable, so local Chromium is used. Verification captures stay private; existing published screenshots are unchanged.
+
 ## UI and execution checks — 0.10.1
 
 Windows verification on 2026-10-18 covers 130 Python tests (127 passed, three POSIX-only skips) and 34 JavaScript tests. Credential-storage regressions check keyring/file/auto/ephemeral modes, invalid configuration, subscription-only authentication, retained worker isolation, and no authentication-file reads by Runquay.

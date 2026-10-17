@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.0 — Auto team
+
+- Create can coordinate planning, building and review across connected Codex, Claude Code and Gemini CLI adapters. The selected team is visible before sending and fixed for the request. Handoffs persist locally, with one automatic repair cycle and existing per-run approval and quota gates.
+- Planning and review use each supported adapter’s read-only/plan mode. Builder model overrides do not leak into another provider. Original run identity remains visible after handoffs.
+- Topic labels have dedicated responsive space and wrap instead of clipping. Provider indicators use distinct motion and respect reduced-motion and pause preferences.
+- Added subprocess and browser coverage for coordinated work, billing boundaries, restart persistence, historical tool identity and narrow-screen label layout.
+
 ## 0.10.1 — Project picker and verified execution
 
 - Replaced the main operating-system project dropdown with a searchable, keyboard-accessible picker. Other native selects now have explicit dark popup colors. Sending stays disabled until the local app connects.

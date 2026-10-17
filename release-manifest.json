@@ -11,6 +11,7 @@
     "autowork.py",
     "supervisor.py",
     "providers.py",
+    "orchestration.py",
     "platform_support.py",
     "service_setup.py",
     "codex_brain.py",
@@ -40,7 +41,8 @@
     "tests/browser_fixture.py",
     "tests/browser_field.cjs",
     "tests/browser_controls.cjs",
-    "tests/browser_tasks.cjs"
+    "tests/browser_tasks.cjs",
+    "tests/browser_team.cjs"
   ],
   "directories": [
     "web",

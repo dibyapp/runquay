@@ -43,6 +43,7 @@ const fs=require('fs'),assert=require('assert/strict');
   await page.locator('.insight-actions [data-learning-action="use"]').click();
   await page.waitForFunction(()=>location.hash==='#projects'&&!document.querySelector('#request-learning-chip').hidden);
   assert.equal(await page.locator('#project-dialog[open]').count(),0,'Using a lesson should stay in the everyday composer');
+  await page.locator('.request-options>summary').click();await page.locator('#request-provider').selectOption('codex');await page.locator('.request-options>summary').click();
   await page.locator('#request-text').fill('Create a fictional SEO release checklist');
   await page.locator('#request-send').click();
   await page.waitForFunction(()=>state.projects.some(p=>p.name==='Create a fictional SEO release checklist'&&p.state==='complete'));

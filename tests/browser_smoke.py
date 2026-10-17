@@ -32,7 +32,7 @@ def main():
                 if process.poll() is not None or time.monotonic()>deadline:
                     raise RuntimeError('Disposable browser fixture did not become ready')
                 time.sleep(.1)
-            for script in ('browser_field.cjs','browser_controls.cjs','browser_tasks.cjs'):
+            for script in ('browser_field.cjs','browser_controls.cjs','browser_team.cjs','browser_tasks.cjs'):
                 subprocess.run([node,str(ROOT/'tests'/script)],cwd=ROOT,env=env,check=True,timeout=240)
             print('Chromium acceptance checks passed; no real AI calls or private histories used.')
         finally:

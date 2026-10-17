@@ -27,6 +27,7 @@ const RunquayUI = (() => {
     const decision=(state.decisions || []).find(d=>["pending","uncertain","redeeming"].includes(d.state) &&
       (d.kind==="external_run" ? (()=>{try {return JSON.parse(d.payload).project_id===project.id;} catch {return false;}})() : false));
     if(decision && ["queued","running"].includes(project.state)) return {label:"Needs your OK",text:"Review the approval above. Nothing is charged automatically."};
+    if(project.state==="running" && project.workflow?.phase) return {label:({plan:'Planning',build:'Building',review:'Reviewing',repair:'Improving'})[project.workflow.phase] || 'Working',text:'Saved handoffs connect each step. Open the workflow to see evidence.'};
     if(project.state==="running") return {label:"Working on it",text:"Progress is saved as we go. You can come back later."};
     if(project.state==="complete") return {label:"Ready to try",text:"Open the result and check that it works for you."};
     if(project.state==="attention") return {label:"Needs you",text:"Your AI stopped for your input. Reply to continue."};
@@ -117,6 +118,11 @@ const RunquayUI = (() => {
     const complete=own?.state==="complete";
     return {browser:Boolean(profile?.instructions?.browser_login),waiting,complete,
       blocked:Boolean(state.login_in_progress),message:own?.message || ""};
+  }
+  function toolMark(provider, motion='idle') {
+    const safe=['codex','claude','gemini','antigravity'].includes(provider)?provider:'custom';
+    const mode=['ambient','working'].includes(motion)?motion:'idle';
+    return `<span class="tool-emblem tool-${safe}" data-motion="${mode}" aria-hidden="true"><img src="${toolIcon(safe)}" alt="" width="24" height="24"></span>`;
   }
   function toolIcon(provider) {
     return "/tool-icons/" + (["codex","claude","gemini","antigravity"].includes(provider) ? provider : "custom") + ".svg";
@@ -239,6 +245,6 @@ const RunquayUI = (() => {
     const title=/\b(unittest|pytest|npm test|npm run (?:test|lint|build)|node --test)\b/i.test(preview) ? "Run checks" : /\b(Get-Content|cat|head|tail)\b/i.test(preview) ? "Read files" : /\b(Get-ChildItem|Get-Location|rg|ls|find|pwd)\b/i.test(preview) ? "Explore project" : /\bgit (?:diff|status|log)\b/i.test(preview) ? "Review changes" : "Run command";
     return {title,preview};
   }
-  return {commandChoices,workStatus,commandPresentation,markdown,sessionEvents,toolIcon,historyGroups,savedTasks,codexTasks:savedTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
+  return {toolMark,commandChoices,workStatus,commandPresentation,markdown,sessionEvents,toolIcon,historyGroups,savedTasks,codexTasks:savedTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
 })();
 if (typeof module !== "undefined") module.exports = RunquayUI;

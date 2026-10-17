@@ -94,7 +94,7 @@ def codex_auth_store(home):
 
 
 def command(provider, executable, project, schema, final_path, model="", custom=None, auth_store="file"):
-    advisor = project.get("kind") in ("advisor", "learnings")
+    advisor = project.get("kind") in ("advisor", "learnings", "review")
     if advisor and not TOOLS[provider]["advisor"]:
         raise ValueError("This adapter has no enforced read-only advisor mode. Choose Codex, Claude Code, or Gemini CLI.")
     if provider == "codex":

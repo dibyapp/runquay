@@ -149,3 +149,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) to add adapters or platform support. Run
 Saved Codex, Claude Code, Gemini CLI and available Antigravity tasks appear in **Tasks → Existing AI tasks**, grouped by project with tool logos, search, project and tool filters, short summaries and source status. Codex custom names and explicit project membership are preserved; sessions marked No project remain separate. Other tools can import compatible metadata JSON. Browsing stays local and starts no AI work. Older encrypted Antigravity history and arbitrary cloud exports are not automatically imported. [Task history guide](docs/TASK_HISTORY.md) · [Tool mark sources](docs/TOOL_LOGOS.md).
 
 ![Actual combined task history controls, with private task details outside the capture](docs/images/ai-task-history.jpg)
+
+### Coordinate connected AI tools
+
+Choose **Auto team** in Create to plan, build and review a project with the tools shown before sending. Durable local handoffs, one repair cycle and existing billing approvals keep work traceable. [Read the coordinated work guide](docs/COORDINATED_WORK.md).

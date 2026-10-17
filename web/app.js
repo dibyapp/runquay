@@ -7,7 +7,7 @@ let ideaFilter = "all", catalogSignature = "", ideaSignature = "";
 const $ = id => document.getElementById(id);
 const esc = text => String(text ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const badge = text => `<span class="badge ${esc(text)}">${esc(RunquayUI.label(text))}</span>`;
-const toolBadge = (provider,name) => `<span class="badge tool-identity"><img src="${RunquayUI.toolIcon(provider)}" alt="" aria-hidden="true" width="24" height="24"><span>${esc(name || state.tools.find(t=>t.id===provider)?.name || "Other tool")}</span></span>`;
+const toolBadge = (provider,name,motion="idle") => `<span class="badge tool-identity">${RunquayUI.toolMark(provider,motion)}<span>${esc(name || state.tools.find(t=>t.id===provider)?.name || "Other tool")}</span></span>`;
 const when = value => value ? new Date(typeof value === "number" ? value * 1000 : value).toLocaleString(undefined, {dateStyle:"medium",timeStyle:"short"}) : "Not yet";
 const empty = (title, sub) => `<div class="empty"><b>${esc(title)}</b><p>${esc(sub)}</p></div>`;
 function toast(message) { $("toast").textContent = message; $("toast").style.display = "block"; clearTimeout(toast.timer); toast.timer = setTimeout(() => $("toast").style.display = "none", 6000); }
@@ -153,7 +153,7 @@ function render() {
   document.title=(decisions.length ? `(${decisions.length}) Your decision needed · ` : running ? "Working · " : "") + "Runquay";
   replaceCards("decision-list",decisions.length ? decisions.map(d=>{
     const profile=state.profiles.find(p=>p.id===d.profile_id);
-    if(d.kind === "external_run") {const payload=JSON.parse(d.payload);return `<div class="decision"><h3>Allow one run with ${esc(profile?.name || "this tool")}?</h3><p>${esc(payload.project)} · ${esc(payload.provider)}</p><p>This tool's billing is unverified. Review your vendor account before continuing.</p><div class="controls"><button class="secondary" data-action="decline-reset" data-id="${d.id}">Decline run</button><button data-action="review-external" data-id="${d.id}">Review request</button></div></div>`;}
+    if(d.kind === "external_run") {const payload=JSON.parse(d.payload);return `<div class="decision"><h3>Allow one run with ${esc(profile?.name || "this tool")}?</h3><p>${esc(payload.project)} · ${esc(payload.provider)} · ${esc(payload.phase || "work")}</p><p>This tool's billing is unverified. Review your vendor account before continuing.</p><div class="controls"><button class="secondary" data-action="decline-reset" data-id="${d.id}">Decline run</button><button data-action="review-external" data-id="${d.id}">Review request</button></div></div>`;}
     return `<div class="decision"><h3>${esc(profile?.name || "This account")} · use one earned reset?</h3><p>${d.state === "uncertain" ? "The previous result is uncertain. A retry uses the same request ID to avoid a second redemption." : "Keep waiting for allowance to refresh, or choose to redeem an existing reset."}</p><div class="controls"><button class="secondary" data-action="decline-reset" data-id="${d.id}">Wait for refresh</button><button data-action="review-reset" data-id="${d.id}" ${d.state === "redeeming" ? "disabled" : ""}>Review reset</button></div></div>`;
   }).join("") : '<p class="hint">Nothing needs your approval right now.</p>');
   for(const d of decisions) if(!previousPending.has(d.id) && window.Notification && Notification.permission === "granted") new Notification("Runquay: your decision is needed",{body:"Open Home to review a tool run or earned reset. You can keep waiting."});
@@ -175,13 +175,13 @@ async function loadLog(id) {
   const data=await api("/api/run/"+id);
   if(request!==sessionRequest || activeLog!==id) return;
   const run=data.run, project=state.projects.find(p=>p.id===run.project_id), profile=state.profiles.find(p=>p.id===run.profile_id);
-  const provider=project?.provider || profile?.provider || "custom", tool=state.tools.find(t=>t.id===provider)?.name || "AI tool";
+  const provider=run.provider || profile?.provider || project?.provider || "custom", tool=state.tools.find(t=>t.id===provider)?.name || "AI tool";
   const viewport=$("session-scroll"), changed=viewport.dataset.run!==id;
   const atBottom=changed || viewport.scrollHeight-viewport.scrollTop-viewport.clientHeight<90, scrollTop=viewport.scrollTop;
   if(changed) {$("session-messages")._rendered=null;$("session-messages").innerHTML="";$("session-diagnostics").open=false;}
   viewport.dataset.run=id;
   $("session-title").textContent=project?.name || "Task progress";
-  replaceCards("log-meta",`${toolBadge(provider,tool)}<span>${esc(profile?.name || "Account unavailable")}</span><span>${esc(when(run.started))}</span>`);
+  replaceCards("log-meta",`${toolBadge(provider,tool,run.state==="running"?"working":"idle")}<span>${esc(profile?.name || "Account unavailable")}</span><span>${esc(when(run.started))}</span>`);
   const runs=state.runs.filter(r=>r.project_id===run.project_id).slice().reverse();
   const options=runs.map((r,n)=>`<option value="${esc(r.id)}">Step ${n+1} · ${esc(RunquayUI.label(r.state))} · ${esc(when(r.started))}</option>`).join("");
   if($("session-run")._options!==options) {$("session-run").innerHTML=options;$("session-run")._options=options;}

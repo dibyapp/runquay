@@ -17,6 +17,7 @@ const {chromium}=require('playwright'),fs=require('fs'),assert=require('assert/s
  console.log('Paused task resumed.');
  if(!await page.locator(`#work-${id} .work-more`).evaluate(n=>n.open))await page.locator(`#work-${id} .work-more>summary`).click();
  await page.locator(`#work-${id} [data-action=cancel-project]`).click();await page.waitForFunction(id=>state.projects.find(p=>p.id===id).state==='cancelled',id);
+ assert.equal(await page.locator(`#work-${id} .work-more`).evaluate(n=>n.open),false,'Task action must close its floating menu');
  // Global start/pause controls work independently of scoped requests.
  await page.locator('#workspace-controls>summary').click();await page.locator('#start').click();await page.waitForFunction(()=>state.running);
  await go('#advisor');await page.locator('#advisor-target').selectOption('product-0');await page.locator('#advisor-form [name=focus]').fill('A fictional improvement');
@@ -26,13 +27,14 @@ const {chromium}=require('playwright'),fs=require('fs'),assert=require('assert/s
  await page.locator('[data-action=dismiss-suggestion]').first().click();await page.waitForFunction(()=>state.suggestions.every(s=>s.state==='dismissed'));
  await go('#projects');await page.locator('#pause').click();await page.waitForFunction(()=>!state.running);
  // Approval handling is exercised only against the fake fixture, never a vendor CLI.
- await page.locator('#request-provider').selectOption('claude');await page.locator('#request-text').fill('Fictional one-run approval interface check');await page.locator('#request-send').click();
+ await page.locator('.request-options>summary').click();await page.locator('#request-provider').selectOption('claude');await page.locator('#request-text').fill('Fictional one-run approval interface check');await page.locator('#request-send').click();
  await page.waitForFunction(()=>state.decisions.some(d=>d.kind==='external_run'&&d.state==='pending'));
+ const approvalId=await page.evaluate(()=>state.decisions.find(d=>d.kind==='external_run'&&d.state==='pending').id);
  await go('#approvals');await page.locator('#field-approvals-dialog[open]').waitFor();await page.locator('[data-action=review-external]').click();
  await page.locator('#approve-external').click();assert.equal(await page.locator('#external-dialog').isVisible(),true);
  await page.locator('#external-ack').check();await page.locator('#approve-external').click();await page.locator('#external-dialog').waitFor({state:'hidden'});
- await page.waitForFunction(()=>state.decisions.some(d=>d.kind==='external_run'&&d.state==='consumed'));
- if(await page.locator('#field-approvals-dialog').isVisible())await page.locator('[data-close=field-approvals-dialog]').click();
+ await page.waitForFunction(id=>state.decisions.some(d=>d.id===id&&d.state==='consumed'),approvalId);
+ await page.locator('#field-approvals-dialog').waitFor({state:'hidden'});
  await go('#accounts');const count=await page.locator('.account').count();const details=page.locator('.account-details').last();await details.locator('summary').click();await details.locator('[data-action=remove-profile]').click();
  await page.waitForFunction(n=>state.profiles.length===n-1,count);
  assert.deepEqual(errors,[]);console.log('Task controls passed: running progress, pause, resume, cancel, global start/pause, advisor ideas/review/dismiss, bookmarked approvals, billing acknowledgement, one-run consumption and connection removal.');

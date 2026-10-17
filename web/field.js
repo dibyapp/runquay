@@ -44,7 +44,7 @@ window.RunquayField = (() => {
     frame=requestAnimationFrame(tick);
   }
   function syncMotion() {
-    document.body.classList.toggle('motion-paused',!motionAllowed());
+    document.body.classList.toggle('motion-paused',!motionAllowed() || document.hidden);
     const button=get('field-motion');button.disabled=reduced.matches;
     button.setAttribute('aria-pressed',String(!motionAllowed()));
     const label=reduced.matches?'Reduced motion follows your system setting':paused?'Enable animation':'Pause animation';

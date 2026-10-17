@@ -308,3 +308,14 @@ test("command previews keep the actual operation while hiding shell wrapper clut
   assert.equal(ui.commandPresentation('git diff --stat').title,"Review changes");
   assert.equal(ui.commandPresentation('custom-command').preview,'custom-command');
 });
+
+
+test('tool motion uses only local known icons and explicit activity states', () => {
+  for(const provider of ['codex','claude','gemini','antigravity','custom']) {
+    const html=ui.toolMark(provider,'working');
+    assert.match(html,new RegExp('/tool-icons/'+provider+'\\.svg'));
+    assert.match(html,/data-motion="working"/);
+  }
+  assert.doesNotMatch(ui.toolMark('<script>','bad" onload="x'),/<script>|onload/);
+  assert.match(ui.toolMark('unknown'),/tool-custom/);
+});

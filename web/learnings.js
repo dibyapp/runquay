@@ -27,6 +27,11 @@ window.RunquayLearnings = (() => {
     get('field-unit').textContent=sources.length===1 ? 'work summary' : 'work summaries';
     const provider=get('learning-provider').value;
     const name=current?.tools.find(t=>t.id===provider)?.name;
+    let indicator=get('learning-tool-indicator');
+    if(!indicator){indicator=document.createElement('span');indicator.id='learning-tool-indicator';indicator.className='learning-tool-indicator';get('field-total').before(indicator);}
+    const active=(current?.learnings?.batches || []).find(b=>b.state==='running');
+    const mark=RunquayUI.toolMark(active?.provider || provider,active?'working':'ambient');
+    if(indicator._html!==mark){indicator.innerHTML=mark;indicator._html=mark;}
     get('learning-auto-note').textContent=name ? `${name} · ${manual ? 'Your chosen context' : 'Automatic context'}` : 'Connect an AI to explore';
     get('learning-prepare').innerHTML=busy ? '<span class="send-thinking" aria-hidden="true">···</span>' : '<span aria-hidden="true">↑</span>';
     get('learning-prepare').setAttribute('aria-label',busy ? 'Finding matching work' : 'Find learnings');
