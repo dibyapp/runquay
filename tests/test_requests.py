@@ -4,6 +4,7 @@ from pathlib import Path
 import secrets
 import tempfile
 import unittest
+from unittest.mock import patch
 import threading
 import urllib.request
 import http.cookiejar
@@ -75,7 +76,8 @@ class RequestTests(unittest.TestCase):
         project=self.sup.store.one('SELECT * FROM projects WHERE id=?',(ident,))
         self.assertEqual(project['provider'],'claude')
         profile=self.sup.store.one("SELECT * FROM profiles WHERE id='claude'")
-        self.assertFalse(self.sup.select_external(project,profile))
+        with patch.object(self.sup,'profile_binary',return_value='fixture-never-executed'):
+            self.assertFalse(self.sup.select_external(project,profile))
         self.assertEqual(self.sup.store.one('SELECT kind,state FROM decisions'),{'kind':'external_run','state':'pending'})
 
     def test_invalid_request_and_setup_in_progress_make_no_workspace(self):
