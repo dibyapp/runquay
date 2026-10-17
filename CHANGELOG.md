@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 - Collective Learnings
+
+- Collect reusable lessons from selected work across projects and AI tools, with any topic/tag rather than a fixed taxonomy.
+- Preview the exact bounded summaries before queuing read-only analysis through connected Codex, Claude Code or Gemini accounts; keep existing usage checks and approvals.
+- Store source-backed AI suggestions for review, editing, saving and dismissal; distinguish reported observations from hypotheses and reject unknown citations.
+- Search by topic and reuse up to 12 explicitly chosen saved lessons in new tasks or existing-project tasks, without copying source summaries.
+- Include native/imported chat previews and completed Runquay reports; Antigravity/custom history can contribute sources while their analysis modes remain unsupported.
+- Keep collections in private runtime storage and exclude them from source packages. No automatic publication or native vendor-memory edits.
+
+
 ## 0.6.3 - Readable task conversations
 
 - Replace raw event output with a conversation view: your request, provider messages, file activity and structured step reports.

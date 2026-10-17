@@ -12,11 +12,17 @@ test("setup recommends a verified account, then an installed tool, then Codex",(
 const base = {running:true, projects:[], decisions:[], profiles:[{provider:"codex",enabled:true,eligible:true}]};
 
 test("legacy bookmarks and unknown routes always resolve to an accessible page",()=>{
-  for(const route of ["overview","projects","advisor","accounts","settings"]) assert.equal(ui.pageFor("#"+route),route);
+  for(const route of ["overview","projects","advisor","learnings","accounts","settings"]) assert.equal(ui.pageFor("#"+route),route);
   assert.equal(ui.pageFor("#approvals"),"overview");
   assert.equal(ui.pageFor("#activity"),"settings");
   assert.equal(ui.pageFor("#missing"),"overview");
   assert.equal(ui.pageFor(""),"overview");
+});
+test("collective analysis has an actionable Home state while remaining separate from build tasks",()=>{
+  const learnings={batches:[{topic:"SEO",state:"queued"}]};
+  assert.equal(ui.nextStep({...base,running:false,learnings}).action,"start");
+  assert.equal(ui.nextStep({...base,learnings}).href,"#learnings");
+  assert.match(ui.nextStep({...base,learnings:{batches:[{topic:"DNS",state:"running"}]}}).title,/Collecting/);
 });
 test("pending and uncertain decisions remain actionable even with active work",()=>{
   for(const state of ["pending","uncertain","redeeming"]) assert.equal(ui.nextStep({...base,projects:[{state:"running",name:"Work"}],decisions:[{state}]}).href,"#approvals");

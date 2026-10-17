@@ -182,3 +182,11 @@ For a fresh computer, use **setup.cmd**, **setup.command** or **sh setup.sh** in
 The current **Tasks → Existing AI tasks** view combines Codex, Claude Code, Gemini CLI and available Antigravity local histories. Choose an **AI tool**, search for a title or project, then open **Task summary**. **Refresh tasks** checks again without starting AI work. Other tools can use **Import history** with a compatible metadata JSON file.
 
 The local queue belongs to this Runquay installation. A saved conversation is separate from that queue; open its original tool to continue it. Missing folders, older encrypted history and unsupported cloud exports are explained rather than guessed. [Detailed guide, supported sources and import example](TASK_HISTORY.md).
+
+
+## Reuse what you learned
+
+Open **Learnings** to collect lessons from work across projects and AI tools. Choose
+any topic, select relevant summaries, and review the exact information before
+queuing analysis. Edit and save useful suggestions, then choose saved lessons in
+your next task form. [Collective Learnings walkthrough](COLLECTIVE_LEARNINGS.md).

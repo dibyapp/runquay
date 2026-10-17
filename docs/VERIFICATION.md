@@ -1,5 +1,36 @@
 # Verification record
 
+## Collective Learnings — 0.7.0
+
+Verified on Windows on 2026-10-17. The Python suite ran 110 tests (107 passed,
+three POSIX-only skips); 32 JavaScript checks passed. New tests cover mixed-tool
+sources, best-effort minimization, exact source-review acknowledgement, changed
+context rejection, idempotent queue requests, bounded input, valid citations,
+atomic result validation, review/edit/dismiss, approved-only task reuse,
+read-only worker dispatch, and HTTP session/CSRF enforcement.
+
+An automated Chromium walkthrough used the real HTTP handler and UI with 20
+fictional product reports from Claude, Gemini, Antigravity and an imported tool.
+It checked selection, source preview, explicit consent, collection results,
+HTML escaping, editing, approval, reuse in a new task, library filters, and
+1440-pixel desktop / 390-pixel mobile layouts. These browser results use a
+deterministic fixture rather than live vendor responses. The in-app browser
+control connection was unavailable for this check; no in-app-browser result is
+claimed. Private captures are excluded from publication.
+
+A separate real Codex analysis on Windows used three explicitly fictional SEO
+reports and an eligible account that passed the existing zero-paid-credit and
+quota checks. It completed with two proposed lessons, valid citations and review
+status. No real private project/chat history was sent, and no credits or resets
+were requested. Claude/Gemini analysis commands are contract-tested in read-only
+mode; their live model execution was not tested. Antigravity/custom histories
+can contribute sources, but their analysis adapters remain disabled.
+
+Native source material remains bounded titles/previews, not complete native
+transcripts. A saved lesson is user-reviewed advice, not an independently
+verified fact. Cross-platform results are available in the [Verify workflow](https://github.com/dibyapp/runquay/actions/workflows/ci.yml).
+
+
 ## Task conversation verification — 0.6.3
 
 On 2026-10-14, the Windows Python suite completed with 99 tests (96 passed, three POSIX-only skips), and all 31 JavaScript UI checks passed. New regressions cover ordered Codex messages, deduplicated command events, file changes, failures, Claude tool results, structured Claude/Gemini reports, wrapped pretty JSON, partial log tails, safe Markdown and reasoning omission from both messages and technical details.

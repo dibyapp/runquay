@@ -25,7 +25,7 @@ Windows: open `start.cmd`. Mac: open `start.command`. Linux: run `sh start.sh` i
 
 ## See Runquay in use
 
-Five pages keep the daily workflow clear: **Home → Tasks → Ideas → Accounts → Settings**. Home tells you what needs attention. Task forms show the essentials first; limits, models, file paths, usage and logs are available when needed.
+Six pages keep the daily workflow clear: **Home → Tasks → Ideas → Learnings → Accounts → Settings**. Home tells you what needs attention. Task forms show the essentials first; limits, models, file paths, usage and logs are available when needed.
 
 Choose **Open conversation** on a Runquay task to read your request and the AI's progress as messages. Expand individual activities to inspect commands and results. Live steps refresh automatically; **Jump to latest** returns to the newest update. Step reports separate the summary, checks and any question that needs your answer. [Following a task](docs/WORKFLOWS.md#follow-a-task-conversation).
 
@@ -62,6 +62,7 @@ Describe a goal and its acceptance criteria, choose its AI tool, then choose **S
 
 - Persistent, prioritized project queue with bounded milestones, pause/resume, blockers, and file-based handoffs.
 - Real AI planning: useful improvements and new projects with evidence, a first milestone, and editable goals before queuing.
+- **Collective Learnings:** combine selected work summaries across projects and tools into tagged, source-backed lessons; review and save useful advice, then choose it for future tasks. [Guide](docs/COLLECTIVE_LEARNINGS.md).
 - **No account-count cap.** Add as many profiles as you need; one worker runs at a time.
 - Codex quota checks, reserve before exhaustion, selection of eligible profiles, and approval for earned resets.
 - Explicit per-task tool selection. No silent cross-provider fallback or copying of conversation history.

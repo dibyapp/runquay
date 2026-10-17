@@ -117,10 +117,12 @@ function renderBrain() {
   replaceCards("suggestion-list",ideas.length ? ideas.map(s=>{const p=s.payload; const target=library.find(c=>c.id===p.catalog_id);return `<article class="suggestion"><div class="idea-meta">${badge(p.kind === "new" ? "New project" : "Improvement")}<span>${esc(target?.name || "New project")}</span><span>${esc(p.effort)}</span></div><h3>${esc(p.title)}</h3><p>${esc(p.why)}</p><div class="first-step">First step: ${esc(p.first_milestone)}</div><details data-key="idea-${s.id}"><summary>Why this idea?</summary><p>${esc(p.evidence)}</p><p>${esc(p.goal)}</p></details><div class="controls"><button data-action="review-suggestion" data-id="${s.id}">Review idea</button><button class="text-button" data-action="dismiss-suggestion" data-id="${s.id}">Dismiss</button></div></article>`;}).join("") : empty(busy ? "Your ideas are on the way" : "No ideas in this view",busy ? "The AI is preparing suggestions from the selected context." : "Choose a project and select Get ideas above."));
 }
 function render() {
+  window.RunquayLearnings?.render(state);
   const running = state.projects.find(p=>p.state === "running");
-  const advising = state.advisor?.state === "running";
+  const learningBusy = (state.learnings?.batches || []).some(b=>b.state==="running");
+  const advising = state.advisor?.state === "running" || learningBusy;
   $("status").textContent = !state.running ? "Paused" : running ? "Working" : advising ? "Planning" : "Ready";
-  $("status-detail").textContent = running ? running.name : advising ? "Finding your next task" : state.running ? "Ready for your next task" : "Work is paused";
+  $("status-detail").textContent = running ? running.name : learningBusy ? "Collecting lessons from your past work" : advising ? "Finding your next task" : state.running ? "Ready for your next task" : "Work is paused";
   $("pause").hidden = !state.running;
   $("start").hidden = state.running;
   $("queued").textContent = state.projects.filter(p=>p.state === "queued").length;
@@ -240,6 +242,7 @@ $("advisor-form").onsubmit = async event => { event.preventDefault(); const data
 $("project-form").onsubmit = async event => {
   event.preventDefault();
   const data = Object.fromEntries(new FormData(event.target));
+  data.learning_ids = new FormData(event.target).getAll("learning_ids");
   try { await api(data.suggestion_id ? "/api/suggestion" : "/api/projects", data.suggestion_id ? {...data,id:data.suggestion_id,action:"start"} : data); $("project-dialog").close(); event.target.reset(); toast(state.running ? "Task added. Work can start when an account is available." : "Task saved. Choose Start work on Home when ready."); setTaskFilter("active"); location.hash="#projects"; await refresh(); } catch(error) { toast(error.message); }
 };
 $("resume-form").onsubmit = async event => { event.preventDefault(); const data = Object.fromEntries(new FormData(event.target)); try { await api("/api/project", {...data,action:"resume"}); $("resume-dialog").close(); setTaskFilter("active"); await refresh(); } catch(error) { toast(error.message); } };
@@ -280,7 +283,7 @@ function updateNavigation() {
   const page=RunquayUI.pageFor(location.hash);
   document.querySelectorAll(".page").forEach(p=>p.hidden=p.dataset.page !== page);
   document.querySelectorAll(".nav a").forEach(a=>{const active=a.hash === "#" + page; a.classList.toggle("active",active); if(active) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");});
-  $("page-title").textContent={overview:"Home",projects:"Tasks",advisor:"Ideas",accounts:"Accounts",settings:"Settings"}[page];
+  $("page-title").textContent={overview:"Home",projects:"Tasks",advisor:"Ideas",learnings:"Collective Learnings",accounts:"Accounts",settings:"Settings"}[page];
   if(location.hash === "#activity") $("activity").open=true;
   if(location.hash === "#projects" && taskFilter !== "finished") setTaskFilter("active");
   if(location.hash === "#approvals" || location.hash === "#activity") document.querySelector(location.hash).scrollIntoView({block:"start",behavior:"instant"});

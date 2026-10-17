@@ -1,0 +1,24 @@
+{
+  "type": "object", "additionalProperties": false,
+  "properties": {
+    "status": {"type": "string", "enum": ["complete", "blocked"]},
+    "summary": {"type": "string"},
+    "tests": {"type": "string"},
+    "next_step": {"type": "string"},
+    "question": {"type": "string"},
+    "learnings": {"type": "array", "items": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "title": {"type": "string"},
+        "lesson": {"type": "string"},
+        "apply_when": {"type": "string"},
+        "caveats": {"type": "string"},
+        "tags": {"type": "array", "items": {"type": "string"}},
+        "confidence": {"type": "string", "enum": ["reported", "hypothesis"]},
+        "source_ids": {"type": "array", "items": {"type": "string"}}
+      },
+      "required": ["title", "lesson", "apply_when", "caveats", "tags", "confidence", "source_ids"]
+    }}
+  },
+  "required": ["status", "summary", "tests", "next_step", "question", "learnings"]
+}

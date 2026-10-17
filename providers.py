@@ -74,7 +74,7 @@ def validate_custom(value):
 
 
 def command(provider, executable, project, schema, final_path, model="", custom=None):
-    advisor = project.get("kind") == "advisor"
+    advisor = project.get("kind") in ("advisor", "learnings")
     if advisor and not TOOLS[provider]["advisor"]:
         raise ValueError("This adapter has no enforced read-only advisor mode. Choose Codex, Claude Code, or Gemini CLI.")
     if provider == "codex":

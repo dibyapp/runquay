@@ -14,6 +14,8 @@
     "platform_support.py",
     "service_setup.py",
     "codex_brain.py",
+    "collective_learnings.py",
+    "learnings-schema.json",
     "task_history.py",
     "security.py",
     "release.py",

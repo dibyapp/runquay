@@ -9,7 +9,7 @@ const RunquayUI = (() => {
     const ready=(state.profiles||[]).find(p=>p.enabled && p.eligible && (state.tools||[]).some(t=>t.id===p.provider && t.advisor));
     return ready?.provider || (state.tools||[]).find(t=>t.installed && t.advisor)?.id || "codex";
   }
-  const routes = {overview:"overview",projects:"projects",advisor:"advisor",accounts:"accounts",settings:"settings",approvals:"overview",activity:"settings"};
+  const routes = {overview:"overview",projects:"projects",advisor:"advisor",learnings:"learnings",accounts:"accounts",settings:"settings",approvals:"overview",activity:"settings"};
   const labels = {queued:"Waiting",running:"Working",paused:"Paused",attention:"Needs you",complete:"Done",cancelled:"Cancelled"};
   function pageFor(hash) { return routes[String(hash || "").replace(/^#/, "")] || "overview"; }
   function nextStep(state) {
@@ -17,6 +17,8 @@ const RunquayUI = (() => {
     if ((state.decisions || []).some(d => ["pending","uncertain","redeeming"].includes(d.state))) return {title:"Your approval is needed",text:"Review the request below. You can keep waiting without approving a reset or a paid tool run.",label:"Review decisions",href:"#approvals"};
     const running = tasks.find(p => p.state === "running");
     if (running) return {title:"Your AI is working",text:running.name + ". Follow progress in Tasks, or pause work here.",label:"View task",href:"#projects"};
+    const learning=(state.learnings?.batches || []).find(b=>["queued","running","attention"].includes(b.state));
+    if(learning) return learning.state==="queued" && !state.running ? {title:"Your learnings are ready to collect",text:"The analysis is saved. Start work when ready; this also runs other queued tasks.",label:"Start queued work",action:"start"} : {title:learning.state==="running" ? "Collecting your learnings" : learning.state==="attention" ? "An analysis needs your attention" : "Your learnings are waiting",text:learning.topic + ". Check progress, account availability or approvals in Collective Learnings.",label:"View learnings",href:"#learnings"};
     if (state.advisor?.state === "running") return {title:"Finding ideas for you",text:"The AI is reading the selected project context. Suggestions will appear in Ideas.",label:"View ideas",href:"#advisor"};
     const attention = tasks.find(p => p.state === "attention");
     if (attention) return {title:"A task needs your help",text:attention.name + ". Read the task note, then continue with guidance.",label:"Review task",href:"#projects"};

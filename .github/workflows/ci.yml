@@ -25,6 +25,7 @@ jobs:
       - run: node --check web/setup.js
       - run: node --check web/beginner.js
       - run: node --check web/ui.js
+      - run: node --check web/learnings.js
       - run: node --test tests/ui.test.js
       - name: Check Windows first-launch setup without installing
         if: runner.os == 'Windows'

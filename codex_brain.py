@@ -379,7 +379,7 @@ class CodexBrain:
         goal = f"{payload['goal']}\n\nFirst milestone: {payload['first_milestone']}\n\nProject evidence: {payload['evidence']}"
         data = {"name": payload["title"], "goal": goal, "catalog_id": payload["catalog_id"], "max_steps": 20}
         if overrides:
-            data.update({k: overrides[k] for k in ("name", "goal", "max_steps", "model", "priority", "provider") if k in overrides})
+            data.update({k: overrides[k] for k in ("name", "goal", "max_steps", "model", "priority", "provider", "learning_ids") if k in overrides})
         project_id = self.sup.create_project(data)
         self.store.execute("UPDATE suggestions SET state='queued',project_id=? WHERE id=?", (project_id, ident))
         return project_id
