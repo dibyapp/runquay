@@ -1,5 +1,18 @@
 # Verification record
 
+## UI and execution checks — 0.10.1
+
+Windows verification on 2026-10-18 covers 130 Python tests (127 passed, three POSIX-only skips) and 34 JavaScript tests. Credential-storage regressions check keyring/file/auto/ephemeral modes, invalid configuration, subscription-only authentication, retained worker isolation, and no authentication-file reads by Runquay.
+
+A real Codex build, submitted through the composer in a private isolated workspace, produced an offline checklist. Independent Chromium checks passed task creation, completion, All/Active/Done filters, deletion, persistence after reload, HTML-looking text, whitespace rejection, invalid-storage recovery and four responsive widths. The run completed through the normal worker after the credential-store fix. An earlier attempt failed when the metadata process ran out of memory; Runquay stopped rather than bypassing its quota monitor. No reset or paid-credit approval was used.
+
+A Claude temperature-converter request was prepared through the same composer. The live invocation remains gated by one-run billing approval; a successful Claude build is **not claimed**. Authentication detection alone does not verify vendor billing. Real vendor sign-in changes, installations, paid/reset redemption, OS-native dialogs and native vendor execution on macOS/Linux were not repeated in this walkthrough.
+
+The reproducible browser suite uses fictional history, real HTTP endpoints and a deterministic subprocess. It exercises all main pages at 320/390/768/1024/1440 widths, project search and keyboard selection, focus return, command navigation, motion controls, setup acknowledgement, settings persistence, account rename/enable/disable/remove, history import, saved previews, learnings review/exclusion/edit/keep/hide/reuse, failed-submit recovery, progress/results/follow-up, task pause/resume/cancel, global queue controls, advisor suggestions and one-run approval handling. Deliberately rejected requests produce expected 400/503 console responses. These checks do not prove every browser, provider or possible state is correct.
+
+Run the browser suite with Node.js, Playwright and its Chromium browser installed: `python tests/browser_smoke.py`. Playwright is a development-only dependency; it is not needed to run Runquay. The fixture never launches vendor tools or imports real project histories. Captures and runtime data stay temporary. The in-app automation connection failed to initialize, so local Chromium was used. No new public screenshots were added in this release.
+
+
 ## Runquay Field — 0.10.0
 
 Verified on Windows on 2026-10-17: 127 Python tests (124 passed, three POSIX skips) and 34 JavaScript tests. New request tests reject invalid/unkept lesson attachments before creating work, exclude source history from the fixed task context, and preserve retry identity after a lesson is hidden. Command-search tests use real titles and route data and exclude hidden lessons and raw logs.

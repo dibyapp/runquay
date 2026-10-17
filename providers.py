@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import tomllib
 from install_setup import search_path, node_binary
 
 TOOLS = {
@@ -73,13 +74,35 @@ def validate_custom(value):
     return value
 
 
-def command(provider, executable, project, schema, final_path, model="", custom=None):
+def codex_auth_store(home):
+    """Carry only the credential-store enum into an otherwise isolated worker.
+
+    Never read auth.json/keyring contents or inherit arbitrary user config.
+    """
+    config = Path(home) / 'config.toml'
+    if not config.exists():
+        return 'file'
+    if config.stat().st_size > 1_000_000:
+        raise ValueError('Codex configuration is too large to verify credential storage')
+    try:
+        mode = tomllib.loads(config.read_text(encoding='utf-8')).get('cli_auth_credentials_store', 'file')
+    except (OSError, ValueError):
+        raise ValueError('Cannot verify the Codex credential-storage setting') from None
+    if not isinstance(mode, str) or mode not in ('file', 'keyring', 'auto', 'ephemeral'):
+        raise ValueError('Unsupported Codex credential-storage setting')
+    return mode
+
+
+def command(provider, executable, project, schema, final_path, model="", custom=None, auth_store="file"):
     advisor = project.get("kind") in ("advisor", "learnings")
     if advisor and not TOOLS[provider]["advisor"]:
         raise ValueError("This adapter has no enforced read-only advisor mode. Choose Codex, Claude Code, or Gemini CLI.")
     if provider == "codex":
+        if auth_store not in ('file', 'keyring', 'auto', 'ephemeral'):
+            raise ValueError('Unsupported Codex credential-storage setting')
         args = [executable, "exec", "--model", model, "--ignore-user-config", "--sandbox", "read-only" if advisor else "workspace-write", "--json",
                 "-c", 'approval_policy="never"', "-c", 'forced_login_method="chatgpt"', "-c", 'model_provider="openai"',
+                "-c", 'cli_auth_credentials_store="' + auth_store + '"',
                 "--disable", "multi_agent", "--disable", "multi_agent_v2", "--disable", "apps", "--disable", "plugins",
                 "--disable", "hooks", "--disable", "computer_use", "--disable", "browser_use", "--disable", "in_app_browser",
                 "-c", "sandbox_workspace_write.network_access=true", "-c", "shell_environment_policy.ignore_default_excludes=false",

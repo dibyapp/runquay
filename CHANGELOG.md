@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.10.1 — Project picker and verified execution
+
+- Replaced the main operating-system project dropdown with a searchable, keyboard-accessible picker. Other native selects now have explicit dark popup colors. Sending stays disabled until the local app connects.
+- Fixed isolated Codex workers losing the credential-store setting used during sign-in. Only the validated storage enum is carried into the worker; credentials and arbitrary user configuration are not copied. Subscription-only authentication and the existing quota/credit checks remain enforced.
+- Fixed the legacy approvals bookmark so it opens the decision drawer.
+- Added reproducible Chromium acceptance checks with fictional data, real local HTTP handling and deterministic worker subprocesses, plus a browser job in CI. This includes open menus rather than only programmatic select values.
+
+
 ## 0.10.0 — Runquay Field
 
 - Replaced the sidebar with a floating navigation dock, an atmospheric workspace, compact work rows and on-demand drawers. The creation surface opens directly into a message rather than a marketing headline.

@@ -35,7 +35,12 @@
     "setup.cmd",
     "Setup-Runquay.ps1",
     "setup.sh",
-    "setup.command"
+    "setup.command",
+    "tests/browser_smoke.py",
+    "tests/browser_fixture.py",
+    "tests/browser_field.cjs",
+    "tests/browser_controls.cjs",
+    "tests/browser_tasks.cjs"
   ],
   "directories": [
     "web",

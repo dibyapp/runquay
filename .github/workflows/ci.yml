@@ -3,6 +3,24 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test dependencies outside the source tree
+        run: |
+          npm install --no-save --prefix "$RUNNER_TEMP/runquay-browser" playwright
+          "$RUNNER_TEMP/runquay-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Exercise the actual dashboard with fictional data
+        env:
+          NODE_PATH: ${{ runner.temp }}/runquay-browser/node_modules
+        run: python tests/browser_smoke.py
   test:
     strategy:
       fail-fast: false

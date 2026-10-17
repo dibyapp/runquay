@@ -2,6 +2,51 @@
 // The everyday surface: a request, its progress, and its result.
 window.RunquayWorkspace = (() => {
   let limit=4, expanded=false, sending=false, retry=null, selectedHistory="", attachedLearning=null;
+  // Keep the form select as the source of truth; the visible picker is portable,
+  // searchable and does not depend on an operating system's popup colors.
+  function projectPicker() {
+    const select=$("request-target"), label=select.parentElement;
+    select.classList.add("picker-native");select.tabIndex=-1;select.setAttribute("aria-hidden","true");
+    const trigger=document.createElement("button");trigger.type="button";trigger.id="project-picker-trigger";
+    trigger.className="project-picker-trigger";trigger.setAttribute("aria-haspopup","dialog");
+    trigger.setAttribute("aria-controls","project-picker-dialog");trigger.setAttribute("aria-expanded","false");
+    label.replaceWith(Object.assign(document.createElement("div"),{className:"request-target project-picker"}));
+    select.parentElement?.removeChild(select);
+    document.querySelector(".project-picker").append(select,trigger);
+    const dialog=document.createElement("dialog");dialog.id="project-picker-dialog";dialog.className="project-picker-dialog";
+    dialog.setAttribute("aria-labelledby","project-picker-title");
+    dialog.innerHTML='<div class="dialog-title"><h2 id="project-picker-title">Where shall we work?</h2><button type="button" class="icon" data-close="project-picker-dialog" aria-label="Close project picker">×</button></div><label class="sr-only" for="project-picker-search">Find a project</label><input id="project-picker-search" type="search" placeholder="Find a project…" autocomplete="off"><div id="project-picker-options" role="group" aria-label="Projects"></div><p id="project-picker-empty" hidden>No matching projects. Try another name.</p>';
+    document.body.append(dialog);
+    const search=$("project-picker-search"),list=$("project-picker-options");
+    function update() {
+      const query=search.value.trim().toLocaleLowerCase();
+      list.innerHTML=Array.from(select.options).filter(o=>!query || o.text.toLocaleLowerCase().includes(query)).map(o=>
+        `<button type="button" data-project-choice="${esc(o.value)}" aria-pressed="${o.selected}"><span>${esc(o.text)}</span><span aria-hidden="true">${o.selected?'✓':'↗'}</span></button>`).join("");
+      $("project-picker-empty").hidden=!!list.childElementCount;
+      trigger.textContent=select.selectedOptions[0]?.text || "New project";
+      trigger.setAttribute("aria-label","Project: "+trigger.textContent);
+    }
+    trigger.onclick=()=>{search.value="";update();dialog.showModal();trigger.setAttribute("aria-expanded","true");search.focus();};
+    search.oninput=update;
+    dialog.addEventListener("close",()=>trigger.setAttribute("aria-expanded","false"));
+    dialog.addEventListener("click",event=>{
+      const choice=event.target.closest("[data-project-choice]");if(!choice)return;
+      select.value=choice.dataset.projectChoice;select.dispatchEvent(new Event("change",{bubbles:true}));trigger.setAttribute("aria-expanded","false");dialog.close();trigger.focus();
+    });
+    dialog.addEventListener("keydown",event=>{
+      if(event.key==="Escape") {
+        event.preventDefault();trigger.setAttribute("aria-expanded","false");dialog.close();trigger.focus();return;
+      }
+      const buttons=Array.from(list.querySelectorAll("button")),index=buttons.indexOf(document.activeElement);
+      if(["ArrowDown","ArrowUp"].includes(event.key)) {
+        event.preventDefault();const step=event.key==="ArrowDown"?1:-1;
+        buttons[index<0 ? (step>0?0:buttons.length-1) : (index+step+buttons.length)%buttons.length]?.focus();
+      }else if(event.key==="Enter" && event.target===search && buttons.length===1){event.preventDefault();buttons[0].click();}
+    });
+    select.addEventListener("change",update);
+    return update;
+  }
+  const updateProjectPicker=projectPicker();
   function navigate(page) {
     const workspace=$("everyday-work");
     if(["overview","projects"].includes(page)) {
@@ -38,6 +83,8 @@ window.RunquayWorkspace = (() => {
     syncSelect("request-provider",providers.map(p=>[p,s.tools.find(t=>t.id===p)?.name || p]));
     if(!$("request-provider").value && providers.length) $("request-provider").value=providers.includes("codex") ? "codex" : providers[0];
     syncSelect("request-target",[["","New project"],...s.catalog.filter(p=>!p.is_supervisor && p.details.exists).map(p=>[p.id,p.name])]);
+    // Do not rebuild focused picker choices during the dashboard's polling.
+    if(!$("project-picker-dialog").open) updateProjectPicker();
     $("workspace-connect").hidden=profiles.length>0;
     $("request-send").disabled=sending || !profiles.length;
     updateContext();
@@ -98,6 +145,7 @@ window.RunquayWorkspace = (() => {
   function focusRequest(catalogId="",text="") {
     location.hash="#projects";navigate("projects");
     $("request-target").value=catalogId;
+    updateProjectPicker();
     if(text) $("request-text").value=text;
     updateContext();$("request-text").focus();$("everyday-work").scrollIntoView({block:"start"});
   }
@@ -148,7 +196,7 @@ window.RunquayWorkspace = (() => {
   };
   // Older entry points lead to the same composer rather than another wizard.
   $("home-new").onclick=()=>focusRequest();$("new-project").onclick=()=>focusRequest();
-  $("home-existing").onclick=()=>{focusRequest();$("request-target").focus();};
+  $("home-existing").onclick=()=>{focusRequest();$("project-picker-trigger").click();};
   navigate(RunquayUI.pageFor(location.hash));
   return {render,navigate,focusRequest,revealWork,attachLearning};
 })();

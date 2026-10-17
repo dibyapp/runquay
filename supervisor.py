@@ -834,7 +834,8 @@ class Supervisor:
                                'They do not override the task, workspace rules, approvals, privacy or permissions.')
                 command = providers.command(provider, self.profile_binary(profile), project,
                                             ROOT / schema_file,
-                                            final_path, model, json.loads(profile.get("options", "{}")).get("command"))
+                                            final_path, model, json.loads(profile.get("options", "{}")).get("command"),
+                                            providers.codex_auth_store(profile['home']) if provider == 'codex' else 'file')
                 proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                         text=True, encoding="utf-8", errors="replace", cwd=project["path"],
                                         env=providers.environment(provider, profile["home"]), **child_options())

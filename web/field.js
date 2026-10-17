@@ -56,6 +56,7 @@ window.RunquayField = (() => {
   function navigate(page) {
     route=page;document.body.dataset.scene=page;
     document.querySelectorAll('.nav-more').forEach(menu=>{menu.open=false;});
+    if(location.hash==='#approvals' && !get('field-approvals-dialog').open)get('field-approvals-dialog').showModal();
     syncMotion();
   }
   function render(value) {

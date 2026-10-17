@@ -10,9 +10,36 @@ import urllib.request
 
 from security import account_hint
 from supervisor import Handler, Supervisor
+import providers
 
 
 class AccountIdentityTests(unittest.TestCase):
+    def test_isolated_workers_keep_the_signin_credential_store_only(self):
+        with tempfile.TemporaryDirectory() as home:
+            config=Path(home)/'config.toml'
+            for mode in ('file','keyring','auto','ephemeral'):
+                config.write_text('cli_auth_credentials_store="'+mode+'"\nmodel_provider="untrusted-provider"\n',encoding='utf-8')
+                store=providers.codex_auth_store(home)
+                args=providers.command('codex','codex',{'path':home},Path(home)/'schema',Path(home)/'result','example-model',auth_store=store)
+                self.assertIn('cli_auth_credentials_store="'+mode+'"',args)
+                self.assertIn('--ignore-user-config',args)
+                self.assertIn('forced_login_method="chatgpt"',args)
+                self.assertIn('model_provider="openai"',args)
+                self.assertNotIn('untrusted-provider',' '.join(args))
+
+    def test_invalid_credential_store_configuration_fails_without_echoing_content(self):
+        with tempfile.TemporaryDirectory() as home:
+            config=Path(home)/'config.toml'
+            for value in ('cli_auth_credentials_store="unsupported"','cli_auth_credentials_store = [', 'cli_auth_credentials_store = ["file"]'):
+                config.write_text(value,encoding='utf-8')
+                with self.assertRaises(ValueError) as error:providers.codex_auth_store(home)
+                self.assertNotIn(value,str(error.exception))
+
+    def test_missing_config_defaults_to_file_without_reading_authentication_files(self):
+        with tempfile.TemporaryDirectory() as home:
+            (Path(home)/'auth.json').write_text('deliberately invalid; must not be parsed',encoding='utf-8')
+            self.assertEqual(providers.codex_auth_store(home),'file')
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="runquay-identity-")
         self.sup = Supervisor(Path(self.temp.name), "test-codex")
