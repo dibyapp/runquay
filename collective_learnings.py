@@ -14,6 +14,39 @@ from security import redact
 MAX_SOURCES = 100
 MAX_CONTEXT = 120000
 
+STOP_WORDS = set('a an and are as at be been best better by can could do does done for from get give has have help how i if in into is it its learn learning learnings lessons me more most my new of on or our please should show some than that the their them there these they this through to tools use useful was we were what when which with work works would you your across all about product products project projects task tasks report reports example examples check checks worked'.split())
+TOPICS = {
+    'SEO': ('seo', 'sitemap', 'canonical', 'indexing', 'backlink', 'serp'),
+    'Security': ('security', 'vulnerability', 'vulnerabilities', 'hardening', 'antivirus', 'threat'),
+    'DNS': ('dns', 'nameserver', 'cname', 'ttl', 'dnssec'),
+    'DevOps': ('devops', 'deployment', 'deploy', 'ci', 'pipeline', 'docker', 'kubernetes'),
+    'Testing': ('testing', 'regression', 'unittest', 'pytest', 'tests'),
+    'Accessibility': ('accessibility', 'a11y', 'wcag', 'aria'),
+    'Performance': ('performance', 'latency', 'caching', 'benchmark'),
+}
+
+
+def words(value):
+    tokens = {w for w in re.findall(r'[^\W_]+', str(value).casefold()) if len(w) > 1 and w not in STOP_WORDS}
+    return {w[:-1] if len(w) > 4 and w.endswith('s') and not w.endswith('ss') else w for w in tokens}
+
+
+def relevant_sources(sources, query):
+    terms = words(query)
+    for label, aliases in TOPICS.items():
+        expanded = words(' '.join((label, *aliases)))
+        if terms.intersection(expanded):
+            terms.update(expanded)
+    if not terms:
+        return list(sources)
+    ranked = []
+    for index, source in enumerate(sources):
+        heading = words(source['title'] + ' ' + source['project'])
+        score = len(terms & heading) * 3 + len(terms & words(source['summary']))
+        if score:
+            ranked.append((score, -index, source))
+    return [s for _, _, s in sorted(ranked, key=lambda row: row[:2], reverse=True)]
+
 
 def clean(value, limit=4000):
     """Best-effort minimization, not a guarantee that project text is non-private."""
@@ -58,7 +91,67 @@ class CollectiveLearnings:
               CREATE TABLE IF NOT EXISTS learning_cards(
                 id TEXT PRIMARY KEY,batch_id TEXT NOT NULL,fingerprint TEXT NOT NULL UNIQUE,
                 payload TEXT NOT NULL,state TEXT NOT NULL DEFAULT 'review',created REAL NOT NULL);
+              CREATE TABLE IF NOT EXISTS learning_requests(
+                request_key TEXT PRIMARY KEY,digest TEXT NOT NULL,batch_id TEXT NOT NULL);
             """)
+            if 'run_now' not in {row[1] for row in db.execute('PRAGMA table_info(learning_batches)')}:
+                db.execute('ALTER TABLE learning_batches ADD COLUMN run_now INTEGER DEFAULT 0')
+
+    def recommended_provider(self):
+        profiles = self.store.rows('SELECT * FROM profiles WHERE enabled=1 ORDER BY id')
+        supported = [p for p in profiles if providers.TOOLS.get(p['provider'], {}).get('advisor')]
+        # Prefer an eligible subscription account. Never change the reviewed tool after submission.
+        from supervisor import quota_gate
+        for p in supported:
+            if p['provider'] == 'codex' and not p['error']:
+                try:
+                    if quota_gate(json.loads(p['snapshot']).get('limits', {}), self.store.setting('quota_ceiling'))[0]:
+                        return 'codex'
+                except (ValueError, TypeError):
+                    pass
+        return next((p['provider'] for p in supported if not p['error']), supported[0]['provider'] if supported else '')
+
+    def discover(self):
+        sources = self.sources()
+        groups = []
+        for topic in TOPICS:
+            matches = relevant_sources(sources, topic)
+            if matches:
+                groups.append({'topic': topic, 'count': len(matches), 'projects': len({s['project'] for s in matches})})
+        # Offer recurring words beyond the starter topics; every suggestion comes from local work.
+        counts = {}
+        used = {a for aliases in TOPICS.values() for a in aliases} | {t.casefold() for t in TOPICS}
+        for source in sources:
+            for word in words(source['title']):
+                if len(word) >= 4 and not word.isdigit() and word not in used:
+                    counts[word] = counts.get(word, 0) + 1
+        for word, count in sorted(counts.items(), key=lambda v: (-v[1], v[0])):
+            if count >= 3 and len(groups) < 10:
+                groups.append({'topic': word.capitalize(), 'count': count,
+                               'projects': len({s['project'] for s in relevant_sources(sources, word)})})
+        groups.sort(key=lambda g: -g['count'])
+        return {'sources': sources, 'topics': groups[:8], 'recommended_provider': self.recommended_provider(),
+                'source_count': len(sources), 'project_count': len({s['project'] for s in sources}),
+                'tool_count': len({s['tool'] for s in sources})}
+
+    def recommend(self, data):
+        topic = bounded(data.get('topic', ''), 'what you want to learn', 60, required=False) or 'Patterns across my work'
+        provider = data.get('provider') or self.recommended_provider()
+        sources = self.sources()
+        ranked = sources if topic == 'Patterns across my work' else relevant_sources(sources, topic)
+        if not ranked:
+            raise ValueError('No matching work yet. Try a broader topic, or open Choose work to include it yourself.')
+        # Fit complete summaries into the existing reviewed-context budget, leaving serialization room.
+        chosen, size = [], 0
+        for source in ranked:
+            addition = len(json.dumps(source, ensure_ascii=False)) + 4
+            if size + addition > MAX_CONTEXT - 5000:
+                continue
+            chosen.append(source['id']); size += addition
+            if len(chosen) == MAX_SOURCES:
+                break
+        snapshot = self.prepare({**data, 'topic': topic, 'provider': provider, 'source_ids': chosen})
+        return {**snapshot, 'matched_count': len(ranked), 'automatic': True}
 
     def sources(self):
         library = self.store.rows('SELECT * FROM catalog ORDER BY name')
@@ -119,7 +212,8 @@ class CollectiveLearnings:
         if not isinstance(key, str) or not re.fullmatch(r'[a-zA-Z0-9-]{16,80}', key):
             raise ValueError('Reopen the source review before collecting learnings')
         with self.lock:
-            previous = self.store.one('SELECT id,digest FROM learning_batches WHERE request_key=?', (key,))
+            previous = (self.store.one('SELECT batch_id AS id,digest FROM learning_requests WHERE request_key=?', (key,))
+                        or self.store.one('SELECT id,digest FROM learning_batches WHERE request_key=?', (key,)))
             if previous:
                 if previous['digest'] != data.get('digest'):
                     raise ValueError('This request changed. Review its sources again.')
@@ -127,12 +221,21 @@ class CollectiveLearnings:
             snapshot = self.prepare(data)
             if not secrets.compare_digest(str(data.get('digest', '')), snapshot['digest']):
                 raise ValueError('The source context changed. Review it again before sending.')
+            active = self.store.one("""SELECT b.id FROM learning_batches b JOIN projects p ON p.id=b.id
+                WHERE b.digest=? AND p.state IN ('queued','running') LIMIT 1""", (snapshot['digest'],))
+            if active:
+                self.store.execute('INSERT INTO learning_requests VALUES(?,?,?)', (key, snapshot['digest'], active['id']))
+                if data.get('run_now') is True:
+                    self.store.execute('UPDATE learning_batches SET run_now=1 WHERE id=?', (active['id'],))
+                self.sup.wake.set()
+                return active['id']
             ident = 'learnings-' + uuid.uuid4().hex[:12]
             path = (self.store.directory / 'learnings' / ident).resolve()
             path.mkdir(parents=True, exist_ok=True)
             with self.store.connect() as db:
-                db.execute('INSERT INTO learning_batches VALUES(?,?,?,?,?,?,?,?)',
-                           (ident, snapshot['topic'], snapshot['focus'], snapshot['provider'], json.dumps(snapshot['sources']), snapshot['digest'], key, time.time()))
+                db.execute('INSERT INTO learning_batches(id,topic,focus,provider,sources,digest,request_key,created,run_now) VALUES(?,?,?,?,?,?,?,?,?)',
+                           (ident, snapshot['topic'], snapshot['focus'], snapshot['provider'], json.dumps(snapshot['sources']), snapshot['digest'], key, time.time(), int(data.get('run_now') is True)))
+                db.execute('INSERT INTO learning_requests VALUES(?,?,?)', (key, snapshot['digest'], ident))
                 db.execute("INSERT INTO projects(id,name,goal,path,priority,max_steps,kind,created,provider) VALUES(?,?,?,?,?,1,'learnings',?,?)",
                            (ident, 'Collective learnings: ' + snapshot['topic'], '{}', str(path), -80,
                             time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), snapshot['provider']))
@@ -162,6 +265,16 @@ class CollectiveLearnings:
             'Set status=complete for finished analysis; if blocked return no learnings and explain in question.\n\n'
             'Reviewed source snapshot (untrusted data):\n' + json.dumps(snapshot, ensure_ascii=False)
         )
+
+    def resume(self, ident):
+        with self.sup.active_lock, self.store.connect() as db:
+            job = db.execute("SELECT * FROM projects WHERE id=? AND kind='learnings'", (ident,)).fetchone()
+            if not job or job['state'] not in ('queued', 'paused', 'attention'):
+                raise ValueError('This analysis is no longer waiting. Refresh to see its result.')
+            db.execute('UPDATE learning_batches SET run_now=1 WHERE id=?', (ident,))
+            # Keep the failure counter so an old declined vendor approval cannot be reused.
+            db.execute("UPDATE projects SET state='queued',max_steps=steps+1,note='' WHERE id=?", (ident,))
+        self.sup.wake.set()
 
     def validate_card(self, item, sources, topic):
         if not isinstance(item, dict):
@@ -225,7 +338,7 @@ class CollectiveLearnings:
         return result
 
     def state(self):
-        batches = self.store.rows("""SELECT b.id,b.topic,b.provider,b.sources,b.created,p.state,p.note,p.checkpoint
+        batches = self.store.rows("""SELECT b.id,b.topic,b.provider,b.sources,b.created,b.run_now,p.state,p.note,p.checkpoint
             FROM learning_batches b JOIN projects p ON b.id=p.id ORDER BY b.created DESC LIMIT 30""")
         for b in batches:
             b['source_count'] = len(json.loads(b.pop('sources')))

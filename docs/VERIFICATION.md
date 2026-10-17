@@ -1,5 +1,33 @@
 # Verification record
 
+
+## Automatic Collective Learnings experience — 0.8.0
+
+Verified on Windows on 2026-10-17. The Python suite ran 114 tests (111 passed,
+three POSIX-only skips), and 32 JavaScript checks passed. New checks cover
+automatic relevance matching across tools, open-ended topics, bounded context
+selection, duplicate active-request reuse, scoped execution while builds remain
+paused, global pause disarming an analysis, and scoped continuation.
+
+An automated Chromium walkthrough verified the actual HTTP handler and UI with
+20 fictional product reports: automatic topic/tool/source selection, no model
+calls on page opening, no unrelated fallback on empty matches, human-readable
+context review, inline source exclusion, one explicit Analyze action, automatic
+results, direct keep-and-attach reuse, editing/hiding/filtering, retained optional
+controls, and desktop/mobile layouts. HTML in evidence remained escaped. These
+browser results use deterministic reports, not real product outcomes. The
+in-app browser automation connection remains unavailable; the check used local
+Chromium. Verification captures stay private and are not release screenshots.
+
+A real Codex analysis of three fictional reports exercised automatic source
+selection and the actual worker while the general build queue stayed paused.
+It returned two proposed lessons with valid citations, both in review state.
+The account passed the existing quota/zero-paid-credit checks. No private
+project history was sent and no credits or resets were requested. Live model
+checks for Claude/Gemini remain unperformed. Local keyword matching and topic
+counts are not semantic understanding or verified AI conclusions.
+
+
 ## Collective Learnings — 0.7.0
 
 Verified on Windows on 2026-10-17. The Python suite ran 110 tests (107 passed,

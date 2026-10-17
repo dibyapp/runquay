@@ -11,32 +11,58 @@ gains or treat a repeated claim as proof.
 
 ## Collect lessons
 
-1. Open **Learnings** in the sidebar. Choose **Collect learnings from past work**.
-2. Enter a topic or tag. Choose a connected analysis tool: Codex, Claude Code or
-   Gemini CLI. You can optionally describe what to look for.
-3. Search your past work by topic or project. Select individual summaries, or
-   choose **Select shown** for up to 100 visible matches. The source-tool filter
-   lets you include one tool or combine several.
-4. Choose **Review selected information**. Read the exact source snapshot. Close
-   the review and uncheck any source you do not want sent to the AI.
-5. Acknowledge the reviewed information, then choose **Queue analysis**.
-6. If work is paused, choose **Start queued work** when ready. This starts the
-   existing queue too. Check Home for any account or billing approval.
-7. Review the resulting lesson cards. Expand **When to use it, caveats and
-   sources**. Edit an inaccurate or overly specific lesson, dismiss an unhelpful
-   one, and choose **Save learning** for useful advice.
+1. Open **Learnings**. Choose a suggested topic, ask a question such as “What
+   worked across my SEO projects?”, or select **Discover patterns** to look across
+   recent work. Runquay chooses matching summaries and a connected analysis tool.
+2. Review the readable context cards. Remove any summary you do not want sent,
+   then choose **Analyze with [tool]**. This button is the consent action; no
+   checkbox, JSON inspection or manual queue setup is needed.
+3. Lessons appear automatically. Read a lesson and expand its source context when
+   helpful. Choose **Keep lesson** for your library or **Use in a task** to keep
+   and attach it in one step. The three-dot menu contains editing and hiding.
 
-Nothing is sent to an AI when you open the page, search sources or prepare the
-preview. Queuing requires explicit source-review acknowledgement. The worker
-uses the reviewed snapshot; changed sources require another review before
-queuing. Repeating the same request does not create another analysis job.
+Topic suggestions use local keyword matches and counts, not AI conclusions.
+The starter vocabulary includes SEO, security, DNS, DevOps, testing,
+accessibility and performance. Recurring words in your own task titles can
+suggest other topics. Any subject can be typed. Matching is lexical with a
+small alias vocabulary, not semantic search; if there are no matches, Runquay
+asks for a broader topic instead of silently sending unrelated work.
+
+No AI request starts when you open the page, view topic suggestions or prepare
+the context. The **Analyze** action authorizes sending the shown snapshot to the
+shown provider. Runquay prefers an eligible Codex subscription connection, then
+an enabled supported connection. It does not silently switch the reviewed
+provider. Claude/Gemini retain their separate per-invocation billing approval.
+
+The selected analysis can run while your build queue is paused. It does not
+start unrelated builds or automatic project ideas. The existing single worker,
+quota checks and account handling remain in force. You can leave the page and
+return for the result. **Pause work** also stops these analyses. A paused or
+blocked collection offers **Continue analysis**, which resumes only that
+collection; it does not start other paused work. A running analysis can be
+cancelled from its progress card.
+
+Changed source context requires another review before sending. Duplicate active
+collections of the same context are reused instead of queued again. Source
+availability refreshes locally every minute while this page is open. Native
+history discovery still follows the existing background refresh schedule.
+
+## Optional controls
+
+Open **Adjust** only if you want to change the AI, add a focus, or **Choose work
+yourself**. Search summaries, filter by tool, and select up to 100. **Use automatic
+selection** returns to the default flow. Editing the main question also returns
+to automatic source selection. Manual controls remain available without being
+required for a normal analysis.
 
 ## Use lessons in another project
 
-Choose **Use in a new task** on a saved card, or open a task form and expand
-**Use collective learnings (optional)**. Check up to 12 saved lessons, then
-describe the new task as usual. Existing-project task forms and reviewed idea
-forms support the same selection.
+Choose **Use in a task** on any lesson after reading it. This keeps the lesson
+and opens a task form with that lesson selected. Or open a task form and expand
+**Use collective learnings (optional)** to choose up to 12 kept lessons.
+Existing-project task forms and reviewed idea forms support the same selection.
+You still describe and submit the task; using a lesson never starts a build by
+itself.
 
 Only the chosen lesson texts, applicability, caveats, confidence labels and tags
 are copied into the task. The original source summaries and source project
@@ -53,7 +79,7 @@ silently edit vendor memory files, instructions or native conversations.
 
 The collection topic becomes the first tag. The AI can propose additional tags,
 and you can edit them. There is no fixed category list. Search the library or
-filter by topic and **Needs review** / **Saved by you**.
+filter by topic and **New lessons** / **Kept by you**.
 
 Cards distinguish **reported** observations from **hypotheses**. Neither label
 means independently verified. Every card must cite at least one source from its

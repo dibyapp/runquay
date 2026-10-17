@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 - Easier Collective Learnings
+
+- Ask a question or choose a suggested topic; Runquay automatically finds matching work, fits the context budget, and recommends a connected analysis tool.
+- Replace source-picking forms and raw JSON with a readable context review and inline removal. One explicit Analyze action sends the reviewed snapshot.
+- Run an authorized analysis while the build queue remains paused; preserve quota/billing approvals and support pausing, cancelling and scoped continuation.
+- Simplify lesson cards, topic browsing, source context and progress. Use in a task keeps and attaches a lesson in one action; optional controls stay under Adjust.
+- Refresh source availability locally, reuse duplicate active analyses, handle no matches honestly, and fix the dashboard startup race between deferred scripts.
+
+
 ## 0.7.0 - Collective Learnings
 
 - Collect reusable lessons from selected work across projects and AI tools, with any topic/tag rather than a fixed taxonomy.

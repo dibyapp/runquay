@@ -120,11 +120,12 @@ function render() {
   window.RunquayLearnings?.render(state);
   const running = state.projects.find(p=>p.state === "running");
   const learningBusy = (state.learnings?.batches || []).some(b=>b.state==="running");
+  const scopedAnalysis = (state.learnings?.batches || []).some(b=>b.run_now && ["queued","running"].includes(b.state));
   const advising = state.advisor?.state === "running" || learningBusy;
-  $("status").textContent = !state.running ? "Paused" : running ? "Working" : advising ? "Planning" : "Ready";
-  $("status-detail").textContent = running ? running.name : learningBusy ? "Collecting lessons from your past work" : advising ? "Finding your next task" : state.running ? "Ready for your next task" : "Work is paused";
-  $("pause").hidden = !state.running;
-  $("start").hidden = state.running;
+  $("status").textContent = learningBusy ? "Learning" : scopedAnalysis && !state.running ? "Waiting" : !state.running ? "Paused" : running ? "Working" : advising ? "Planning" : "Ready";
+  $("status-detail").textContent = running ? running.name : learningBusy ? "Collecting lessons from your past work" : scopedAnalysis ? "Your analysis is waiting for an available account" : advising ? "Finding your next task" : state.running ? "Ready for your next task" : "Work is paused";
+  $("pause").hidden = !state.running && !scopedAnalysis;
+  $("start").hidden = state.running || scopedAnalysis;
   $("queued").textContent = state.projects.filter(p=>p.state === "queued").length;
   $("ready").innerHTML = `${state.profiles.filter(p=>p.eligible && p.enabled).length} <em>/ ${state.profiles.length}</em>`;
   $("completed").textContent = state.projects.filter(p=>p.state === "complete").length;
@@ -293,4 +294,6 @@ document.addEventListener("invalid",event=>{let details=event.target.closest("de
 document.querySelector(".skip-link").onclick=event=>{event.preventDefault();$("main-content").focus();$("main-content").scrollIntoView();};
 window.addEventListener("hashchange",updateNavigation); updateNavigation();
 
-refresh(); setInterval(refresh,4000);
+function startDashboard() {refresh(); setInterval(refresh,4000);}
+if(document.readyState === 'complete') startDashboard();
+else window.addEventListener('DOMContentLoaded',startDashboard,{once:true});

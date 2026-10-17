@@ -115,6 +115,62 @@ class LearningTests(unittest.TestCase):
         self.assertNotIn(str(self.base),prompt)
         self.assertNotIn('profile',prompt)
 
+    def test_automatic_matching_suggestions_and_unknown_topics(self):
+        self.store.set('codex_tasks', [{'id':'dns','title':'DNS migration','preview':'Check nameserver and TTL before migration.','updated_at':200}])
+        discovery=self.learn.discover()
+        self.assertIn('SEO',{t['topic'] for t in discovery['topics']})
+        self.assertIn('DNS',{t['topic'] for t in discovery['topics']})
+        found=self.learn.recommend({'topic':'What worked across my SEO projects?','provider':'codex'})
+        self.assertTrue(found['automatic'])
+        self.assertEqual(len(found['sources']),4)
+        self.assertTrue(all('SEO' in s['title'] for s in found['sources']))
+        self.assertEqual(self.store.rows('SELECT * FROM projects'),[])
+        with self.assertRaises(ValueError):self.learn.recommend({'topic':'Deep sea welding','provider':'codex'})
+        self.assertEqual(len(self.learn.recommend({'topic':'','provider':'codex'})['sources']),5)
+
+    def test_custom_topic_works_without_fixed_taxonomy_and_context_fits(self):
+        samples=[task('custom',str(n),'Sourdough recipe '+str(n),'Hydration trials and fermentation notes.',updated=n) for n in range(4)]
+        self.store.set('imported_tasks',samples)
+        found=self.learn.recommend({'topic':'Sourdough'})
+        self.assertEqual(found['provider'],'codex')
+        self.assertEqual(len(found['sources']),4)
+        self.assertIn('Sourdough',{t['topic'] for t in self.learn.discover()['topics']})
+        large=[{'id':str(n),'title':'SEO','project':'Example','tool':'Example tool','provider':'custom','summary':'x'*4500,'updated_at':n,'kind':'preview'} for n in range(100)]
+        with patch.object(self.learn,'sources',return_value=large):
+            found=self.learn.recommend({'topic':'SEO'})
+            self.assertLess(found['characters'],120000)
+            self.assertLess(len(found['sources']),100)
+            self.assertGreater(len(found['sources']),1)
+
+    def test_repeated_auto_requests_do_not_queue_duplicate_running_analysis(self):
+        data=self.request_data(run_now=True)
+        first=self.learn.request(data)
+        retry={**data,'request_key':secrets.token_hex(16)}
+        self.assertEqual(first,self.learn.request(retry))
+        self.store.execute("UPDATE projects SET state='complete' WHERE id=?",(first,))
+        # A lost response retried after completion must not spend allowance on another run.
+        self.assertEqual(first,self.learn.request(retry))
+        self.assertEqual(len(self.store.rows('SELECT * FROM learning_batches')),1)
+
+    def test_analysis_runs_while_build_queue_stays_paused_and_resume_is_scoped(self):
+        ident=self.learn.request(self.request_data(run_now=True))
+        build=self.sup.create_project({'name':'Other task','goal':'This build should stay paused'})
+        self.assertFalse(self.store.setting('running'))
+        self.assertEqual(self.sup.pending_project()['id'],ident)
+        project=self.store.one('SELECT * FROM projects WHERE id=?',(ident,))
+        self.assertTrue(self.sup.work_allowed(project))
+        self.assertFalse(self.sup.work_allowed(self.store.one('SELECT * FROM projects WHERE id=?',(build,))))
+        self.store.execute('UPDATE learning_batches SET run_now=0')
+        self.assertIsNone(self.sup.pending_project())
+        self.assertFalse(self.sup.work_allowed(project))
+        self.store.execute("UPDATE projects SET state='attention',failures=1 WHERE id=?",(ident,))
+        self.learn.resume(ident)
+        self.assertEqual(self.sup.pending_project()['id'],ident)
+        self.assertEqual(self.store.one('SELECT failures FROM projects WHERE id=?',(ident,))['failures'],1)
+        self.assertFalse(self.store.setting('running'))
+        self.store.execute("UPDATE projects SET state='complete' WHERE id=?",(ident,))
+        with self.assertRaises(ValueError):self.learn.resume(ident)
+
     def test_invalid_source_or_card_is_atomic_and_not_saved(self):
         ident,data=self.queue(); item=self.lesson(data['source_ids'][0])
         bad=copy.deepcopy(item);bad['source_ids']=['fabricated-id']
@@ -156,7 +212,8 @@ class LearningTests(unittest.TestCase):
     def test_analysis_dispatch_is_read_only_and_persists_review_cards(self):
         ident,data=self.queue()
         self.store.execute("UPDATE projects SET state='queued' WHERE id=?",(ident,))
-        self.store.set('running',True)
+        self.store.set('running',False)
+        self.store.execute('UPDATE learning_batches SET run_now=1 WHERE id=?',(ident,))
         project=self.store.one('SELECT * FROM projects WHERE id=?',(ident,))
         profile=self.store.one('SELECT * FROM profiles')
         source=data['source_ids'][0]
@@ -202,6 +259,11 @@ class LearningTests(unittest.TestCase):
         self.assertTrue(queued['id'].startswith('learnings-'))
         self.assertFalse(self.store.setting('running'))
         self.assertEqual(json.load(post('/api/learnings/collect',data)),queued)
+        post('/api/control',{'action':'pause'}).close()
+        self.assertEqual(self.store.one('SELECT run_now FROM learning_batches')['run_now'],0)
+        post('/api/learnings/run',{'id':queued['id']}).close()
+        self.assertFalse(self.store.setting('running'))
+        self.assertEqual(self.sup.pending_project()['id'],queued['id'])
 
 
 if __name__=='__main__':unittest.main()

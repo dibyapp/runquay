@@ -186,7 +186,6 @@ The local queue belongs to this Runquay installation. A saved conversation is se
 
 ## Reuse what you learned
 
-Open **Learnings** to collect lessons from work across projects and AI tools. Choose
-any topic, select relevant summaries, and review the exact information before
-queuing analysis. Edit and save useful suggestions, then choose saved lessons in
-your next task form. [Collective Learnings walkthrough](COLLECTIVE_LEARNINGS.md).
+Open **Learnings** to collect lessons from work across projects and AI tools. Ask about any topic or choose a suggestion. Runquay finds matching work and an
+analysis tool. Review the context and choose Analyze; lessons appear automatically
+without starting unrelated paused tasks. Use a useful lesson in a task with one action. [Collective Learnings walkthrough](COLLECTIVE_LEARNINGS.md).

@@ -20,7 +20,8 @@ test("legacy bookmarks and unknown routes always resolve to an accessible page",
 });
 test("collective analysis has an actionable Home state while remaining separate from build tasks",()=>{
   const learnings={batches:[{topic:"SEO",state:"queued"}]};
-  assert.equal(ui.nextStep({...base,running:false,learnings}).action,"start");
+  assert.equal(ui.nextStep({...base,running:false,learnings}).href,"#learnings");
+  assert.notEqual(ui.nextStep({...base,running:false,learnings:{batches:[{topic:'SEO',state:'queued',run_now:1}]}}).action,'start');
   assert.equal(ui.nextStep({...base,learnings}).href,"#learnings");
   assert.match(ui.nextStep({...base,learnings:{batches:[{topic:"DNS",state:"running"}]}}).title,/Collecting/);
 });

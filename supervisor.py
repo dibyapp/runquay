@@ -677,9 +677,9 @@ class Supervisor:
                     self.brain.discover()
                 if self.store.setting("running"):
                     self.brain.maybe_plan()
-                pending = self.store.one("SELECT * FROM projects WHERE state='queued' ORDER BY priority DESC,created ASC")
-                active = bool(self.store.setting("running") and pending)
-                needs_awake = bool(self.store.setting("running") and (pending or self.store.setting("advisor_auto")))
+                pending = self.pending_project()
+                active = bool(pending)
+                needs_awake = bool(pending or self.store.setting("running") and self.store.setting("advisor_auto"))
                 self.set_awake(needs_awake and self.store.setting("keep_awake"))
                 if active:
                     self.step(pending)
@@ -689,6 +689,16 @@ class Supervisor:
             self.wake.wait(20)
             self.wake.clear()
         self.set_awake(False)
+
+    def work_allowed(self, project):
+        return bool(self.store.setting('running') or project.get('kind') == 'learnings' and
+                    self.store.one('SELECT id FROM learning_batches WHERE id=? AND run_now=1', (project['id'],)))
+
+    def pending_project(self):
+        if self.store.setting('running'):
+            return self.store.one("SELECT * FROM projects WHERE state='queued' ORDER BY priority DESC,created ASC")
+        return self.store.one("""SELECT p.* FROM projects p JOIN learning_batches b ON b.id=p.id
+            WHERE p.kind='learnings' AND p.state='queued' AND b.run_now=1 ORDER BY p.created ASC LIMIT 1""")
 
     def step(self, project):
         if project["steps"] >= project["max_steps"]:
@@ -742,7 +752,7 @@ class Supervisor:
         try:
             with self.active_lock:
                 fresh = self.store.one("SELECT state FROM projects WHERE id=?", (project["id"],))
-                if not self.store.setting("running") or not fresh or fresh["state"] != "queued":
+                if not self.work_allowed(project) or not fresh or fresh["state"] != "queued":
                     return
                 if self.last_profile != profile["id"]:
                     self.store.event(f"Selected {profile['name']} for local work")
@@ -831,7 +841,7 @@ class Supervisor:
                         continue
                     state = self.store.one("SELECT state FROM projects WHERE id=?", (project["id"],))
                     enabled = self.store.one("SELECT enabled FROM profiles WHERE id=?", (profile["id"],))
-                    if self.stop.is_set() or not self.store.setting("running") or not state or state["state"] != "running" or not enabled or not enabled["enabled"]:
+                    if self.stop.is_set() or not self.work_allowed(project) or not state or state["state"] != "running" or not enabled or not enabled["enabled"]:
                         reason = "Paused by user; existing files retained"
                     elif time.monotonic() - started > (min(10, self.store.setting("turn_minutes")) if is_analysis else self.store.setting("turn_minutes")) * 60:
                         reason = "Milestone time limit reached; inspect the checkpoint before retrying"
@@ -972,7 +982,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         try:
             self.wfile.write(body)
-        except (BrokenPipeError, ConnectionResetError):
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             pass
 
     def authorized(self):
@@ -998,7 +1008,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             state["csrf"] = self.server.token
             return self.send_data(sanitize(state))
         if path == '/api/learnings/sources':
-            return self.send_data({'sources': self.server.supervisor.learnings.sources()})
+            return self.send_data(self.server.supervisor.learnings.discover())
         if path.startswith("/api/delivery/"):
             project = self.server.supervisor.store.one("SELECT * FROM projects WHERE id=? AND kind='work'", (path.split("/")[-1],))
             if not project:
@@ -1044,6 +1054,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         raise ValueError('Finish tool setup before starting work')
                     sup.store.set("running", action == "start")
                     if action == "pause":
+                        sup.store.execute('UPDATE learning_batches SET run_now=0')
                         stop_tree(sup.active_proc)
                 sup.store.event("Queue started" if action == "start" else "Queue paused")
             elif path == "/api/projects":
@@ -1084,10 +1095,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 return self.send_data({"id": ident}, 202)
             elif path == '/api/learnings/preview':
                 return self.send_data(sup.learnings.prepare(data))
+            elif path == '/api/learnings/recommend':
+                return self.send_data(sup.learnings.recommend(data))
             elif path == '/api/learnings/collect':
                 return self.send_data({'id': sup.learnings.request(data)}, 202)
             elif path == '/api/learnings/review':
                 sup.learnings.review(data)
+            elif path == '/api/learnings/run':
+                sup.learnings.resume(data.get('id', ''))
             elif path == "/api/suggestion":
                 if data.get("action") == "start":
                     ident = sup.brain.start_suggestion(data["id"], data)
