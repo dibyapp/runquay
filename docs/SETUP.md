@@ -1,6 +1,18 @@
 # Automatic setup for Windows, macOS and Linux
 
-Download and extract [the latest source ZIP](https://github.com/dibyapp/runquay/releases/latest). Keep the folder intact. Runquay detects your computer and offers a setup plan for the AI tool you choose.
+Open [the latest release](https://github.com/dibyapp/runquay/releases/latest). Runquay detects your computer and offers a setup plan for the AI tool you choose.
+
+| Computer | Easiest first install | Open it again later |
+| --- | --- | --- |
+| Windows | Download and double-click **Install-Runquay.cmd** | Search **Runquay** in Start |
+| macOS | Download **install-runquay.sh** and run `sh install-runquay.sh` from Downloads in Terminal | Open **Runquay.command** in Applications |
+| Linux / Ubuntu | Download **install-runquay.sh** and run `sh install-runquay.sh` from Downloads in Terminal | Run **Open Runquay.command** in your user data folder |
+
+The installer downloads the current audited source release and its SHA256 checksum, checks the archive contents, saves the app in a versioned user folder, and opens the guided setup. It does not ask for a GitHub login or store a GitHub token. Your projects, Runquay database and AI sign-ins stay outside that install folder. Running the installer again selects the newest release without erasing them. Review the installer source in this repository if you prefer. Shell environments that call Downloads something else can run `sh /path/to/install-runquay.sh`.
+
+Runquay is a desktop orchestrator. Docker would hide the host's AI tools, sign-ins and project folders inside a separate container, creating more setup steps. Native installation is the supported everyday path. The source ZIP remains available for manual or managed installs.
+
+To install manually, download and extract [the latest source ZIP](https://github.com/dibyapp/runquay/releases/latest), keep the folder intact, and use the first-launch file below.
 
 | Computer | First launch | What happens if essentials are missing |
 | --- | --- | --- |

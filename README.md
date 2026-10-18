@@ -19,9 +19,11 @@ Created and maintained by [Dibyaprakash Pradhan](https://github.com/dibyapp). [D
 
 [Start with the beginner guide](docs/BEGINNERS.md). After connecting your AI once, type what you want in **Your work** and choose the **↑** send control. Runquay creates a separate folder and starts that request when its AI is available. Pick an existing project only when you want its files changed. You do not need to name the task, choose a model, set work limits, or turn on a queue.
 
+**Easiest install:** [Open the latest release](https://github.com/dibyapp/runquay/releases/latest). On Windows, download and open **Install-Runquay.cmd**. On macOS or Linux, download **install-runquay.sh**, open Terminal in Downloads and run `sh install-runquay.sh`. The installer checks the release checksum, saves the app in your user folder and opens guided setup. Windows adds Runquay to Start; macOS adds **Runquay.command** to Applications. [Install details](docs/SETUP.md).
+
 Results and saved conversations appear together, with recognizable tool icons, search, plain progress, **View result**, and **Ask for a change**. Saved native conversations are previews; their original chat continues in its own tool. AI choices, connections, work controls and detailed history remain available when needed. [Everyday workflow](docs/WORKFLOWS.md).
 
-Windows: open `start.cmd`. Mac: open `start.command`. Linux: run `sh start.sh` in the extracted folder. First-time setup can prepare missing dependencies; provider sign-in and OS permission prompts still need you.
+For the source ZIP, open `setup.cmd` on Windows, `setup.command` on Mac or `sh setup.sh` on Linux. First-time setup can prepare missing dependencies; provider sign-in and OS permission prompts still need you.
 
 ## See Runquay in use
 
@@ -35,7 +37,7 @@ These are real browser screenshots of the running 0.10.0 app with fictional loca
 
 ## Start in one command
 
-For a fresh computer, extract the source ZIP and open **setup.cmd** (Windows), **setup.command** (Mac), or **sh setup.sh** (Linux). It detects your OS, prepares missing Python/Git using the matching package manager, and opens the dashboard. Choose **Install missing tools** there to prepare Codex, Claude Code or Gemini CLI. OS permissions and vendor sign-in remain interactive. [Automatic setup guide](docs/SETUP.md).
+Use the installer above for a fresh computer. If you prefer the source ZIP, extract it and open **setup.cmd** (Windows), **setup.command** (Mac), or **sh setup.sh** (Linux). Setup detects your OS, prepares missing Python/Git using the matching package manager, and opens the dashboard. Choose **Install missing tools** there to prepare Codex, Claude Code or Gemini CLI. OS permissions and vendor sign-in remain interactive. [Automatic setup guide](docs/SETUP.md).
 
 If Python 3.11+ and Git are already installed, open a terminal in the extracted `runquay` folder:
 

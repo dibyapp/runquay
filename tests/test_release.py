@@ -2,9 +2,11 @@ import json
 import hashlib
 from pathlib import Path
 import tempfile
+import tarfile
 import unittest
+import zipfile
 
-from release import ROOT, audit, source_files, has_credential, public_images
+from release import ROOT, audit, build, source_files, has_credential, public_images
 
 
 class ReleaseTests(unittest.TestCase):
@@ -69,6 +71,30 @@ class ReleaseTests(unittest.TestCase):
     def test_historical_fixture_literal_is_not_a_real_credential(self):
         self.assertFalse(has_credential('API_KEY: "test-key'))
         self.assertTrue(has_credential('API_KEY: "' + 'real-credential-value'))
+
+    def test_release_installer_assets_and_both_archives_contain_only_allowlisted_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            files = {'runquay.py':b'print("example")\n','setup.sh':b'#!/bin/sh\n',
+                     'setup.cmd':b'@echo off\r\n','Install-Runquay.cmd':b'@echo off\r\n',
+                     'install-runquay.sh':b'#!/bin/sh\n'}
+            for name, contents in files.items(): (root/name).write_bytes(contents)
+            (root/'pyproject.toml').write_text('[project]\nversion="1.2.3"\n',encoding='utf-8')
+            (root/'release-manifest.json').write_text(json.dumps({'files':list(files)+['pyproject.toml'],'directories':[],'public_images':{}}),encoding='utf-8')
+            build(root=root)
+            dist=root/'dist'
+            expected={'runquay/'+name for name in [*files,'pyproject.toml']}
+            with zipfile.ZipFile(dist/'runquay-1.2.3-source.zip') as package:
+                self.assertEqual(set(package.namelist()),expected)
+            with tarfile.open(dist/'runquay-1.2.3-source.tar.gz') as package:
+                self.assertEqual(set(package.getnames()),expected)
+                self.assertTrue(all(item.isfile() and item.uid == 0 and item.gid == 0 and not item.uname and not item.gname for item in package))
+            for name in ('runquay-1.2.3-source.zip','runquay-1.2.3-source.tar.gz'):
+                digest,filename=(dist/(name+'.sha256')).read_text(encoding='ascii').strip().split('  ')
+                self.assertEqual(filename,name)
+                self.assertEqual(digest,hashlib.sha256((dist/name).read_bytes()).hexdigest())
+            self.assertEqual((dist/'Install-Runquay.cmd').read_bytes(),files['Install-Runquay.cmd'])
+            self.assertEqual((dist/'install-runquay.sh').read_bytes(),files['install-runquay.sh'])
 
 
 if __name__ == "__main__": unittest.main()

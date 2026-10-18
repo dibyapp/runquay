@@ -37,6 +37,8 @@
     "Setup-Runquay.ps1",
     "setup.sh",
     "setup.command",
+    "Install-Runquay.cmd",
+    "install-runquay.sh",
     "tests/browser_smoke.py",
     "tests/browser_fixture.py",
     "tests/browser_field.cjs",

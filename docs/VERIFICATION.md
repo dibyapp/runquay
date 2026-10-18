@@ -1,5 +1,9 @@
 # Verification record
 
+## Installers — 0.11.1
+
+Windows PowerShell 5.1 downloaded the existing public source ZIP, checked its SHA256 file and inspected and extracted its entries in verify-only mode without installing or launching AI work. The Unix installer was checked under Ubuntu/WSL with a locally generated audited tarball: it verified SHA256, installed into an isolated temporary user folder, reached guided setup with stub Python/Git commands, and reopened through its launcher. Real vendor invocations and paid usage were not part of these checks. Native macOS opening and real Python/Git package installation remain unverified; CI builds source packages on Windows, macOS and Linux and checks shell syntax on macOS and Linux.
+
 ## Auto team — 0.11.0
 
 Windows checks cover 136 Python tests (133 passed, three POSIX-only skips) and 35 JavaScript tests. New subprocess tests exercise plan/build/review transitions, persisted handoffs after reopening storage, a bounded repair loop, external approval identity, stale-selection rejection, adapter permissions and clearing model overrides between providers.

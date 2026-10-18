@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.1 — Easier installation
+
+- Added a Windows download-and-open installer and a single shell installer for macOS/Linux. Both verify release checksums, install into a versioned user folder, and open the existing guided setup.
+- Added an audited tarball for Unix installation and install launchers to release artifacts. App data and provider sign-ins remain outside the versioned install folder.
+- Kept Docker out of the default setup because container isolation would hide host tools, logins, and project folders.
+
 ## 0.11.0 — Auto team
 
 - Create can coordinate planning, building and review across connected Codex, Claude Code and Gemini CLI adapters. The selected team is visible before sending and fixed for the request. Handoffs persist locally, with one automatic repair cycle and existing per-run approval and quota gates.

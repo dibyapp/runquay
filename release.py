@@ -3,7 +3,9 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
+import tarfile
 import zipfile
 import tomllib
 from security import PATTERNS
@@ -139,6 +141,26 @@ def build(check_only=False, root=ROOT):
     digest = hashlib.sha256(target.read_bytes()).hexdigest()
     (directory / (target.name + ".sha256")).write_text(digest + "  " + target.name + "\n", encoding="ascii")
     print("Created " + target.name + " · SHA256 " + digest)
+    tar_target = directory / f"runquay-{version}-source.tar.gz"
+    with tarfile.open(tar_target, "w:gz") as archive:
+        for file in files:
+            name = (Path("runquay") / file.relative_to(root)).as_posix()
+            info = tarfile.TarInfo(name)
+            info.size = file.stat().st_size
+            info.mode = 0o755 if file.name in {"start.command", "start.sh", "setup.command", "setup.sh", "install-runquay.sh"} else 0o644
+            info.uid = info.gid = 0
+            info.uname = info.gname = ""
+            info.mtime = 0
+            with file.open("rb") as source:
+                archive.addfile(info, source)
+    tar_digest = hashlib.sha256(tar_target.read_bytes()).hexdigest()
+    (directory / (tar_target.name + ".sha256")).write_text(tar_digest + "  " + tar_target.name + "\n", encoding="ascii")
+    print("Created " + tar_target.name + " · SHA256 " + tar_digest)
+    for source_name, asset_name in (("Install-Runquay.cmd", "Install-Runquay.cmd"),
+                                    ("install-runquay.sh", "install-runquay.sh")):
+        asset = directory / asset_name
+        shutil.copyfile(root / source_name, asset)
+        print("Created " + asset_name + " · SHA256 " + hashlib.sha256(asset.read_bytes()).hexdigest())
 
 
 if __name__ == "__main__":

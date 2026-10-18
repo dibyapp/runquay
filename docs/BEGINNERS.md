@@ -16,7 +16,9 @@ A **terminal** is an app where you type instructions for your computer. On Windo
 
 ## 2. Open Runquay
 
-Download the source ZIP from [the latest release](https://github.com/dibyapp/runquay/releases/latest). Extract it first; do not open the launcher while it is still inside the ZIP.
+Open [the latest release](https://github.com/dibyapp/runquay/releases/latest). On Windows, download and open **Install-Runquay.cmd**. On Mac or Linux, download **install-runquay.sh**, open Terminal in Downloads, and enter `sh install-runquay.sh`. Runquay checks the download and opens setup. Windows adds a Start entry; Mac adds **Runquay.command** in Applications.
+
+If you prefer the source ZIP, extract it first; do not open the launcher while it is still inside the ZIP.
 
 | Computer | What to open |
 | --- | --- |

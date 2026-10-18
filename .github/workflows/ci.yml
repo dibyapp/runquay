@@ -54,10 +54,16 @@ jobs:
           powershell.exe -NoProfile -File Setup-Runquay.ps1 -CheckOnly
       - name: Check Unix first-launch setup without installing
         if: runner.os != 'Windows'
-        run: sh setup.sh --check
+        run: |
+          sh -n install-runquay.sh
+          sh setup.sh --check
       - run: python runquay.py release --check
       - run: python runquay.py release
       - uses: actions/upload-artifact@v4
         with:
           name: source-${{ matrix.os }}-${{ matrix.python }}
-          path: dist/runquay-*-source.zip*
+          path: |
+            dist/runquay-*-source.zip*
+            dist/runquay-*-source.tar.gz*
+            dist/Install-Runquay.cmd
+            dist/install-runquay.sh
