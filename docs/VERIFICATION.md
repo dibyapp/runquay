@@ -1,5 +1,9 @@
 # Verification record
 
+## Claude account handoff — 0.11.2
+
+On Windows, 139 Python tests passed with three environment-dependent skips. A simulated Claude CLI response exercised a usage-limit failure, durable one-hour cooldown, selection of a second connected profile and the separate approval required before that profile could launch. Error-classification cases covered an explicit limit, stderr 429, ordinary response text and an unrelated permission failure. JavaScript syntax validation passed. The local browser smoke suite could not run because Playwright is absent from this checkout; CI runs it separately. No live Claude account or billable request was used, and credential isolation across two real logins was not verified. An unrecognized CLI error follows the normal failure path.
+
 ## Installers — 0.11.1
 
 Windows PowerShell 5.1 downloaded the existing public source ZIP, checked its SHA256 file and inspected and extracted its entries in verify-only mode without installing or launching AI work. The Unix installer was checked under Ubuntu/WSL with a locally generated audited tarball: it verified SHA256, installed into an isolated temporary user folder, reached guided setup with stub Python/Git commands, and reopened through its launcher. Real vendor invocations and paid usage were not part of these checks. Native macOS opening and real Python/Git package installation remain unverified; CI builds source packages on Windows, macOS and Linux and checks shell syntax on macOS and Linux.

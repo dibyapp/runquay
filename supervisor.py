@@ -263,6 +263,7 @@ class Store:
             if "kind" not in {row[1] for row in db.execute("PRAGMA table_info(projects)")}:
                 db.execute("ALTER TABLE projects ADD COLUMN kind TEXT DEFAULT 'work'")
             for table, column, definition in (("profiles", "provider", "TEXT DEFAULT 'codex'"), ("profiles", "options", "TEXT DEFAULT '{}'"),
+                                              ("profiles", "limit_until", "REAL DEFAULT 0"),
                                               ("projects", "run_requested", "INTEGER DEFAULT 0"), ("projects", "provider", "TEXT DEFAULT 'codex'"), ("projects", "learning_context", "TEXT DEFAULT '[]'"), ("projects", "workflow", "TEXT DEFAULT '{}'"), ("runs", "provider", "TEXT DEFAULT ''"), ("runs", "phase", "TEXT DEFAULT ''")):
                 if column not in {row[1] for row in db.execute(f"PRAGMA table_info({table})")}:
                     db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
@@ -426,16 +427,18 @@ class Supervisor:
         return hashlib.sha256(value.encode()).hexdigest()
 
     def select_external(self, project, profile):
-        if not self.profile_binary(profile):
+        if profile.get("limit_until", 0) > time.time() or not self.profile_binary(profile):
             return False
         key = self.external_key(project, profile)
-        decision = self.store.one("SELECT * FROM decisions WHERE kind='external_run' AND json_extract(payload,'$.key')=? ORDER BY created DESC LIMIT 1", (key,))
+        decision = self.store.one("SELECT * FROM decisions WHERE kind='external_run' AND json_extract(payload,'$.key')=? ORDER BY created DESC,rowid DESC LIMIT 1", (key,))
         if decision and decision["state"] == "approved":
             self.store.execute("UPDATE decisions SET state='consumed',result='Authorized one invocation' WHERE id=? AND state='approved'", (decision["id"],))
             return True
         if not decision or decision["state"] in ("consumed", "expired"):
             payload = {"key": key, "project_id": project["id"], "project": project["name"], "provider": profile["provider"],
                        "step": project["steps"], "phase": orchestration.load(project).get("phase", "work"), "message": "This CLI's subscription quota and billing cannot be verified. Check vendor account/billing and permissions first. Approve only if you accept any vendor usage charges for ONE invocation. Runquay never buys credits or resets."}
+            if profile["provider"] == "claude" and project.get("note", "").startswith("Claude usage limit reached"):
+                payload["switch_reason"] = "Another Claude account reached its usage limit. This profile was selected for the next run."
             self.store.execute("INSERT INTO decisions(id,profile_id,kind,payload,created) VALUES(?,?,?,?,?)", (str(uuid.uuid4()), profile["id"], "external_run", json.dumps(payload), utcnow()))
         self.store.execute("UPDATE projects SET note='Waiting for one-run approval in the Approval inbox' WHERE id=?", (project["id"],))
         return False
@@ -444,7 +447,7 @@ class Supervisor:
         profile = self.store.one("SELECT * FROM profiles WHERE id=?", (decision["profile_id"],))
         payload = json.loads(decision["payload"])
         project = self.store.one("SELECT * FROM projects WHERE id=?", (payload["project_id"],))
-        if decision["state"] != "pending" or not profile or not project or project['state'] != 'queued' or self.external_key(project, profile) != payload["key"]:
+        if decision["state"] != "pending" or not profile or not project or project['state'] != 'queued' or profile.get('limit_until', 0) > time.time() or self.external_key(project, profile) != payload["key"]:
             raise ValueError("This approval is stale; refresh the queue")
         self.store.execute("UPDATE decisions SET state=?,result=? WHERE id=? AND state='pending'", ("approved" if approve else "declined", "One invocation authorized" if approve else "Run declined", decision["id"]))
         if not approve:
@@ -772,17 +775,23 @@ class Supervisor:
             self.store.execute("UPDATE projects SET state='attention',note='Milestone cap reached. Review progress and raise the cap if needed.' WHERE id=?", (project["id"],))
             return
         selected = None
+        external_waiting = False
         with self.account_lock:
             for profile in self.store.rows("SELECT * FROM profiles WHERE enabled=1 AND provider=? ORDER BY id", (project.get("provider", "codex"),)):
+                if profile.get("provider") != "codex" and profile.get("limit_until", 0) > time.time():
+                    continue
                 if profile["error"] and time.time() - profile["checked"] < 60:
                     continue
                 rpc = None
                 try:
                     if profile.get("provider", "codex") != "codex":
+                        if not self.profile_binary(profile):
+                            continue
                         if self.select_external(project, profile):
                             selected = (profile, None)
                             break
-                        continue
+                        external_waiting = True
+                        break
                     rpc = Rpc(self.profile_binary(profile), profile["home"], self.children)
                     snapshot = self.refresh(profile, rpc)
                     ok, reason, reset = quota_gate(snapshot["limits"], self.store.setting("quota_ceiling"))
@@ -799,6 +808,8 @@ class Supervisor:
             if selected:
                 # Serialize selection with reset approvals and pause/cancel actions.
                 self.run_step(project, *selected)
+            elif not external_waiting and project.get("provider") == "claude":
+                self.store.execute("UPDATE projects SET note='Claude accounts are unavailable or waiting for their usage limits to refresh' WHERE id=? AND state='queued'", (project["id"],))
 
     def run_step(self, project, profile, rpc):
         proc = None
@@ -939,9 +950,15 @@ class Supervisor:
                     self.store.execute("UPDATE projects SET state=?,note=? WHERE id=?", (target, reason, project["id"]))
                 self.store.execute("UPDATE runs SET state='interrupted',finished=?,result=? WHERE id=?", (utcnow(), reason, run_id))
             elif code != 0:
+                if providers.usage_limit_error(provider, "".join(captured), last_errors):
+                    self.external_limit(project, profile, run_id)
+                    return
                 error = "\n".join(last_errors)[-3000:] or f"AI tool exited with code {code}"
                 self.fail(project, run_id, error)
             else:
+                if providers.usage_limit_error(provider, "".join(captured)):
+                    self.external_limit(project, profile, run_id)
+                    return
                 result = providers.parse_result(provider, "".join(captured), final_path)
                 if result.get("status") not in ("continue", "complete", "blocked") or any(not isinstance(result.get(k), str) for k in ("summary", "tests", "next_step", "question")):
                     raise ValueError("AI tool returned an invalid checkpoint")
@@ -974,6 +991,17 @@ class Supervisor:
             if rpc:
                 rpc.close()
 
+    def external_limit(self, project, profile, run_id):
+        # Claude exposes no reliable subscription reset timestamp. Recheck later;
+        # never replay this invocation or authorize another account automatically.
+        until = time.time() + 3600
+        self.store.execute("UPDATE profiles SET limit_until=? WHERE id=?", (until, profile["id"]))
+        self.store.execute("UPDATE decisions SET state='expired',result='Reapproval required after account switch' WHERE kind='external_run' AND json_extract(payload,'$.project_id')=? AND state IN ('pending','approved')", (project["id"],))
+        self.store.execute("UPDATE runs SET state='limited',finished=?,result='Claude reported a usage limit' WHERE id=?", (utcnow(), run_id))
+        self.store.execute("UPDATE projects SET state='queued',note='Claude usage limit reached. Selecting another connected account for a fresh one-run approval.' WHERE id=? AND state='running'", (project["id"],))
+        self.store.event(f"{profile['name']}: Claude usage limit reached; checking the next connected account")
+        self.wake.set()
+
     def fail(self, project, run_id, error):
         self.store.execute("UPDATE runs SET state='failed',finished=?,result=? WHERE id=?", (utcnow(), error[:3000], run_id))
         fresh = self.store.one("SELECT * FROM projects WHERE id=?", (project["id"],))
@@ -997,7 +1025,9 @@ class Supervisor:
                 account["signInHint"] = account_hint(legacy_email)
             if profile.get("provider", "codex") != "codex":
                 profile["eligible"] = False
-                profile["reason"] = profile["error"] or "Approval required for every run; vendor quota and costs are unverified"
+                profile["reason"] = (profile["error"] or
+                    ("Usage limit reported; retry available later or use another profile" if profile.get("limit_until", 0) > time.time()
+                     else "Approval required for every run; vendor quota and costs are unverified"))
                 profile["instructions"] = self.profile_instructions(profile)
                 continue
             profile["instructions"] = self.profile_instructions(profile)

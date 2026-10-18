@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.2 — Claude account handoff
+
+- When Claude Code explicitly reports a usage limit, pause that profile for an hour and select another connected Claude profile for the queued milestone.
+- Require a separate approval for the replacement account. Keep ambiguous failures on the normal retry path, and show the limit on the account card.
+- Add simulated multi-profile CLI and error-classification tests. Live paid/credentialed multi-account execution remains unverified.
+
 ## 0.11.1 — Easier installation
 
 - Added a Windows download-and-open installer and a single shell installer for macOS/Linux. Both verify release checksums, install into a versioned user folder, and open the existing guided setup.

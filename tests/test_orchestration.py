@@ -133,3 +133,50 @@ class TeamTests(unittest.TestCase):
         self.sup.store.execute("UPDATE projects SET model='builder-only-model' WHERE id=?", (ident,))
         self.execute(ident); self.execute(ident)
         self.assertEqual(self.project(ident)['model'], '')
+
+    def test_claude_limit_selects_next_profile_with_separate_approval(self):
+        self.sup.store.execute('INSERT INTO profiles(id,name,home,provider) VALUES(?,?,?,?)',
+                               ('claude-2', 'Example second', str(self.root/'claude-2'), 'claude'))
+        ident = self.sup.create_request(self.request(provider='claude'))
+        project = self.project(ident)
+        first = self.sup.store.one("SELECT * FROM profiles WHERE id='claude'")
+        real_popen = subprocess.Popen
+
+        def limited_popen(command, **kwargs):
+            if command[0] != 'fixture-cli':
+                return real_popen(command, **kwargs)
+            return real_popen([sys.executable, '-c',
+                               'import sys,json;sys.stdin.read();print(json.dumps({"is_error":True,"result":"You have hit your usage limit"}))'],
+                              **kwargs)
+
+        self.assertFalse(self.sup.select_external(project, first))
+        approval = self.sup.store.one("SELECT * FROM decisions WHERE profile_id='claude' AND kind='external_run'")
+        self.sup.decide_external(approval, True)
+        second = self.sup.store.one("SELECT * FROM profiles WHERE id='claude-2'")
+        self.assertFalse(self.sup.select_external(project, second))
+        old_second_approval = self.sup.store.one("SELECT * FROM decisions WHERE profile_id='claude-2' AND kind='external_run'")
+        self.sup.decide_external(old_second_approval, True)
+        with patch('supervisor.subprocess.Popen', side_effect=limited_popen):
+            self.sup.step(project)
+        self.assertEqual(self.project(ident)['state'], 'queued')
+        self.assertGreater(self.sup.store.one("SELECT limit_until FROM profiles WHERE id='claude'")['limit_until'], 0)
+        self.assertEqual(self.sup.store.one('SELECT state FROM runs WHERE project_id=?', (ident,))['state'], 'limited')
+        self.assertEqual(self.sup.store.one('SELECT state FROM decisions WHERE id=?', (old_second_approval['id'],))['state'], 'expired')
+        with patch.object(self.sup, 'run_step') as launch:
+            self.sup.step(self.project(ident))
+            launch.assert_not_called()
+        next_approval = self.sup.store.one("SELECT * FROM decisions WHERE profile_id='claude-2' AND kind='external_run' AND state='pending'")
+        self.assertEqual(next_approval['state'], 'pending')
+        self.assertIn('switch_reason', json.loads(next_approval['payload']))
+        self.sup.decide_external(next_approval, True)
+        with patch.object(self.sup, 'run_step') as launch:
+            self.sup.step(self.project(ident))
+            self.assertEqual(launch.call_args.args[1]['id'], 'claude-2')
+        self.assertFalse(self.sup.store.one("SELECT * FROM profiles WHERE id='claude-2'")['limit_until'])
+
+    def test_only_explicit_claude_errors_trigger_rotation(self):
+        self.assertTrue(providers.usage_limit_error('claude', '{"is_error":true,"result":"Rate limit reached"}'))
+        self.assertTrue(providers.usage_limit_error('claude', '', ['API Error: 429 rate_limit_error']))
+        self.assertFalse(providers.usage_limit_error('claude', '{"result":"Document rate limit handling"}'))
+        self.assertFalse(providers.usage_limit_error('gemini', '{"is_error":true,"result":"Rate limit reached"}'))
+        self.assertFalse(providers.usage_limit_error('claude', '{"is_error":true,"result":"Permission denied"}'))

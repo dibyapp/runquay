@@ -21,7 +21,7 @@ Separate Codex profiles offer **Sign in with Codex**, which launches the install
 
 Local flag inspection used version `2.1.251`. Print mode returns a structured JSON envelope. Read-only planning exposes only Read/Glob/Grep. Builds use `dontAsk`, Edit/Write and a small allowlist of test/status commands; other approval-required tools are denied. `--safe-mode` suppresses customizations, `--strict-mcp-config` with an empty config removes MCP servers, and user/project setting sources are omitted. No bypass mode is enabled.
 
-Native permissions are not a guarantee of total filesystem/network containment. New dependencies or broader shell access may block a task. Sign in via the profile's generated `CLAUDE_CONFIG_DIR` command. Confirm that your installed version and OS keep authentication isolated as expected before adding multiple accounts; some vendor credential stores have their own global behavior. Model execution has not been live-tested for this release.
+Native permissions are not a guarantee of total filesystem/network containment. New dependencies or broader shell access may block a task. Sign in via the profile's generated `CLAUDE_CONFIG_DIR` command. Confirm that your installed version and OS keep authentication isolated as expected before adding multiple accounts; some vendor credential stores have their own global behavior. When the CLI explicitly reports a usage or rate limit, Runquay pauses that profile for an hour and offers the next connected profile with a fresh one-run approval. It cannot preflight Claude subscription quota or paid extra usage, and does not replay a failed run without approval. Limit handoff is tested with simulated CLI responses; live multi-account execution has not been verified for this release.
 
 ## Gemini CLI
 

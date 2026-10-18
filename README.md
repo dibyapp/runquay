@@ -63,17 +63,18 @@ Describe your goal in **Your work**, then choose the **↑** send control. Finis
 - **Collective Learnings:** combine selected work summaries across projects and tools into tagged, source-backed lessons; review and save useful advice, then choose it for future tasks. [Guide](docs/COLLECTIVE_LEARNINGS.md).
 - **No account-count cap.** Add as many profiles as you need; one worker runs at a time.
 - Codex quota checks, reserve before exhaustion, selection of eligible profiles, and approval for earned resets.
+- Claude Code usage-limit handoff: when the CLI explicitly reports a limit, select another connected Claude profile and request fresh approval before its next run.
 - Explicit per-task tool selection. No silent cross-provider fallback or copying of conversation history.
 - Local SQLite state, private run logs, a loopback-only dashboard, and opt-in startup services.
 
-Use Runquay to schedule coding tasks across existing repositories, build a new project through bounded milestones, or resume a long-running development workflow from saved checkpoints. For Codex automation, it can select an eligible account when subscription quota runs low. Claude Code automation and the other CLI adapters use the same task queue, with explicit approval for each invocation when billing is unverified.
+Use Runquay to schedule coding tasks across existing repositories, build a new project through bounded milestones, or resume a long-running development workflow from saved checkpoints. Codex switches among eligible subscription profiles using its quota checks. Claude Code switches to another connected profile after a clear CLI usage-limit error, then waits for approval of that profile's next invocation. Other CLI adapters use the same task queue with explicit approval for each invocation when billing is unverified.
 
 ## Codex, Claude Code, Gemini CLI, and Antigravity support
 
 | Tool | Execution / advisor | Accounts | Verification |
 | --- | --- | --- | --- |
 | Codex | Native `exec`, schema, workspace sandbox / read-only advisor | Separate `CODEX_HOME` profiles | Live model execution tested on Windows; quota guard tested |
-| Claude Code | Print JSON/schema, scoped tools / plan mode with Read/Glob/Grep only | `CLAUDE_CONFIG_DIR` profiles; verify vendor auth isolation on your OS | Installed CLI flags checked; synthetic execution contracts tested |
+| Claude Code | Print JSON/schema, scoped tools / plan mode with Read/Glob/Grep only | `CLAUDE_CONFIG_DIR` profiles; limit-triggered handoff; verify vendor auth isolation on your OS | Installed CLI flags checked; simulated limit handoff tested; live multi-account run not verified |
 | Gemini CLI | Headless JSON, edit approval mode, vendor sandbox / plan advisor | Separate `GEMINI_CLI_HOME` profiles | Contract tested; account execution not live-tested here |
 | Antigravity CLI (`agy`) | Print JSON/schema, vendor sandbox / advisor disabled pending verified read-only policy | Current login; custom wrapper for isolation | Contract tested; not live-tested here |
 | Other headless tools | Custom argv, prompt on stdin, checkpoint JSON on stdout / advisor disabled | Wrapper owns isolation | Adapter-specific permissions, auth, and billing |
@@ -88,7 +89,9 @@ Setup creates the chosen connection automatically when needed. Later, use **Acco
 
 **Codex:** requires ChatGPT subscription auth and verified zero paid credits with no unlimited credit entitlement. Official quota checks run before each milestone and every 15 seconds. Positive or unknown paid balances fail closed. At the reserve (90% used by default), Runquay stops and selects another eligible Codex profile; otherwise it waits for natural refresh. Existing earned resets require approval. Durable idempotency IDs protect reset retries. No purchase or paid-continuation feature is implemented.
 
-**Other tools:** quota and billing are unverified. **Each invocation, subsequent milestone, and retry needs explicit approval.** Check vendor billing and authentication first; approval permits one invocation and any charges the vendor may apply. No automatic external approval or credit/reset purchase occurs. External errors do not automatically rotate accounts; disable an unavailable profile and resume with another for that tool.
+**Claude Code:** quota and billing cannot be checked before a run. Every invocation needs approval. If its CLI explicitly reports a usage or rate limit, Runquay pauses that profile for an hour, selects the next connected Claude profile, and asks for a new one-run approval. It does not silently rerun a possibly partial milestone. If every profile is limited, work waits; if the error is ambiguous, the normal failure path applies. The vendor may use a separate credential store on some systems, so verify each isolated profile is signed into the intended account.
+
+**Other non-Codex tools:** quota and billing are unverified. **Each invocation, subsequent milestone, and retry needs explicit approval.** Check vendor billing and authentication first; approval permits one invocation and any charges the vendor may apply. No automatic external approval or credit/reset purchase occurs. Gemini CLI, Antigravity CLI and custom adapters do not yet rotate on errors.
 
 Common inherited provider API keys and billing-routing environment variables are removed from workers. CLIs can still have their own paid authentication on disk. **Polling is not an atomic spending guarantee.** Pause before changing credits or billing elsewhere. Unlimited profiles do not increase provider allowances or bypass provider policies; use only accounts you control under their permitted terms.
 

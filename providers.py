@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import tomllib
@@ -154,3 +155,20 @@ def parse_result(provider, stdout, final_path):
     if not isinstance(payload, dict):
         raise ValueError("Provider did not return a structured checkpoint object")
     return payload
+
+
+def usage_limit_error(provider, stdout, errors=()):
+    """Recognize explicit Claude CLI limit failures, never normal model output."""
+    if provider != "claude":
+        return False
+    messages = list(errors)
+    try:
+        payload = json.loads(stdout)
+    except (TypeError, ValueError):
+        payload = None
+    if isinstance(payload, dict) and (payload.get("is_error") is True or
+                                      str(payload.get("subtype", "")).startswith("error_")):
+        messages.extend(str(payload.get(key, "")) for key in ("result", "error", "errors", "subtype"))
+    return any(re.search(r"\b(?:usage limit|rate limit|rate_limit_error|quota exceeded|"
+                         r"hit your limit|reached your limit|limit reached|429)\b", message, re.I)
+               for message in messages)
