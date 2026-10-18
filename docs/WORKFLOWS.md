@@ -11,7 +11,7 @@ Your work and saved native conversations share a searchable list. **View result*
 The sections below describe the optional detailed controls. **Tasks** refers to the task list under **Your work → Browse all conversations and folders**. **Home** refers to **Work controls and activity**. **Accounts**, **Ideas** and **Settings** live under **More**.
 
 
-Use this guide after [initial setup](GETTING_STARTED.md). Runquay is a local task queue around coding CLIs. It preserves goals, milestone results and file-based handoffs; it does not transfer full conversations between tools or certify generated code.
+Use this guide after [initial setup](GETTING_STARTED.md). Runquay is a local task queue around coding CLIs. It preserves goals, milestone results and file-based handoffs. For Codex and Claude Code, it also resumes the native conversation when the same signed-in profile continues the same phase. It does not transfer full vendor conversations between accounts or tools, or certify generated code.
 
 ## Improve an existing repository
 
@@ -78,7 +78,8 @@ There is no profile-count cap. One worker uses a single selected provider at a t
 | Codex paid balance is positive or unknown | Blocks subscription-only work | Check the vendor account. Do not assume API-key or paid-credit use is allowed by this guard. |
 | An earned reset is available | Presents a separate explicit decision | Approve one existing reset or keep waiting. Redemption cannot be undone. |
 | Claude, Gemini, Antigravity or a custom CLI | Billing/quota is unverified; each invocation needs approval | Check the vendor account and possible charges before authorizing one run. |
-| External provider errors | Does not automatically rotate accounts | Resolve the issue, disable the unavailable profile if needed and resume with another profile for that tool. |
+| Claude reports an explicit usage limit | Cools down that profile and selects the next connected Claude profile | Review a fresh one-run approval for the next profile; otherwise wait for the limit to refresh. |
+| Other external provider errors | Does not automatically rotate accounts | Resolve the issue, disable the unavailable profile if needed and resume with another profile for that tool. |
 
 Quota checks run before Codex milestones and during work. They are polling observations, not an atomic guarantee against spending if account settings change elsewhere. Runquay has no credit/reset purchase feature. Unlimited profiles are not unlimited AI usage or permission to bypass provider policies.
 
@@ -92,7 +93,7 @@ After a timeout, restart or interruption, inspect the repository and checkpoint 
 
 For a blocker, answer the actual question in the resume guidance. For a failed check, include the command, relevant sanitized error and intended behavior. Repeated failures are bounded; fix the cause instead of continually increasing limits. External-provider retries require new approvals.
 
-The checkpoint file uses the legacy name `AUTOWORK_CHECKPOINT.md`. Later eligible accounts continue from project files and structured milestone results, not the previous account's complete chat transcript.
+The checkpoint file uses the legacy name `AUTOWORK_CHECKPOINT.md`. A later Codex or Claude milestone in the same profile and phase can resume that tool's native conversation. When an account, tool or phase changes, Runquay starts a separate native conversation and supplies the original goal, current workspace and bounded milestone handoffs. It never copies vendor credentials or another account's transcript. On an interrupted or quota-limited step, inspect any partial file changes before retrying; a completed handoff cannot describe work done after the interruption. Native Codex and Claude transcripts stay in their respective profile's local vendor storage, where the original tool can also find them.
 
 ## Read task states
 

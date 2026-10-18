@@ -264,7 +264,7 @@ class Store:
                 db.execute("ALTER TABLE projects ADD COLUMN kind TEXT DEFAULT 'work'")
             for table, column, definition in (("profiles", "provider", "TEXT DEFAULT 'codex'"), ("profiles", "options", "TEXT DEFAULT '{}'"),
                                               ("profiles", "limit_until", "REAL DEFAULT 0"),
-                                              ("projects", "run_requested", "INTEGER DEFAULT 0"), ("projects", "provider", "TEXT DEFAULT 'codex'"), ("projects", "learning_context", "TEXT DEFAULT '[]'"), ("projects", "workflow", "TEXT DEFAULT '{}'"), ("runs", "provider", "TEXT DEFAULT ''"), ("runs", "phase", "TEXT DEFAULT ''")):
+                                              ("projects", "run_requested", "INTEGER DEFAULT 0"), ("projects", "provider", "TEXT DEFAULT 'codex'"), ("projects", "learning_context", "TEXT DEFAULT '[]'"), ("projects", "workflow", "TEXT DEFAULT '{}'"), ("runs", "provider", "TEXT DEFAULT ''"), ("runs", "phase", "TEXT DEFAULT ''"), ("runs", "native_session", "TEXT DEFAULT ''"), ("runs", "native_workspace", "TEXT DEFAULT ''")):
                 if column not in {row[1] for row in db.execute(f"PRAGMA table_info({table})")}:
                     db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
             db.execute("INSERT OR IGNORE INTO settings VALUES('running','false')")
@@ -828,6 +828,8 @@ class Supervisor:
         provider = project.get("provider", "codex")
         captured = []
         captured_size = 0
+        resume_session = ""
+        observed_session = ""
         try:
             with self.active_lock:
                 fresh = self.store.one("SELECT * FROM projects WHERE id=?", (project["id"],))
@@ -838,6 +840,16 @@ class Supervisor:
                 if self.last_profile != profile["id"]:
                     self.store.event(f"Selected {profile['name']} for local work")
                     self.last_profile = profile["id"]
+                # A native conversation belongs to exactly one profile and one
+                # phase. A different account, tool, or review mode gets the
+                # portable file/checkpoint handoff instead of another login's
+                # transcript or a stale native context.
+                previous = self.store.one("SELECT profile_id,provider,phase,state,native_session,native_workspace FROM runs WHERE project_id=? ORDER BY rowid DESC LIMIT 1", (project["id"],))
+                if (provider in ("codex", "claude") and project["steps"] > 0 and previous
+                        and previous["native_workspace"] == project["path"] and previous["profile_id"] == profile["id"]
+                        and previous["provider"] == provider and previous["phase"] == flow.get("phase", "work")
+                        and previous["state"] == "complete" and providers.valid_session_id(previous["native_session"])):
+                    resume_session = previous["native_session"]
                 self.store.execute("UPDATE projects SET state='running',note='' WHERE id=?", (project["id"],))
                 self.store.execute("INSERT INTO runs(id,project_id,profile_id,started,log,provider,phase) VALUES(?,?,?,?,?,?,?)",
                                    (run_id, project["id"], profile["id"], utcnow(), str(log_path), provider, flow.get("phase", "work")))
@@ -868,7 +880,7 @@ class Supervisor:
                 command = providers.command(provider, self.profile_binary(profile), {**project, "kind": "review"} if orchestration.readonly(flow) else project,
                                             ROOT / schema_file,
                                             final_path, model, json.loads(profile.get("options", "{}")).get("command"),
-                                            providers.codex_auth_store(profile['home']) if provider == 'codex' else 'file')
+                                            providers.codex_auth_store(profile['home']) if provider == 'codex' else 'file', resume_session)
                 proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                         text=True, encoding="utf-8", errors="replace", cwd=project["path"],
                                         env=providers.environment(provider, profile["home"]), **child_options())
@@ -914,6 +926,7 @@ class Supervisor:
                                 payload = {"type": "stderr", "text": line.rstrip()}
                             log.write(json.dumps(sanitize(payload), ensure_ascii=False) + "\n")
                             log.flush()
+                            observed_session = providers.event_session_id(provider, payload) or observed_session
                             if payload.get("type") in ("error", "turn.failed", "stderr"):
                                 last_errors.append(json.dumps(sanitize(payload))[-1600:])
                                 last_errors = last_errors[-5:]
@@ -975,7 +988,9 @@ class Supervisor:
                 self.store.execute("UPDATE projects SET state=?,steps=steps+1,failures=0,checkpoint=?,note=?,workflow=?,provider=?,model=? WHERE id=? AND state='running'",
                                    (target, json.dumps(result), note, json.dumps(flow), next_provider,
                                     project["model"] if next_provider == provider else '', project["id"]))
-                self.store.execute("UPDATE runs SET state='complete',finished=?,result=? WHERE id=?", (utcnow(), json.dumps(result), run_id))
+                native_session = providers.session_id(provider, "".join(captured)) or observed_session or resume_session
+                self.store.execute("UPDATE runs SET state='complete',finished=?,result=?,native_session=?,native_workspace=? WHERE id=?",
+                                   (utcnow(), json.dumps(result), native_session, project["path"], run_id))
                 self.store.event(f"{project['name']}: {result['summary'][:180]}")
         except Exception as exc:
             LOG.exception("Milestone failed")
@@ -1064,7 +1079,7 @@ class Supervisor:
                 "workspace_root": self.store.setting("workspace_root"), "platform": sys.platform,
                 "setup": self.setup.snapshot(),
                 "advisor_provider": self.store.setting("advisor_provider"),
-                "runs": self.store.rows("SELECT * FROM runs ORDER BY started DESC LIMIT 40"),
+                "runs": self.store.rows("SELECT id,project_id,profile_id,state,started,finished,result,log,provider,phase FROM runs ORDER BY started DESC LIMIT 40"),
                 "decisions": self.store.rows("SELECT * FROM decisions ORDER BY created DESC LIMIT 40"),
                 "events": self.store.rows("SELECT * FROM events ORDER BY id DESC LIMIT 40"),
                 "login_in_progress": self.login_in_progress, "login_status": self.login_status}

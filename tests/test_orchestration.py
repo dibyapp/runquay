@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import uuid
 from unittest.mock import patch
 
 import orchestration
@@ -180,3 +181,95 @@ class TeamTests(unittest.TestCase):
         self.assertFalse(providers.usage_limit_error('claude', '{"result":"Document rate limit handling"}'))
         self.assertFalse(providers.usage_limit_error('gemini', '{"is_error":true,"result":"Rate limit reached"}'))
         self.assertFalse(providers.usage_limit_error('claude', '{"is_error":true,"result":"Permission denied"}'))
+
+    def test_native_claude_resume_is_profile_and_phase_scoped(self):
+        ident = self.sup.create_request(self.request(provider='claude'))
+        session = str(uuid.uuid4())
+        result = {'status': 'continue', 'summary': 'Finished a fixture milestone',
+                  'tests': 'Fixture check passed', 'next_step': 'Continue fixture work', 'question': ''}
+        real_popen = subprocess.Popen
+        commands = []
+
+        def popen(command, **kwargs):
+            commands.append(command)
+            payload = json.dumps({'session_id': session, 'structured_output': result})
+            return real_popen([sys.executable, '-c', 'import sys;sys.stdin.read();print(sys.argv[1])', payload], **kwargs)
+
+        first = self.sup.store.one("SELECT * FROM profiles WHERE id='claude'")
+        with patch('supervisor.subprocess.Popen', side_effect=popen):
+            self.sup.run_step(self.project(ident), first, None)
+            self.sup.run_step(self.project(ident), first, None)
+        self.assertNotIn('--resume', commands[0])
+        self.assertNotIn('--no-session-persistence', commands[0])
+        self.assertEqual(commands[1][commands[1].index('--resume') + 1], session)
+        self.assertEqual(self.sup.store.one('SELECT native_session FROM runs ORDER BY rowid DESC LIMIT 1')['native_session'], session)
+        self.assertNotIn('native_session', self.sup.state()['runs'][0])
+
+        self.sup.store.execute('INSERT INTO profiles(id,name,home,provider) VALUES(?,?,?,?)',
+                               ('claude-other', 'Other fixture', str(self.root/'claude-other'), 'claude'))
+        other = self.sup.store.one("SELECT * FROM profiles WHERE id='claude-other'")
+        with patch('supervisor.subprocess.Popen', side_effect=popen):
+            self.sup.run_step(self.project(ident), other, None)
+            self.sup.run_step(self.project(ident), first, None)
+        self.assertNotIn('--resume', commands[2])
+        self.assertNotIn('--resume', commands[3])
+        review = {'version': 1, 'lead': 'claude', 'reviewer': 'claude',
+                  'phase': 'review', 'repairs': 0, 'history': []}
+        self.sup.store.execute('UPDATE projects SET workflow=? WHERE id=?', (json.dumps(review), ident))
+        with patch('supervisor.subprocess.Popen', side_effect=popen):
+            self.sup.run_step(self.project(ident), first, None)
+        self.assertNotIn('--resume', commands[4])
+        self.sup.store.execute("UPDATE projects SET state='queued',steps=0,workflow='{}' WHERE id=?", (ident,))
+        with patch('supervisor.subprocess.Popen', side_effect=popen):
+            self.sup.run_step(self.project(ident), first, None)
+        self.assertNotIn('--resume', commands[5])
+        self.sup.store.execute("UPDATE projects SET state='queued',steps=0 WHERE id=?", (ident,))
+        with patch('supervisor.subprocess.Popen', side_effect=popen):
+            self.sup.run_step(self.project(ident), first, None)
+        self.assertNotIn('--resume', commands[6])
+
+    def test_native_session_ids_reject_cli_fragments(self):
+        self.assertFalse(providers.valid_session_id('--dangerously-skip-permissions'))
+        self.assertEqual(providers.session_id('claude', '{"session_id":"not-a-uuid"}'), '')
+        with self.assertRaises(ValueError):
+            providers.command('claude', 'claude', {'kind': 'work', 'path': str(self.root)},
+                              Path(__file__).resolve().parents[1]/'result-schema.json', self.root/'result',
+                              resume_session='--dangerously-skip-permissions')
+
+    def test_native_codex_resume_keeps_sandbox_and_profile_boundary(self):
+        ident = self.sup.create_request(self.request(provider='codex'))
+        session = str(uuid.uuid4())
+        result = {'status': 'continue', 'summary': 'Fixture milestone', 'tests': 'Fixture check',
+                  'next_step': 'More fixture work', 'question': ''}
+        commands = []
+        real_popen = subprocess.Popen
+
+        class Rpc:
+            def close(self): pass
+            def call(self, method, params):
+                return {'data': [{'isDefault': True, 'model': 'fixture-model'}]}
+
+        def popen(command, **kwargs):
+            commands.append(command)
+            output = command[command.index('--output-last-message') + 1]
+            script = ('import json,sys;from pathlib import Path;sys.stdin.read();'
+                      'Path(sys.argv[1]).write_text(sys.argv[2],encoding="utf-8");'
+                      'print(json.dumps({"type":"thread.started","thread_id":sys.argv[3]}))')
+            return real_popen([sys.executable, '-c', script, output, json.dumps(result), session], **kwargs)
+
+        first = self.sup.store.one("SELECT * FROM profiles WHERE id='codex'")
+        with patch('supervisor.subprocess.Popen', side_effect=popen):
+            self.sup.run_step(self.project(ident), first, Rpc())
+            self.sup.run_step(self.project(ident), first, Rpc())
+        self.assertNotIn('resume', commands[0])
+        self.assertIn('resume', commands[1])
+        self.assertEqual(commands[1][-2], session)
+        self.assertIn('sandbox_mode="workspace-write"', commands[1])
+        self.assertNotIn('--sandbox', commands[1])
+        self.assertNotIn('native_session', self.sup.state()['runs'][0])
+        self.sup.store.execute('INSERT INTO profiles(id,name,home,provider) VALUES(?,?,?,?)',
+                               ('codex-other', 'Other fixture', str(self.root/'codex-other'), 'codex'))
+        other = self.sup.store.one("SELECT * FROM profiles WHERE id='codex-other'")
+        with patch('supervisor.subprocess.Popen', side_effect=popen):
+            self.sup.run_step(self.project(ident), other, Rpc())
+        self.assertNotIn('resume', commands[2])

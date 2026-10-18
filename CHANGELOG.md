@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.3 — Native conversation continuity
+
+- Resume the native Codex or Claude Code conversation when the immediately preceding completed milestone used the same signed-in profile and phase. Keep session IDs in private Runquay state, outside the browser's general state response.
+- Account, tool and workflow-phase changes start a separate vendor conversation from the shared project files and bounded milestone handoffs. No vendor transcript or credential is copied between profiles.
+- Preserve Codex sandbox policy on resumed turns and remove Claude's session-persistence blocker. Add profile-boundary tests, a real quota-gated two-turn Codex resume check, and a disposable Chromium workflow check.
+
 ## 0.11.2 — Claude account handoff
 
 - When Claude Code explicitly reports a usage limit, pause that profile for an hour and select another connected Claude profile for the queued milestone.

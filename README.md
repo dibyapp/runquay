@@ -64,6 +64,7 @@ Describe your goal in **Your work**, then choose the **↑** send control. Finis
 - **No account-count cap.** Add as many profiles as you need; one worker runs at a time.
 - Codex quota checks, reserve before exhaustion, selection of eligible profiles, and approval for earned resets.
 - Claude Code usage-limit handoff: when the CLI explicitly reports a limit, select another connected Claude profile and request fresh approval before its next run.
+- Same-profile Codex and Claude milestones resume their native conversation; account or tool changes continue from the same project files and bounded Runquay handoffs.
 - Explicit per-task tool selection. No silent cross-provider fallback or copying of conversation history.
 - Local SQLite state, private run logs, a loopback-only dashboard, and opt-in startup services.
 
@@ -73,8 +74,8 @@ Use Runquay to schedule coding tasks across existing repositories, build a new p
 
 | Tool | Execution / advisor | Accounts | Verification |
 | --- | --- | --- | --- |
-| Codex | Native `exec`, schema, workspace sandbox / read-only advisor | Separate `CODEX_HOME` profiles | Live model execution tested on Windows; quota guard tested |
-| Claude Code | Print JSON/schema, scoped tools / plan mode with Read/Glob/Grep only | `CLAUDE_CONFIG_DIR` profiles; limit-triggered handoff; verify vendor auth isolation on your OS | Installed CLI flags checked; simulated limit handoff tested; live multi-account run not verified |
+| Codex | Native `exec` and same-profile resume, schema, workspace sandbox / read-only advisor | Separate `CODEX_HOME` profiles | Live model execution and two-turn native resume tested on Windows; quota guard tested |
+| Claude Code | Print JSON/schema with same-profile resume, scoped tools / plan mode with Read/Glob/Grep only | `CLAUDE_CONFIG_DIR` profiles; limit-triggered handoff; verify vendor auth isolation on your OS | Installed CLI flags checked; simulated resume and limit handoff tested; live multi-account run not verified |
 | Gemini CLI | Headless JSON, edit approval mode, vendor sandbox / plan advisor | Separate `GEMINI_CLI_HOME` profiles | Contract tested; account execution not live-tested here |
 | Antigravity CLI (`agy`) | Print JSON/schema, vendor sandbox / advisor disabled pending verified read-only policy | Current login; custom wrapper for isolation | Contract tested; not live-tested here |
 | Other headless tools | Custom argv, prompt on stdin, checkpoint JSON on stdout / advisor disabled | Wrapper owns isolation | Adapter-specific permissions, auth, and billing |

@@ -1,5 +1,11 @@
 # Verification record
 
+## Native conversation continuity — 0.11.3
+
+On Windows, 142 Python tests ran (139 passed, three environment-dependent skips), and 35 JavaScript checks passed. New subprocess checks cover native session ID parsing, same-profile resume, account and phase boundaries, sandbox flags, approval preservation and exclusion of private IDs from the general browser state. A real Codex subscription check passed its zero-paid-credit quota gate, completed a disposable build, and then completed two read-only turns with the same native session ID. No paid credits or reset were authorized.
+
+The local Chromium suite passed its complete fictional-data walkthrough: setup, account controls, task creation and follow-up, review handoffs, approval gates, learnings, pause/resume, and responsive pages. It does not invoke a vendor model. The installed Claude CLI advertises session persistence and `--resume`; simulated output and multi-profile tests passed, but a live Claude run awaits explicit acceptance of possible vendor charges. Gemini, Antigravity and custom adapters continue through portable file/checkpoint handoffs; native conversation resume for those tools is not claimed. No macOS/Linux machine or multiple real Claude logins was available in this local run. CI performs cross-OS checks after publication; these are not a substitute for live vendor execution on every OS.
+
 ## Claude account handoff — 0.11.2
 
 On Windows, 139 Python tests passed with three environment-dependent skips. A simulated Claude CLI response exercised a usage-limit failure, durable one-hour cooldown, selection of a second connected profile and the separate approval required before that profile could launch. Error-classification cases covered an explicit limit, stderr 429, ordinary response text and an unrelated permission failure. JavaScript syntax validation passed. The local browser smoke suite could not run because Playwright is absent from this checkout; CI runs it separately. No live Claude account or billable request was used, and credential isolation across two real logins was not verified. An unrecognized CLI error follows the normal failure path.

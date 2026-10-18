@@ -94,20 +94,31 @@ def codex_auth_store(home):
     return mode
 
 
-def command(provider, executable, project, schema, final_path, model="", custom=None, auth_store="file"):
+def command(provider, executable, project, schema, final_path, model="", custom=None, auth_store="file", resume_session=""):
     advisor = project.get("kind") in ("advisor", "learnings", "review")
     if advisor and not TOOLS[provider]["advisor"]:
         raise ValueError("This adapter has no enforced read-only advisor mode. Choose Codex, Claude Code, or Gemini CLI.")
     if provider == "codex":
         if auth_store not in ('file', 'keyring', 'auto', 'ephemeral'):
             raise ValueError('Unsupported Codex credential-storage setting')
-        args = [executable, "exec", "--model", model, "--ignore-user-config", "--sandbox", "read-only" if advisor else "workspace-write", "--json",
+        if resume_session and not valid_session_id(resume_session):
+            raise ValueError("Invalid saved Codex session ID")
+        args = [executable, "exec"] + (["resume"] if resume_session else []) + ["--model", model, "--ignore-user-config", "--json",
                 "-c", 'approval_policy="never"', "-c", 'forced_login_method="chatgpt"', "-c", 'model_provider="openai"',
                 "-c", 'cli_auth_credentials_store="' + auth_store + '"',
                 "--disable", "multi_agent", "--disable", "multi_agent_v2", "--disable", "apps", "--disable", "plugins",
                 "--disable", "hooks", "--disable", "computer_use", "--disable", "browser_use", "--disable", "in_app_browser",
-                "-c", "sandbox_workspace_write.network_access=true", "-c", "shell_environment_policy.ignore_default_excludes=false",
-                "--cd", project["path"], "--output-schema", str(schema), "--output-last-message", str(final_path), "-"]
+                "-c", "sandbox_workspace_write.network_access=true", "-c", "shell_environment_policy.ignore_default_excludes=false"]
+        if resume_session:
+            # exec resume has no --sandbox or --cd flag. The child process is
+            # already launched with cwd=project; enforce the policy via config.
+            args += ["-c", 'sandbox_mode="' + ("read-only" if advisor else "workspace-write") + '"']
+        else:
+            args += ["--sandbox", "read-only" if advisor else "workspace-write", "--cd", project["path"]]
+        args += ["--output-schema", str(schema), "--output-last-message", str(final_path)]
+        if resume_session:
+            args.append(resume_session)
+        args.append("-")
         if os.name == "nt":
             args[2:2] = ["-c", 'windows.sandbox="unelevated"']
         if not (Path(project["path"]) / ".git").exists():
@@ -117,8 +128,12 @@ def command(provider, executable, project, schema, final_path, model="", custom=
         args = [executable, "-p", "--output-format", "json", "--json-schema", Path(schema).read_text(encoding="utf-8"),
                 "--permission-mode", "plan" if advisor else "dontAsk", "--max-turns", "30",
                 "--tools", "Read,Glob,Grep" if advisor else "Read,Glob,Grep,Edit,Write,Bash",
-                "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}', "--disable-slash-commands", "--no-session-persistence",
+                "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}', "--disable-slash-commands",
                 "--setting-sources", "", "--safe-mode"]
+        if resume_session:
+            if not valid_session_id(resume_session):
+                raise ValueError("Invalid saved Claude session ID")
+            args += ["--resume", resume_session]
         if not advisor:
             args += ["--allowedTools", "Read,Glob,Grep,Edit,Write,Bash(git status *),Bash(git diff *),Bash(python -m unittest *),Bash(npm test *),Bash(npm run build *),Bash(npm run lint *)"]
     elif provider == "gemini":
@@ -133,6 +148,33 @@ def command(provider, executable, project, schema, final_path, model="", custom=
     if model and provider != "custom":
         args += ["--model", model]
     return native_command(args)
+
+
+def valid_session_id(value):
+    """Accept only vendor UUIDs, never user-supplied CLI fragments."""
+    import uuid
+    try:
+        return str(uuid.UUID(value)) == value.lower()
+    except (AttributeError, TypeError, ValueError):
+        return False
+
+
+def session_id(provider, stdout):
+    """Extract the native Claude conversation ID from its final JSON envelope."""
+    if provider != "claude":
+        return ""
+    try:
+        payload = json.loads(stdout)
+    except (TypeError, ValueError):
+        return ""
+    value = payload.get("session_id", "") if isinstance(payload, dict) else ""
+    return value if valid_session_id(value) else ""
+
+
+def event_session_id(provider, payload):
+    """Only Codex's own thread-start event can establish a resumable ID."""
+    value = payload.get("thread_id", "") if provider == "codex" and payload.get("type") == "thread.started" else ""
+    return value if valid_session_id(value) else ""
 
 
 def parse_result(provider, stdout, final_path):
