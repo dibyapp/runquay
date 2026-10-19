@@ -1,5 +1,9 @@
 # Actual Runquay screenshots and test record
 
+## Dev.to article cover — 19 October 2026
+
+The 1000 × 420 [article cover](images/devto-cover.jpg) is original Runquay vector artwork rendered to JPEG. It is a designed cover, not an app screenshot or evidence of a vendor run. Its pixels were reviewed for personal information; it contains no account details, email, private paths, credentials or private project content. The exact JPEG hash is pinned in the release manifest, and the file has no EXIF or XMP metadata.
+
 ## Runquay Field — 0.10.0, 17 October 2026
 
 Actual JPEGs captured from the running local app in Chromium on Windows. The isolated walkthrough used 26 fictional source summaries, including 20 example SEO projects, plus DNS, security, DevOps, accessibility, testing and performance reports. The browser exercised real HTTP handlers and a deterministic worker subprocess. These captures show the actual interface; they are not generated images or evidence of live model outcomes. Animation was frozen only for the still capture.
