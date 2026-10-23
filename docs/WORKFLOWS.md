@@ -1,5 +1,13 @@
 # Runquay workflow guide
 
+## Find and resume your work
+
+The Create page saves an unsent request in the current browser tab. Reloading restores its words, AI choice and target project when that connection and folder still exist. **Discard draft** clears the words; a successful send clears the saved draft automatically. The draft stays in browser session storage and is never sent to an AI until you submit it. Press **Ctrl/⌘ Enter** in the request box to submit.
+
+Choose **All your work** to search Runquay tasks and saved AI conversations. Search also checks task goals and short result or saved-chat previews. Filter by status, AI tool or project; **No linked project** finds ungrouped chats. Change the order, pin important items on this browser, or show only pinned items. Background analysis chats are hidden by default and can be included explicitly. These views are local and do not invoke an AI.
+
+Open a task’s **···** menu to use its original request as an unsent starting point. **Copy summary** writes only the task’s saved summary to your clipboard; inspect it before pasting elsewhere. Pin identifiers stay in browser local storage. Search, filters and pins do not change or delete projects or native conversations.
+
 ## Everyday work
 
 In **Create**, say what you want and choose **↑**. Keep **New project** for a separate folder, or select an existing project before sending. The provider is shown before you send; Runquay never silently switches providers. Only that request is started when the global queue is paused. Normal account, quota, permission and billing rules still apply.

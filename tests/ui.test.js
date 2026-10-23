@@ -77,6 +77,33 @@ test("task filters retain paused and blocked work and separate finished tasks",(
   assert.deepEqual(ui.visibleTasks(tasks,"finished").map(p=>p.state),["complete","cancelled"]);
   assert.equal(ui.visibleTasks(tasks,"all").length,6);
 });
+test("work library filters saved chats, project, tool and lifecycle without changing source",()=>{
+  const state={projects:[
+    {id:'a',name:'Fix login',goal:'Investigate OAuth',state:'attention',provider:'codex',catalog_id:'shop',created:'2026-01-01'},
+    {id:'b',name:'Build menu',state:'complete',provider:'claude',catalog_id:'cafe',created:'2026-01-02'}],
+    history_tasks:[{key:'c',title:'Old SEO chat',project_name:'Shop',provider:'codex',catalog_id:'shop',updated_at:1},
+      {key:'d',title:'Hidden analysis',provider:'codex',background_analysis:true,updated_at:2},
+      {key:'e',title:'Loose thought',provider:'codex',updated_at:3}],runs:[]};
+  const original=JSON.stringify(state);
+  assert.deepEqual(ui.workRows(state,{status:'needs-you'}).map(r=>r.key),['work:a']);
+  assert.deepEqual(ui.workRows(state,{status:'finished'}).map(r=>r.key),['work:b']);
+  assert.deepEqual(ui.workRows(state,{status:'saved'}).map(r=>r.key),['history:e','history:c']);
+  assert.deepEqual(ui.workRows(state,{provider:'claude'}).map(r=>r.key),['work:b']);
+  assert.deepEqual(ui.workRows(state,{project:'shop'}).map(r=>r.key),['work:a','history:c']);
+  assert.deepEqual(ui.workRows(state,{project:'__none__'}).map(r=>r.key),['history:e']);
+  assert.deepEqual(ui.workRows(state,{query:'oauth'}).map(r=>r.key),['work:a']);
+  assert.deepEqual(ui.workRows(state,{background:true,query:'analysis'}).map(r=>r.key),['history:d']);
+  assert.equal(JSON.stringify(state),original);
+});
+test("work library pins and sorting are deterministic",()=>{
+  const state={projects:[{id:'a',name:'Alpha',state:'complete',created:'2026-01-01'},
+    {id:'z',name:'Zeta',state:'complete',created:'2026-02-01'}],history_tasks:[],runs:[]};
+  assert.deepEqual(ui.workRows(state).map(r=>r.key),['work:z','work:a']);
+  assert.deepEqual(ui.workRows(state,{pins:['work:a']}).map(r=>r.key),['work:a','work:z']);
+  assert.deepEqual(ui.workRows(state,{status:'pinned',pins:['work:a']}).map(r=>r.key),['work:a']);
+  assert.deepEqual(ui.workRows(state,{sort:'oldest'}).map(r=>r.key),['work:a','work:z']);
+  assert.deepEqual(ui.workRows(state,{sort:'name'}).map(r=>r.key),['work:a','work:z']);
+});
 test("unrecognized vendor statuses remain readable",()=>{
   assert.equal(ui.label("complete"),"Done");
   assert.equal(ui.label("attention"),"Needs you");

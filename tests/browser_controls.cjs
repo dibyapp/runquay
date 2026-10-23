@@ -1,6 +1,6 @@
 const {chromium}=require('playwright');
 const fs=require('fs'),assert=require('assert/strict');
-(async()=>{const browser=await chromium.launch({headless:true});const out=process.env.RUNQUAY_BROWSER_ARTIFACTS,checks=[];checks.push=function(...items){console.log(items[0]);return Array.prototype.push.apply(this,items);};try{
+(async()=>{const browser=await chromium.launch({headless:true,executablePath:process.env.RUNQUAY_BROWSER_EXECUTABLE || undefined});const out=process.env.RUNQUAY_BROWSER_ARTIFACTS,checks=[];checks.push=function(...items){console.log(items[0]);return Array.prototype.push.apply(this,items);};try{
 const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],violations=[];
 page.on('pageerror',e=>errors.push(e.message));page.on('console',e=>{if(e.type()==='error')violations.push(e.text())});
 await page.goto(JSON.parse(fs.readFileSync(out+'/browser-control.json','utf8')).url);await page.locator('#connection').filter({hasText:'Connected'}).waitFor();

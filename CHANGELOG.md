@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0 — Recoverable requests and a usable work library
+
+- Keep an unsent request in this browser tab through reloads, including its selected AI and target folder. Discard it explicitly, or send with Ctrl/⌘ Enter. A successful send clears the draft.
+- Search task names, project names, goals, saved previews and outcome summaries. In All your work, filter by lifecycle, AI tool, project (including unlinked chats) and pinned items; sort by recent importance, oldest or name; clear filters with one action.
+- Pin local tasks and saved conversations on this browser, hide background analyses by default with an opt-in toggle, and read short previews in the library. Reuse a prior request as an unsent starting point or copy its summary to the clipboard.
+- Add pure filtering tests and Chromium checks for reload recovery, keyboard send, pinning, filters, reuse and responsive layout. No vendor invocation is part of these checks.
+
 ## 0.11.3 — Native conversation continuity
 
 - Resume the native Codex or Claude Code conversation when the immediately preceding completed milestone used the same signed-in profile and phase. Keep session IDs in private Runquay state, outside the browser's general state response.

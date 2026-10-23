@@ -23,6 +23,8 @@ Created and maintained by [Dibyaprakash Pradhan](https://github.com/dibyapp). [D
 
 Results and saved conversations appear together, with recognizable tool icons, search, plain progress, **View result**, and **Ask for a change**. Saved native conversations are previews; their original chat continues in its own tool. AI choices, connections, work controls and detailed history remain available when needed. [Everyday workflow](docs/WORKFLOWS.md).
 
+Your unsent request survives a reload in the same browser tab, with its chosen AI and project. **All your work** adds status, tool and project filters, pinned items, sorting and short previews; reuse an earlier request without sending it. Drafts and pins stay in local browser storage. [Work library guide](docs/WORKFLOWS.md#find-and-resume-your-work).
+
 For the source ZIP, open `setup.cmd` on Windows, `setup.command` on Mac or `sh setup.sh` on Linux. First-time setup can prepare missing dependencies; provider sign-in and OS permission prompts still need you.
 
 ## See Runquay in use

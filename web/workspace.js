@@ -2,6 +2,18 @@
 // The everyday surface: a request, its progress, and its result.
 window.RunquayWorkspace = (() => {
   let limit=4, expanded=false, sending=false, retry=null, selectedHistory="", attachedLearning=null, activeWorkflow='';
+  const draftKey='runquay.request.draft.v1', pinsKey='runquay.work.pins.v1';
+  function readLocal(storage,key,fallback) {try{return JSON.parse(storage.getItem(key)) ?? fallback;}catch{return fallback;}}
+  let pendingDraft=readLocal(sessionStorage,draftKey,null), draftRestored=false;
+  const savedPins=readLocal(localStorage,pinsKey,[]);
+  let pins=new Set((Array.isArray(savedPins) ? savedPins : []).filter(v=>typeof v==='string' && /^(work|history):[\w.-]{1,160}$/.test(v)).slice(0,500));
+  function saveDraft() {
+    const text=$('request-text').value;
+    $('request-discard').hidden=!text.trim();
+    $('request-draft-status').textContent=text.trim()?'Draft saved in this browser tab · Ctrl/⌘ Enter to send':'';
+    try{if(text.trim())sessionStorage.setItem(draftKey,JSON.stringify({text,provider:$('request-provider').value,catalog_id:$('request-target').value}));else sessionStorage.removeItem(draftKey);}catch{/* Browser storage may be disabled. */}
+  }
+  function savePins(){try{localStorage.setItem(pinsKey,JSON.stringify([...pins]));}catch{/* Pins remain available until this tab closes. */}}
   // Keep the form select as the source of truth; the visible picker is portable,
   // searchable and does not depend on an operating system's popup colors.
   function projectPicker() {
@@ -93,19 +105,28 @@ window.RunquayWorkspace = (() => {
     syncSelect("request-provider",[...(s.team_tools?.length ? [['auto','Auto team · plan, build, review']] : []),...providers.map(p=>[p,s.tools.find(t=>t.id===p)?.name || p])]);
     if(!$("request-provider").value && providers.length) $("request-provider").value=providers.includes("codex") ? "codex" : providers[0];
     syncSelect("request-target",[["","New project"],...s.catalog.filter(p=>!p.is_supervisor && p.details.exists).map(p=>[p.id,p.name])]);
+    if(!draftRestored && pendingDraft && typeof pendingDraft.text==='string') {
+      $('request-text').value=pendingDraft.text.slice(0,10000);
+      if([...$('request-provider').options].some(o=>o.value===pendingDraft.provider))$('request-provider').value=pendingDraft.provider;
+      if([...$('request-target').options].some(o=>o.value===pendingDraft.catalog_id))$('request-target').value=pendingDraft.catalog_id;
+      draftRestored=true;pendingDraft=null;saveDraft();
+    }
     // Do not rebuild focused picker choices during the dashboard's polling.
     if(!$("project-picker-dialog").open) updateProjectPicker();
     $("workspace-connect").hidden=profiles.length>0;
     $("request-send").disabled=sending || !profiles.length;
     updateContext();
-    const query=$("workspace-search").value.trim().toLocaleLowerCase();
-    const work=s.projects.map(p=>({kind:"work",item:p,time:Date.parse(s.runs.find(r=>r.project_id===p.id)?.started || p.created)||0,active:["running","attention"].includes(p.state) || p.state==="queued" && (s.running || p.run_requested)}));
-    const history=(s.history_tasks || []).map(t=>({kind:"history",item:t,time:typeof t.updated_at==="number" ? t.updated_at*1000 : Date.parse(t.updated_at)||0,active:false}));
-    const all=[...work,...history].filter(row=>!query || `${row.item.name || row.item.title} ${row.item.project_name || ""}`.toLocaleLowerCase().includes(query))
-      .sort((a,b)=>Number(b.active)-Number(a.active) || b.time-a.time);
+    const query=$("workspace-search").value;
+    const selected=expanded?{status:$('work-filter').value,provider:$('work-tool').value,project:$('work-project').value,sort:$('work-sort').value,background:$('work-background').checked}:{};
+    syncSelect('work-tool',[["","Every tool"],...[...new Set([...s.projects.map(p=>p.provider || 'codex'),...(s.history_tasks || []).map(t=>t.provider || 'custom')])].map(p=>[p,s.tools.find(t=>t.id===p)?.name || p])]);
+    syncSelect('work-project',[["","Every project"],["__none__","No linked project"],...s.catalog.filter(p=>!p.is_supervisor).map(p=>[p.id,p.name])]);
+    const background=(s.history_tasks || []).some(t=>t.background_analysis);
+    $('work-background-option').hidden=!background;
+    const all=RunquayUI.workRows(s,{...selected,query,pins});
     replaceCards("everyday-list",all.length ? all.slice(0,limit).map(row=>row.kind==="work" ? workCard(row.item,s) : historyCard(row.item)).join("") :
       `<div class="workspace-empty"><span aria-hidden="true">✧</span><h3>${query ? "No matching work" : "Your next idea starts here"}</h3><p>${query ? "Try another name." : "Describe something above. Your progress and results will appear here."}</p></div>`);
     $("orbit-work-count").textContent=all.length ? String(all.length).padStart(2,"0") : "";
+    $('work-result-count').textContent=`${all.length} ${all.length===1?'item':'items'}`;
     $("workspace-more").hidden=expanded || all.length<=limit;
     $("work-library-more").hidden=!expanded || all.length<=limit;
     renderAttachment();
@@ -114,12 +135,14 @@ window.RunquayWorkspace = (() => {
   function workCard(p,s) {
     const run=s.runs.find(r=>r.project_id===p.id && Date.parse(r.started)>=Date.parse(p.created));
     const status=RunquayUI.workStatus(p,s);
+    const pinned=pins.has(`work:${p.id}`);
+    const preview=expanded ? `<p class="work-preview">${esc(p.checkpoint?.summary || p.goal || 'No summary yet.')}</p>` : '';
     const primary=p.state==='complete' ? `<button data-action="result" data-id="${p.id}" aria-label="View result" title="View result">↗</button>` :
       p.state==='attention' ? `<button data-action="resume" data-id="${p.id}" aria-label="Reply to your AI" title="Reply">↩</button>` :
       ['paused','cancelled'].includes(p.state) || p.state==='queued' && !s.running && !p.run_requested ? `<button data-work-start="${p.id}" aria-label="${p.state==='queued'?'Start':'Continue'}" title="${p.state==='queued'?'Start':'Continue'}">▷</button>` :
       status.label==='Connect your AI' ? '<a class="text-button" href="#accounts" aria-label="Connect your AI">↗</a>' :
       run ? `<button data-action="log" data-id="${run.id}" aria-label="See progress" title="See progress">↗</button>` : '';
-    return `<article class="work-card" id="work-${p.id}" tabindex="-1"><div class="work-card-icon" role="img" aria-label="${esc(s.tools.find(t=>t.id===p.provider)?.name || p.provider)}">${RunquayUI.toolMark(p.provider,p.state==='running'?'working':'idle')}</div><div class="work-card-body"><h3 title="${esc(p.name)}">${esc(p.name)}</h3>${p.workflow?.phase?`<button class="workflow-trail" data-workflow="${p.id}">${esc(({plan:"Plan",build:"Build",review:"Review",repair:"Improve",done:"Finished"})[p.workflow.phase])} <span>· View handoffs ↗</span></button>`:""}${p.state==='attention' ? `<p class="work-question">${esc(p.checkpoint.question || p.note || 'Reply to continue.')}</p>` : ''}</div><span class="work-status ${esc(p.state)}" title="${esc(status.text)}">${esc(status.label)}</span><div class="work-card-actions">${primary}${p.state==='complete'?`<button data-action="resume" data-id="${p.id}" aria-label="Ask for a change" title="Ask for a change">✎</button>`:''}<details data-key="work-more-${p.id}" class="work-more"><summary aria-label="More actions for ${esc(p.name)}">···</summary><div>${p.state==='complete'?`<button class="text-button" data-action="resume" data-id="${p.id}">Ask for a change</button>`:''}${['running','queued'].includes(p.state)?`<button class="text-button" data-action="pause-project" data-id="${p.id}">Pause</button>`:''}${!['complete','cancelled'].includes(p.state)?`<button class="text-button" data-action="cancel-project" data-id="${p.id}">Stop this task</button>`:''}${run?`<button class="text-button" data-action="log" data-id="${run.id}">Conversation</button>`:''}<p>${esc(status.text)}</p><p>${esc(p.checkpoint.tests || 'No checks reported yet.')}</p>${p.note?`<p>${esc(p.note)}</p>`:''}<p>${esc(p.path)}</p></div></details></div></article>`;
+    return `<article class="work-card" id="work-${p.id}" tabindex="-1"><div class="work-card-icon" role="img" aria-label="${esc(s.tools.find(t=>t.id===p.provider)?.name || p.provider)}">${RunquayUI.toolMark(p.provider,p.state==='running'?'working':'idle')}</div><div class="work-card-body"><h3 title="${esc(p.name)}">${esc(p.name)}</h3>${preview}${p.workflow?.phase?`<button class="workflow-trail" data-workflow="${p.id}">${esc(({plan:"Plan",build:"Build",review:"Review",repair:"Improve",done:"Finished"})[p.workflow.phase])} <span>· View handoffs ↗</span></button>`:""}${p.state==='attention' ? `<p class="work-question">${esc(p.checkpoint.question || p.note || 'Reply to continue.')}</p>` : ''}</div><span class="work-status ${esc(p.state)}" title="${esc(status.text)}">${esc(status.label)}</span><div class="work-card-actions">${expanded?`<button class="work-pin" data-work-pin="work:${esc(p.id)}" aria-pressed="${pinned}" aria-label="${pinned?'Unpin':'Pin'} ${esc(p.name)}" title="${pinned?'Unpin':'Pin'}">${pinned?'◆':'◇'}</button>`:''}${primary}${p.state==='complete'?`<button data-action="resume" data-id="${p.id}" aria-label="Ask for a change" title="Ask for a change">✎</button>`:''}<details data-key="work-more-${p.id}" class="work-more"><summary aria-label="More actions for ${esc(p.name)}">···</summary><div>${p.state==='complete'?`<button class="text-button" data-action="resume" data-id="${p.id}">Ask for a change</button>`:''}${['running','queued'].includes(p.state)?`<button class="text-button" data-action="pause-project" data-id="${p.id}">Pause</button>`:''}${!['complete','cancelled'].includes(p.state)?`<button class="text-button" data-action="cancel-project" data-id="${p.id}">Stop this task</button>`:''}${run?`<button class="text-button" data-action="log" data-id="${run.id}">Conversation</button>`:''}<button class="text-button" data-work-reuse="${esc(p.id)}">Use request as starting point</button>${p.checkpoint?.summary?`<button class="text-button" data-work-copy="${esc(p.id)}">Copy summary</button>`:''}<p>${esc(status.text)}</p><p>${esc(p.checkpoint.tests || 'No checks reported yet.')}</p>${p.note?`<p>${esc(p.note)}</p>`:''}<p>${esc(p.path)}</p></div></details></div></article>`;
   }
   const flowDialog=document.createElement('dialog');flowDialog.id='workflow-dialog';flowDialog.className='field-sheet';
   flowDialog.innerHTML='<div class="dialog-title"><h2>How your tools worked</h2><button type="button" class="icon" data-close="workflow-dialog" aria-label="Close workflow">×</button></div><div id="workflow-content"></div>';
@@ -134,13 +157,16 @@ window.RunquayWorkspace = (() => {
     if(!flowDialog.open)flowDialog.showModal();
   }
   function historyCard(t) {
-    return `<article class="work-card history-work" id="history-${esc(t.key)}" tabindex="-1"><div class="work-card-icon"><img src="${RunquayUI.toolIcon(t.provider)}" alt="${esc(t.tool || t.provider)}" width="24" height="24"></div><div class="work-card-body"><button class="history-title" data-work-history="${esc(t.key)}">${esc(t.title)}</button><p class="work-status-note">${esc(t.project_name || 'Saved conversation')} · ${esc(t.tool || t.provider)}</p></div><button class="text-button" data-work-history="${esc(t.key)}" aria-label="View ${esc(t.title)}" title="View saved preview">↗</button></article>`;
+    const pinned=pins.has(`history:${t.key}`);
+    return `<article class="work-card history-work" id="history-${esc(t.key)}" tabindex="-1"><div class="work-card-icon"><img src="${RunquayUI.toolIcon(t.provider)}" alt="${esc(t.tool || t.provider)}" width="24" height="24"></div><div class="work-card-body"><button class="history-title" data-work-history="${esc(t.key)}">${esc(t.title)}</button><p class="work-status-note">${esc(t.project_name || 'Saved conversation')} · ${esc(t.tool || t.provider)}</p>${expanded && t.preview?`<p class="work-preview">${esc(t.preview)}</p>`:''}</div>${expanded?`<button class="work-pin" data-work-pin="history:${esc(t.key)}" aria-pressed="${pinned}" aria-label="${pinned?'Unpin':'Pin'} ${esc(t.title)}" title="${pinned?'Unpin':'Pin'}">${pinned?'◆':'◇'}</button>`:''}<button class="text-button" data-work-history="${esc(t.key)}" aria-label="View ${esc(t.title)}" title="View saved preview">↗</button></article>`;
   }
   function openLibrary() {
     expanded=true;limit=Math.max(limit,30);
     $('work-library-content').append($('workspace-search').parentElement,$('everyday-list'));
     if(state)render(state);
     if(!$('work-library-dialog').open)$('work-library-dialog').showModal();
+    $('work-library-scroll').scrollTop=0;
+    $('workspace-search').focus({preventScroll:true});
   }
   $('work-library-dialog').addEventListener('close',()=>{
     expanded=false;limit=4;
@@ -170,9 +196,16 @@ window.RunquayWorkspace = (() => {
     $("request-target").value=catalogId;
     updateProjectPicker();
     if(text) $("request-text").value=text;
-    updateContext();$("request-text").focus();$("everyday-work").scrollIntoView({block:"start"});
+    updateContext();saveDraft();$("request-text").focus();$("everyday-work").scrollIntoView({block:"start"});
   }
   $("request-target").onchange=updateContext;$("request-provider").onchange=updateContext;
+  $('request-text').addEventListener('input',saveDraft);
+  $('request-target').addEventListener('change',saveDraft);
+  $('request-provider').addEventListener('change',saveDraft);
+  $('request-discard').onclick=()=>{$('request-text').value='';saveDraft();$('request-text').focus();};
+  $('request-text').addEventListener('keydown',event=>{if(event.key==='Enter' && (event.ctrlKey || event.metaKey) && !event.isComposing){event.preventDefault();$('request-form').requestSubmit();}});
+  for(const id of ['work-filter','work-tool','work-project','work-sort','work-background'])$(id).addEventListener('change',()=>{limit=30;if(state)render(state);});
+  $('work-clear').onclick=()=>{for(const id of ['work-filter','work-tool','work-project'])$(id).value=id==='work-filter'?'all':'';$('work-sort').value='recent';$('work-background').checked=false;$('workspace-search').value='';limit=30;render(state);$('workspace-search').focus();};
   $("workspace-search").oninput=()=>{limit=expanded?30:4;if(state) render(state);};
   $("workspace-more").onclick=openLibrary;
   $("work-library-more").onclick=()=>{limit+=30;render(state);};
@@ -187,7 +220,7 @@ window.RunquayWorkspace = (() => {
     sending=true;$("request-send").disabled=true;$("request-send").textContent="Sending…";$("request-error").hidden=true;
     try {
       const result=await api("/api/requests",{...fields,request_key:retry.key});
-      retry=null;$("request-text").value="";$("workspace-search").value="";limit=expanded?30:4;attachedLearning=null;renderAttachment();
+      retry=null;$("request-text").value="";saveDraft();$("workspace-search").value="";limit=expanded?30:4;attachedLearning=null;renderAttachment();
       $("request-receipt").hidden=false;$("request-receipt").textContent="Got it. We’ll take it from here. Progress appears below.";
       await refresh();$("work-"+result.id)?.focus({preventScroll:true});
     } catch(error) {$("request-error").hidden=false;$("request-error").textContent=error.message+" Your words are still here; you can try again.";}
@@ -200,6 +233,9 @@ window.RunquayWorkspace = (() => {
       if(!open.contains(event.target))open.open=false;
     });
     if(event.target.closest("#remove-request-learning")){attachedLearning=null;renderAttachment();return;}
+    const pin=event.target.closest('[data-work-pin]');if(pin){const key=pin.dataset.workPin;pins.has(key)?pins.delete(key):pins.add(key);savePins();render(state);return;}
+    const reuse=event.target.closest('[data-work-reuse]');if(reuse){const p=state.projects.find(p=>p.id===reuse.dataset.workReuse);if(!p)return;if($('work-library-dialog').open)$('work-library-dialog').close();focusRequest('',p.goal || '');return;}
+    const copy=event.target.closest('[data-work-copy]');if(copy){const p=state.projects.find(p=>p.id===copy.dataset.workCopy);if(!p?.checkpoint?.summary)return;try{await navigator.clipboard.writeText(p.checkpoint.summary);toast('Summary copied to clipboard.');}catch{toast('Clipboard unavailable. Open the result to read the summary.');}return;}
     const example=event.target.closest("[data-request-example]");if(example) focusRequest("",example.dataset.requestExample);
     const workflow=event.target.closest('[data-workflow]');if(workflow)showWorkflow(workflow.dataset.workflow);
     const start=event.target.closest("[data-work-start]");

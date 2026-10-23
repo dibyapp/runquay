@@ -5,6 +5,36 @@ const RunquayUI = (() => {
     const query=search.trim().toLocaleLowerCase();
     return tasks.filter(t=>(!folder || t.catalog_id===folder) && (!tool || t.tool===tool) && (!query || `${t.title} ${t.project_name} ${t.tool || ""}`.toLocaleLowerCase().includes(query)));
   }
+  function workRows(state, options={}) {
+    const query=String(options.query || "").trim().toLocaleLowerCase();
+    const pins=new Set(options.pins || []);
+    const work=(state.projects || []).map(item=>({kind:"work",item,key:`work:${item.id}`,
+      time:Math.max(Date.parse(item.created || "") || 0,...(state.runs || []).filter(r=>r.project_id===item.id).map(r=>Date.parse(r.started || "") || 0)),
+      project:item.catalog_id || "",provider:item.provider || "codex",status:item.state || "queued"}));
+    const history=(state.history_tasks || []).filter(item=>options.background || !item.background_analysis)
+      .map(item=>({kind:"history",item,key:`history:${item.key}`,
+        time:typeof item.updated_at==="number" ? item.updated_at*1000 : Date.parse(item.updated_at || "") || 0,
+        project:item.catalog_id || "",provider:item.provider || "custom",status:"saved"}));
+    const status=options.status || "all", provider=options.provider || "", project=options.project || "";
+    const rows=[...work,...history].filter(row=>{
+      if(status==="pinned" && !pins.has(row.key))return false;
+      if(status==="saved" && row.kind!=="history")return false;
+      if(status==="needs-you" && row.status!=="attention")return false;
+      if(status==="in-progress" && !["queued","running","paused"].includes(row.status))return false;
+      if(status==="finished" && !["complete","cancelled"].includes(row.status))return false;
+      if(provider && row.provider!==provider)return false;
+      if(project && (project==='__none__' ? Boolean(row.project) : row.project!==project))return false;
+      if(!query)return true;
+      const item=row.item;
+      return [item.name,item.title,item.project_name,item.goal,item.checkpoint?.summary,item.preview]
+        .some(value=>String(value || "").toLocaleLowerCase().includes(query));
+    });
+    const sort=options.sort || "recent";
+    rows.sort((a,b)=>sort==="name" ? String(a.item.name || a.item.title || "").localeCompare(String(b.item.name || b.item.title || "")) :
+      sort==="oldest" ? a.time-b.time : Number(pins.has(b.key))-Number(pins.has(a.key)) ||
+      Number(b.status==="running" || b.status==="attention")-Number(a.status==="running" || a.status==="attention") || b.time-a.time);
+    return rows;
+  }
   function recommendedTool(state) {
     const ready=(state.profiles||[]).find(p=>p.enabled && p.eligible && (state.tools||[]).some(t=>t.id===p.provider && t.advisor));
     return ready?.provider || (state.tools||[]).find(t=>t.installed && t.advisor)?.id || "codex";
@@ -245,6 +275,6 @@ const RunquayUI = (() => {
     const title=/\b(unittest|pytest|npm test|npm run (?:test|lint|build)|node --test)\b/i.test(preview) ? "Run checks" : /\b(Get-Content|cat|head|tail)\b/i.test(preview) ? "Read files" : /\b(Get-ChildItem|Get-Location|rg|ls|find|pwd)\b/i.test(preview) ? "Explore project" : /\bgit (?:diff|status|log)\b/i.test(preview) ? "Review changes" : "Run command";
     return {title,preview};
   }
-  return {toolMark,commandChoices,workStatus,commandPresentation,markdown,sessionEvents,toolIcon,historyGroups,savedTasks,codexTasks:savedTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
+  return {toolMark,commandChoices,workStatus,commandPresentation,markdown,sessionEvents,toolIcon,historyGroups,savedTasks,workRows,codexTasks:savedTasks,pageFor,nextStep,visibleTasks,visibleIdeas,starters,createBrief,plainInstructions,accountChoice,setupAccount,needsSetupAccount,loginView,recommendedTool,label:state => labels[state] || state};
 })();
 if (typeof module !== "undefined") module.exports = RunquayUI;

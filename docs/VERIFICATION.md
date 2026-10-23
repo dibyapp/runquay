@@ -1,5 +1,13 @@
 # Verification record
 
+## Recoverable requests and work library — 0.12.0
+
+On Windows, 142 Python tests ran (139 passed, three environment-dependent skips), and 37 JavaScript unit checks passed. The pure library checks cover lifecycle, provider and project filters, unlinked and background chats, full-text matching, pinned views, sorting and no mutation of source state.
+
+The local Chromium suite used fictional data and a deterministic worker with no vendor model calls. It exercised draft recovery after reload with the target folder and AI choice, explicit discard, Ctrl/⌘ Enter submission, library filters, pinning, request reuse, the existing account and approval flows, and five responsive widths. The suite used locally installed Chrome because the bundled Playwright browser version was unavailable; CI uses its own installed Chromium. Native vendor execution and cross-platform UI interaction were not repeated in this release.
+
+Browser session storage holds unsent draft text in the current tab; local storage holds pin identifiers. Neither is included in release archives. Browser storage can be disabled or cleared by the user, so draft recovery is best effort. Clipboard copying requires a supported browser and a user action.
+
 ## Native conversation continuity — 0.11.3
 
 On Windows, 142 Python tests ran (139 passed, three environment-dependent skips), and 35 JavaScript checks passed. New subprocess checks cover native session ID parsing, same-profile resume, account and phase boundaries, sandbox flags, approval preservation and exclusion of private IDs from the general browser state. A real Codex subscription check passed its zero-paid-credit quota gate, completed a disposable build, and then completed two read-only turns with the same native session ID. No paid credits or reset were authorized.

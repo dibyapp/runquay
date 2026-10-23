@@ -1,5 +1,5 @@
 const {chromium}=require('playwright'),fs=require('fs'),assert=require('assert/strict');
-(async()=>{const browser=await chromium.launch({headless:true});try{
+(async()=>{const browser=await chromium.launch({headless:true,executablePath:process.env.RUNQUAY_BROWSER_EXECUTABLE || undefined});try{
  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));await page.goto(JSON.parse(fs.readFileSync(process.env.RUNQUAY_BROWSER_ARTIFACTS+'/browser-control.json','utf8')).url.replace('#learnings','#projects'));
  await page.locator('#request-send:not([disabled])').waitFor();
